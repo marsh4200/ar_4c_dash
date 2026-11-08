@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
@@ -77,6 +77,8 @@ const ALARM = { disarmed: "Disarmed", armed_home: "Armed home", armed_away: "Arm
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+LINE.speaker = '<rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="14" r="3"/><circle cx="12" cy="7.5" r="1"/>';
+LINE.mute = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l4 6M21 9l-4 6"/>';
 const line = (k, cls) => '<svg class="' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + (LINE[k] || LINE.sparkle) + "</svg>";
 const PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12-7.5z"/></svg>';
 const PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg>';
@@ -268,9 +270,93 @@ svg{flex:none}
 .bgt.on i{border-color:var(--acc)}
 .bgt small{display:block;font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .setrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 4px}
+.seg{display:flex;padding:3px;border-radius:19px;background:rgba(255,255,255,.08);align-self:center;flex:none}
+.seg div{height:32px;padding:0 16px;border-radius:16px;display:flex;align-items:center;font-size:13px;cursor:pointer;color:var(--muted)}
+.seg div.on{background:var(--fg);color:#17161a}
+.np{display:flex;gap:14px;align-items:center}
+.np .art{width:84px;height:84px;border-radius:16px;box-shadow:0 8px 24px -8px #000}
+.npt{min-width:0;flex:1}
+.npt b{display:block;font-weight:400;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.npt small{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctrls .ib.big{background:var(--fg);color:#17161a}
+.vpc{font-size:13px;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+.spk{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;flex:none}
+.spk::-webkit-scrollbar{display:none}
+.sk{position:relative;flex:none;width:122px;padding:10px 10px 9px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(16,14,18,.62);cursor:pointer}
+.sk svg{width:20px;height:20px;color:var(--muted)}
+.sk b{display:block;font-weight:400;font-size:13.5px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sk small{display:block;font-size:11px;color:var(--muted)}
+.sk.on{border-color:var(--acc);background:rgba(var(--accrgb),.12)}
+.sk.on svg{color:var(--acc)}
+.sk.grp{border-color:rgba(var(--accrgb),.5)}
+.jn{position:absolute;top:7px;right:7px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:15px;line-height:1;color:var(--fg);background:rgba(0,0,0,.25)}
+.sk.grp .jn{background:var(--acc);color:#2a2116;border-color:transparent}
+.lib{gap:2px}
+.li{display:flex;align-items:center;gap:12px;padding:7px 4px;border-radius:12px;cursor:pointer}
+.li:active{background:rgba(255,255,255,.06)}
+.li .a{width:46px;height:46px;border-radius:10px;flex:none;background:rgba(255,255,255,.07) center/cover;display:grid;place-items:center;color:var(--muted)}
+.li .a svg{width:20px;height:20px}
+.li.round .a{border-radius:50%}
+.li>div:not(.a){min-width:0;flex:1}
+.li b{display:block;font-weight:400;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li small{font-size:12px;color:var(--muted)}
+.li>svg{width:18px;height:18px;color:var(--muted)}
+.li.now b{color:var(--acc)}
+.chip svg[viewBox]{width:14px;height:14px}
+.ask{font-size:22px;font-weight:300;text-align:center;padding:10px 0 4px;text-wrap:balance}
+.srcs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.src{position:relative;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(16,14,18,.62);padding:16px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer}
+.src:active{transform:scale(.97)}
+.src span{font-size:14px;text-align:center}
+.src.last{border-color:rgba(var(--accrgb),.7)}
+.src.last::after{content:"Last watched";position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--acc);color:#2a2116;padding:2px 8px;border-radius:9px;white-space:nowrap}
+.lg{width:100%;height:70px;border-radius:14px;display:grid;place-items:center;color:var(--muted)}
+.lg img{max-width:100%;max-height:100%;object-fit:contain}
+.lg svg{width:34px;height:34px}
+.lg.big{width:150px;height:104px}
+.start{display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:8px}
+.chk{width:100%;display:flex;flex-direction:column;gap:8px}
+.chk h3{font-weight:400;font-size:18px;margin:0 0 4px;text-align:center}
+.st{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(16,14,18,.62);border:1px solid rgba(255,255,255,.1);font-size:14.5px}
+.st i{width:24px;height:24px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);display:grid;place-items:center;font-style:normal;font-size:13px;flex:none}
+.st small{margin-left:auto;font-size:12px;color:var(--muted)}
+.st.wait{opacity:.45}
+.st.go i{border-color:var(--acc);border-top-color:transparent;animation:spin .8s linear infinite}
+.st.done i,.st.skip i{background:#7fd6a0;border-color:#7fd6a0;color:#10301c}
+.st.fail i{background:#ff8a7a;border-color:#ff8a7a;color:#3a0f0a}
+@keyframes spin{to{transform:rotate(360deg)}}
+.nowc{display:flex;align-items:center;gap:12px}
+.nowc .lg{width:64px;height:46px;flex:none}
+.nowc>div:not(.lg){flex:1;min-width:0}
+.nowc b{display:block;font-weight:400;font-size:17px}
+.nowc small{font-size:12.5px;color:var(--muted)}
+.two{display:flex;gap:8px}
+.two .chip{flex:1;justify-content:center}
+.dpad{position:relative;width:212px;height:212px;margin:4px auto 0;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);touch-action:none}
+.dk{position:absolute;width:62px;height:62px;display:grid;place-items:center;cursor:pointer;border-radius:50%;color:rgba(255,255,255,.88)}
+.dk.down,.dk:active{background:rgba(255,255,255,.12)}
+.dk svg{width:26px;height:26px}
+.dk.u{top:4px;left:75px}.dk.d{bottom:4px;left:75px}.dk.l{left:4px;top:75px}.dk.r{right:4px;top:75px}
+.okk{position:absolute;left:56px;top:56px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;font-size:17px;letter-spacing:.08em;cursor:pointer}
+.okk:active{background:rgba(var(--accrgb),.35)}
+.keys{display:flex;justify-content:space-between;padding:0 4px}
+.keys .ib{width:46px;height:46px}
+.keys .ib.big{background:var(--fg);color:#17161a;border-color:transparent}
+.wvol{display:flex;align-items:center;gap:10px}
+.wvol .ib{width:52px;height:52px}
+.wvol .ib.down{background:rgba(255,255,255,.14)}
+.wvol .ib svg{width:22px;height:22px}
+.wvol .n{flex:1;text-align:center;font-size:13px;color:var(--muted);min-width:0}
+.wvol .n b{display:block;font-weight:400;font-size:15px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .inp{width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--fg);font:inherit;font-size:16px;padding:0 12px;outline:none}
 .inp:focus{border-color:var(--acc)}
 .sbody{padding:4px 12px 14px;display:flex;flex-direction:column;gap:8px}
+.stp{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:1px solid rgba(255,255,255,.1);border-radius:14px}
+.stp .inp{height:38px;font-size:14px;flex:1;min-width:120px}
+.stp .sel,.sel{flex:0 0 auto;width:auto;min-width:0;padding:0 8px;height:38px;font-size:14px}
+.ib.sm{width:32px;height:32px}
+.ib.sm svg{width:15px;height:15px}
+.lgs img{width:28px;height:28px;object-fit:contain}
 .rtr{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid rgba(255,255,255,.1);border-radius:14px}
 .rtr .chip{align-self:flex-end}
 .chip svg{width:14px;height:14px}
@@ -285,7 +371,7 @@ class Ar4cDash extends HTMLElement {
   getGridOptions() { return { columns: "full", rows: "auto" }; }
   connectedCallback() {
     this._clockT = setInterval(() => this._tick(), 15000);
-    if (this._ready && !this._unsub && this.conf) this._subscribe();
+    if (this._ready && !this._unsub && this.conf) { this._subscribe(); this._watchSub(); }
     if (this._ready && this.page === "cameras") this._camLoop();
   }
   disconnectedCallback() {
@@ -293,6 +379,18 @@ class Ar4cDash extends HTMLElement {
     clearInterval(this._camT);
     this._stopLive();
     if (this._unsub) { this._unsub(); this._unsub = null; }
+    if (this._wunsub) { this._wunsub(); this._wunsub = null; }
+    if (this.sp) this.sp.stop();
+  }
+  // which Watch source is on in each room, and each step of the last start (from Home Assistant)
+  _watchSub() {
+    this._hass.connection
+      .subscribeMessage((m) => {
+        this.wst = m || {};
+        if (this.page === "watch") this._render(true);
+      }, { type: "ar_4c_dash/watch_subscribe" })
+      .then((u) => (this._wunsub = u))
+      .catch(() => {});
   }
   set hass(h) {
     const first = !this._hass;
@@ -314,6 +412,24 @@ class Ar4cDash extends HTMLElement {
     this.media = { icons: [], backgrounds: [] };
     this._ready = true;
     this.shadowRoot.addEventListener("click", (e) => this._click(e));
+    // typing: the page isn't redrawn under the keyboard; it catches up when typing stops
+    this.shadowRoot.addEventListener("focusout", () => setTimeout(() => {
+      if (this._later && !this.typing() && !this._down) { this._later = false; this._render(true); }
+    }, 60));
+    // hold to repeat (remote arrows, volume)
+    this.shadowRoot.addEventListener("pointerdown", (ev) => {
+      const b = ev.target.closest && ev.target.closest("[data-hold]");
+      if (!b) return;
+      ev.preventDefault();
+      const fire = () => this.watchCmd(b.getAttribute("data-hold"), b.getAttribute("data-v"));
+      fire();
+      b.classList.add("down");
+      let t2 = null;
+      const t1 = setTimeout(() => (t2 = setInterval(fire, 280)), 450);
+      const up = () => { clearTimeout(t1); clearInterval(t2); b.classList.remove("down"); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); };
+      window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", up);
+    });
     this.shadowRoot.addEventListener("input", (ev) => {
       const t = ev.target, k = t.getAttribute && t.getAttribute("data-in");
       if (k === "name" && this.draft) {
@@ -322,6 +438,34 @@ class Ar4cDash extends HTMLElement {
       } else if ((k === "rname" || k === "rurl") && this.draft && this.draft.rtsp) {
         const c = this.draft.rtsp[Number(t.getAttribute("data-v"))];
         if (c) { c[k === "rname" ? "name" : "url"] = t.value; this.dirty = true; const sv = this.shadowRoot.querySelector('[data-act="s-save"]'); if (sv) { sv.textContent = "Save for everyone"; sv.style.cssText = "justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent"; } }
+      } else if (this.draft && (k === "sname" || k === "stv" || k === "sts" || k === "stt" || k === "rkind")) {
+        const key = t.getAttribute("data-v").split(":");
+        const sc = this.srcAt(key[0] + ":" + key[1]);
+        if (k === "sname") sc.name = t.value;
+        else if (k === "rkind") { if (sc.remote) sc.remote.kind = t.value; }
+        else {
+          const st = sc.steps[Number(key[2])];
+          if (k === "stv") st.v = t.value;
+          else if (k === "sts") st.s = Math.max(0, Math.min(30, Number(t.value) || 0));
+          else { st.t = t.value; this.dirty = true; this._render(true); return; }
+        }
+        this.dirty = true;
+        const sv = this.shadowRoot.querySelector('[data-act="s-save"]');
+        if (sv) { sv.textContent = "Save for everyone"; sv.style.cssText = "justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent"; }
+      } else if (k === "lq" || k === "sq") {
+        // search as you type (a moment after the last key)
+        this[k] = t.value;
+        if (k === "lq") this.lres = null; else this.sres = null;
+        clearTimeout(this._qT);
+        const box = this.shadowRoot.querySelector(".lres");
+        this._qT = setTimeout(() => {
+          const q = t.value.trim();
+          const show = () => { const b = this.shadowRoot.querySelector(".lres"); if (b) b.innerHTML = k === "lq" ? this.maSearchHtml() : this.spSearchHtml(); };
+          if (!q) return show();
+          if (k === "lq") this._hass.callWS({ type: "ar_4c_dash/listen", op: "search", q }).then((res) => { if (this.lq === t.value) { this.lres = res || {}; show(); } }).catch(() => { this.lres = {}; show(); });
+          else this.spot().api("GET", "/search?type=track,playlist,artist&limit=8&q=" + encodeURIComponent(q)).then((res) => { if (this.sq === t.value) { this.sres = res || {}; show(); } }).catch((er) => { this.sres = { err: er.message }; show(); });
+        }, 450);
+        if (box) box.innerHTML = '<div class="empty" style="padding:16px">Searching\u2026</div>';
       } else if (k === "q" && this.pick) {
         this.pickQ = t.value;
         const res = this.shadowRoot.querySelector(".pres");
@@ -334,6 +478,8 @@ class Ar4cDash extends HTMLElement {
   async _load() {
     const h = this._hass;
     await this._subscribe();
+    try { this.li = await h.callWS({ type: "ar_4c_dash/listen", op: "info" }); } catch (e) { this.li = {}; }
+    this._watchSub();
     try {
       const u = await h.callWS({ type: "frontend/get_user_data", key: PREF_KEY });
       if (u && u.value && typeof u.value === "object") this.P = Object.assign(this.P, u.value);
@@ -368,8 +514,16 @@ class Ar4cDash extends HTMLElement {
     this._watch = null;
     const c = this.conf || { rooms: [] };
     this.rc = { lightTypes: c.lightTypes || {}, lightTone: c.lightTone, houseImage: c.houseImage };
-    this.rooms = (Array.isArray(c.rooms) ? c.rooms : []).map((r, i) => {
-      const o = { name: r.name || "Room " + (i + 1), image: r.image };
+    const cr = Array.isArray(c.rooms) ? c.rooms : [];
+    this.rooms = cr.map((r, i) => {
+      if (r.whole) {
+        // Whole House: everything from every room (no Watch sources of its own)
+        const o = { name: r.name || "Whole House", whole: true, sources: [] };
+        ROOM_KEYS.forEach((k) => (o[k] = []));
+        cr.forEach((x) => { if (!x.whole) ROOM_KEYS.forEach((k) => list(x[k]).forEach((e) => { if (o[k].indexOf(e) < 0) o[k].push(e); })); });
+        return o;
+      }
+      const o = { name: r.name || "Room " + (i + 1), image: r.image, sources: Array.isArray(r.sources) ? r.sources : [] };
       ROOM_KEYS.forEach((k) => (o[k] = list(r[k])));
       return o;
     });
@@ -411,8 +565,12 @@ class Ar4cDash extends HTMLElement {
   }
   setOpt(e, o) { this.opt[e] = Object.assign({}, this.opt[e] || {}, o, { until: Date.now() + 4000 }); }
   cats() {
-    const r = this.room();
-    return ORDER.filter((k) => (k === "cameras" || k === "security" || k === "utilities" ? this.house[k] : r[k]).length);
+    const r = this.room(), li = this.li || {};
+    return ORDER.filter((k) => {
+      if (k === "music") return r.music.length || li.ma || li.spotify;
+      if (k === "watch") return r.watch.length || r.sources.length;
+      return (k === "cameras" || k === "security" || k === "utilities" ? this.house[k] : r[k]).length;
+    });
   }
   ents(k) { return k === "cameras" || k === "security" || k === "utilities" ? this.house[k] : this.room()[k]; }
 
@@ -452,10 +610,12 @@ class Ar4cDash extends HTMLElement {
     (this.rooms || []).forEach((r) => ROOM_KEYS.forEach((k) => (r[k] || []).forEach((e) => w.push(e))));
     const hs = this.house || {};
     ["cameras", "security", "utilities"].forEach((k) => (hs[k] || []).forEach((e) => w.push(e)));
+    ((this.li && this.li.maPlayers) || []).forEach((e) => w.push(e));
     if (this.conf && this.conf.weather) w.push(this.conf.weather);
     else { const wx = Object.keys(this._hass.states).filter((e) => e.indexOf("weather.") === 0)[0]; if (wx) w.push(wx); }
     return (this._watch = w);
   }
+  typing() { const a = this.shadowRoot && this.shadowRoot.activeElement; return !!a && (a.tagName === "INPUT" || a.tagName === "SELECT"); }
   _changed() {
     if (!this._ready || this.dragging) return;
     // Home Assistant hands over new states for every change in the house, many a
@@ -468,7 +628,7 @@ class Ar4cDash extends HTMLElement {
       if (seen[e] !== o) { seen[e] = o; diff = true; }
     });
     if (!diff) return;
-    if (this._down) { this._later = true; return; } // a finger is on the screen: redraw when it lifts
+    if (this._down || this.typing()) { this._later = true; return; } // a finger is on the screen: redraw when it lifts
     if (this.sheet === "settings" && this.setTab === "setup") return; // typing: leave the setup page alone
     if (this._raf) return;
     this._raf = requestAnimationFrame(() => { this._raf = 0; this._render(true); });
@@ -529,7 +689,7 @@ class Ar4cDash extends HTMLElement {
   }
   inner() {
     const k = this.page;
-    const f = { lights: this.pLights, climate: this.pClimate, music: this.pMedia, watch: this.pMedia, shades: this.pShades, scenes: this.pScenes, security: this.pSecurity, cameras: this.pCameras, utilities: this.pUtil }[k];
+    const f = { lights: this.pLights, climate: this.pClimate, music: this.pListen, watch: this.pWatch, shades: this.pShades, scenes: this.pScenes, security: this.pSecurity, cameras: this.pCameras, utilities: this.pUtil }[k];
     return this.head(TITLES[k]) + (f ? f.call(this) : "");
   }
 
@@ -651,6 +811,13 @@ class Ar4cDash extends HTMLElement {
     c.last = now;
     if (kind === "cover") { if (done) this.call("cover", "set_cover_position", { entity_id: e, position: v }); this.setOpt(e + "#pos", { v }); }
     else if (kind === "vol") { this.call("media_player", "volume_set", { entity_id: e, volume_level: v / 100 }); this.setOpt(e + "#vol", { v }); }
+    else if (kind === "mvol") {
+      // a group: every speaker in it to the same level
+      this.setOpt(e + "#mvol", { v });
+      [e].concat(this.maMembers(e)).forEach((x) => this.call("media_player", "volume_set", { entity_id: x, volume_level: v / 100 }));
+    } else if (kind === "svol") { this.setOpt("SP#vol", { v }); this.spot().api("PUT", "/me/player/volume?volume_percent=" + v).catch(() => {}); }
+    const pc = sl.parentNode && sl.parentNode.querySelector(".vpc");
+    if (pc) pc.textContent = v + "%";
   }
   toggle(e) {
     const on = !this.isOn(e);
@@ -721,6 +888,330 @@ class Ar4cDash extends HTMLElement {
         (on && vol != null ? '<div class="row">' + line("vol") + this.slider(e, "vol", vol) + "</div>" : "") + src + "</div>";
     });
     return '<div class="scroll">' + (h || '<div class="empty">Nothing set up here for this room.</div>') + "</div>";
+  }
+  // ===== Listen: Music Assistant / Spotify (as on the panels), or the room's players =====
+  lmode() {
+    const li = this.li || {};
+    const want = this.lsrc || this.P.lsrc || (this.conf && this.conf.listenStart) || "ma";
+    if (want === "spotify" && li.spotify) return "spotify";
+    if (li.ma) return "ma";
+    if (li.spotify) return "spotify";
+    return "plain";
+  }
+  pListen() {
+    const mode = this.lmode(), li = this.li || {};
+    if (mode === "plain") return this.pMedia();
+    let h = "";
+    if (li.ma && li.spotify) h += '<div class="seg"><div data-act="lsrc" data-v="ma" class="' + (mode === "ma" ? "on" : "") + '">Music Assistant</div><div data-act="lsrc" data-v="spotify" class="' + (mode === "spotify" ? "on" : "") + '">Spotify</div></div>';
+    h += mode === "ma" ? this.maHtml() : this.spHtml();
+    return '<div class="scroll">' + h + "</div>";
+  }
+  libRow(it, act, extra) {
+    const img = it.image || it.thumb || "";
+    return '<div class="li' + (it.round ? " round" : "") + (it.now ? " now" : "") + '" data-act="' + act + '"' + (extra || "") + '><div class="a"' + (img ? ' style="background-image:url(&quot;' + esc(img) + '&quot;)"' : "") + ">" + (img ? "" : line(it.icon || "music")) + "</div><div><b>" + esc(it.name) + "</b><small>" + esc(it.sub || "") + "</small></div>" + (it.chev === false ? "" : line("chevr")) + "</div>";
+  }
+  nowCard(o) {
+    // o: {art, title, sub, on, playing, vol, zone, cmd:(k)->act attrs}
+    return '<div class="card"><div class="np"><div class="art"' + (o.art ? ' style="background-image:url(&quot;' + esc(o.art) + '&quot;)"' : "") + ">" + (o.art ? "" : line("music")) + '</div><div class="npt"><b>' + esc(o.title) + "</b><small>" + esc(o.sub || "") + "</small>" + (o.where ? "<small>" + esc(o.where) + "</small>" : "") + "</div></div>" +
+      '<div class="ctrls"><div class="ib" data-act="' + o.act + '" data-v="prev">' + line("prev") + '</div><div class="ib big" data-act="' + o.act + '" data-v="play">' + (o.playing ? PAUSE : PLAY) + '</div><div class="ib" data-act="' + o.act + '" data-v="next">' + line("next") + "</div></div>" +
+      (o.vol != null ? '<div class="row">' + line("vol") + (o.zone ? '<span class="lbl">Zone · ' + o.zone + "</span>" : "") + this.slider(o.volKey, o.volKind, o.vol) + '<span class="vpc">' + o.vol + "%</span></div>" : "") + "</div>";
+  }
+  // ---- Music Assistant (Home Assistant's Music Assistant integration) ----
+  maTarget() {
+    const ps = (this.li && this.li.maPlayers) || [];
+    if (this.maT && ps.indexOf(this.maT) >= 0) return this.maT;
+    const mine = this.room().music.filter((e) => ps.indexOf(e) >= 0)[0];
+    return mine || ps.filter((e) => this.st(e) && this.st(e).state === "playing")[0] || ps[0] || null;
+  }
+  maMembers(t) { const s = this.st(t); return ((s && s.attributes.group_members) || []).filter((x) => x !== t); }
+  maHtml() {
+    const t = this.maTarget();
+    if (!t) return '<div class="empty">No Music Assistant speakers found in Home Assistant.</div>';
+    const s = this.st(t) || { state: "off", attributes: {} }, a = s.attributes;
+    const mem = this.maMembers(t);
+    const vol = this.opt[t + "#mvol"] && this.opt[t + "#mvol"].until > Date.now() ? this.opt[t + "#mvol"].v : a.volume_level != null ? Math.round(a.volume_level * 100) : null;
+    let h = this.nowCard({ art: a.entity_picture, title: a.media_title || (s.state === "playing" ? "Playing" : "Pick something to play"), sub: [a.media_artist, a.media_album_name].filter(Boolean).join(" · "), where: "on " + this.name(t) + (mem.length ? " + " + mem.length : ""), playing: s.state === "playing", act: "mact", vol, volKey: t, volKind: "mvol", zone: mem.length ? mem.length + 1 : 0 });
+    const tab = this.libTab || "fav";
+    if (tab !== "group" && tab !== "search") h += '<div class="lbl">Speakers</div>' + this.maSpeakers(t, mem);
+    h += '<div class="chips" style="padding:0">';
+    [["fav", "Favourites"], ["playlists", "Playlists"], ["artists", "Artists"], ["radio", "Radio"], ["search", "Search"], ["group", "Group"]].forEach((x) => (h += '<div class="chip' + (x[0] === tab ? " on" : "") + '" data-act="ltab" data-v="' + x[0] + '">' + x[1] + "</div>"));
+    h += "</div>";
+    return h + '<div class="card lib">' + this.maLib(t, tab, mem) + "</div>";
+  }
+  maSpeakers(t, mem) {
+    let h = '<div class="spk">';
+    (this.li.maPlayers || []).forEach((x) => {
+      const on = x === t, g = mem.indexOf(x) >= 0, xs = this.st(x);
+      h += '<div class="sk' + (on ? " on" : g ? " grp" : "") + '" data-act="mpick" data-e="' + esc(x) + '">' + line("speaker") + "<b>" + esc(this.name(x)) + "</b><small>" + (on ? "Playing on" : g ? "Joined" : xs && xs.state === "playing" ? "Playing" : "Tap to switch") + "</small>" + (on ? "" : '<div class="jn" data-act="mjoin" data-e="' + esc(x) + '">' + (g ? "✓" : "+") + "</div>") + "</div>";
+    });
+    return h + "</div>";
+  }
+  maLib(t, tab, mem) {
+    if (tab === "group") {
+      let h = '<div class="lbl" style="padding:2px 4px 6px">Play in more rooms with ' + esc(this.name(t)) + "</div>";
+      (this.li.maPlayers || []).filter((x) => x !== t).forEach((x) => {
+        const g = mem.indexOf(x) >= 0;
+        h += '<div class="li" data-act="mjoin" data-e="' + esc(x) + '"><div class="a">' + line("speaker") + "</div><div><b>" + esc(this.name(x)) + "</b><small>" + (g ? "In the group" : "Not in the group") + '</small></div><span class="chip' + (g ? " on" : "") + '" style="height:30px">' + (g ? "Joined" : "Add") + "</span></div>";
+      });
+      return h;
+    }
+    if (this.libOpen) return this.tracksHtml("mtrack");
+    if (tab === "search") return '<input class="inp" data-in="lq" placeholder="Search Music Assistant" value="' + esc(this.lq || "") + '" autocomplete="off"><div class="lres">' + this.maSearchHtml() + "</div>";
+    const items = (this.libCache || {})[tab];
+    if (!items) { this.maLoad(tab); return '<div class="empty" style="padding:20px">Loading…</div>'; }
+    if (items.err) return '<div class="empty" style="padding:20px">' + esc(items.err) + "</div>";
+    if (!items.length) return '<div class="empty" style="padding:20px">' + (tab === "fav" ? "No favourites yet: star playlists or stations in Music Assistant." : "Nothing here in Music Assistant yet.") + "</div>";
+    return items.map((it, i) => this.libRow(this.maItem(it), "mitem", ' data-v="' + tab + ":" + i + '"')).join("");
+  }
+  maItem(it) {
+    const mt = it.media_type;
+    return { name: it.name, image: it.image, sub: mt === "radio" ? "Radio" : mt === "album" ? "Album" : mt === "artist" ? "Artist" : mt === "track" ? (it.artists && it.artists[0] && it.artists[0].name) || "Song" : "Playlist", round: mt === "artist", chev: mt !== "radio" && mt !== "track", icon: mt === "radio" ? "radio" : "music" };
+  }
+  maLoad(tab) {
+    const c = this.libCache || (this.libCache = {});
+    if (c["_" + tab]) return;
+    c["_" + tab] = true;
+    const lib = (mt, fav) => this._hass.callWS({ type: "ar_4c_dash/listen", op: "library", media_type: mt, favorite: !!fav }).then((r) => (r && r.items) || []);
+    const p = tab === "fav" ? Promise.all([lib("playlist", true), lib("radio", true), lib("album", true)]).then((x) => x[0].concat(x[1], x[2])) : lib(tab === "playlists" ? "playlist" : tab === "artists" ? "artist" : "radio");
+    p.then((items) => { c[tab] = items; }).catch((e) => { c[tab] = { err: "Music Assistant: " + (e && e.message ? e.message : "can't load this") }; }).then(() => { c["_" + tab] = false; this._render(true); });
+  }
+  maSearchHtml() {
+    const r = this.lres;
+    if (!this.lq) return '<div class="empty" style="padding:16px">Type an artist, song, playlist or station.</div>';
+    if (!r) return '<div class="empty" style="padding:16px">Searching…</div>';
+    let h = "";
+    [["playlists", "Playlists"], ["artists", "Artists"], ["albums", "Albums"], ["tracks", "Songs"], ["radio", "Radio"]].forEach((g) => {
+      const l = r[g[0]] || [];
+      if (!l.length) return;
+      h += '<div class="lbl" style="padding:8px 4px 2px">' + g[1] + "</div>" + l.map((it, i) => this.libRow(this.maItem(it), "mitem", ' data-v="s' + g[0] + ":" + i + '"')).join("");
+    });
+    return h || '<div class="empty" style="padding:16px">Nothing found.</div>';
+  }
+  maFind(key) {
+    const [tab, i] = key.split(":");
+    if (tab[0] === "s") return ((this.lres || {})[tab.slice(1)] || [])[Number(i)];
+    return ((this.libCache || {})[tab] || [])[Number(i)];
+  }
+  // a playlist, album or artist: its songs (Home Assistant's media browser for the speaker)
+  openLib(it, ent, kind) {
+    this.libOpen = { name: it.name, uri: it.uri || it.id, type: it.media_type || it.type, kind, tracks: null };
+    const lo = this.libOpen;
+    const done = (tracks) => { if (this.libOpen === lo) { lo.tracks = tracks; this._render(true); } };
+    if (kind === "sp") {
+      const path = lo.type === "playlist" ? "/playlists/" + it.id + "/tracks?limit=100" : "/artists/" + it.id + "/top-tracks?market=from_token";
+      this.spot().api("GET", path).then((j) => done(((j && (j.items || j.tracks)) || []).map((x) => x.track || x).filter((x) => x && x.uri).map((x) => ({ name: x.name, sub: (x.artists || []).map((a) => a.name).join(", "), uri: x.uri, image: x.album && x.album.images && x.album.images.length ? x.album.images[x.album.images.length - 1].url : "" })))).catch((e) => done({ err: e.message }));
+      return;
+    }
+    this._hass.callWS({ type: "media_player/browse_media", entity_id: ent, media_content_id: lo.uri, media_content_type: lo.type })
+      .then((b) => done(((b && b.children) || []).filter((x) => x.can_play).map((x) => ({ name: x.title, sub: "", uri: x.media_content_id, image: x.thumbnail }))))
+      .catch((e) => done({ err: e && e.message ? e.message : "Can't open this" }));
+  }
+  tracksHtml(act) {
+    const lo = this.libOpen;
+    let h = '<div class="row" style="padding:2px 2px 6px"><div class="chip" data-act="lback">' + line("chevl") + "Back</div><b style=\"font-weight:400;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\">" + esc(lo.name) + '</b><div class="chip on" data-act="' + act + '" data-v="all">' + PLAY + "Play</div></div>";
+    if (!lo.tracks) return h + '<div class="empty" style="padding:20px">Loading…</div>';
+    if (lo.tracks.err) return h + '<div class="empty" style="padding:20px">' + esc(lo.tracks.err) + "</div>";
+    return h + lo.tracks.map((t, i) => this.libRow({ name: t.name, sub: t.sub, image: t.image, chev: false }, act, ' data-v="' + i + '"')).join("");
+  }
+  maPlay(t, uris, type) {
+    this.call("music_assistant", "play_media", { entity_id: t, media_id: uris, media_type: type });
+    this._toast("Playing on " + this.name(t));
+  }
+  // ---- Spotify (Spotify's Web API, with Home Assistant's Spotify login) ----
+  spot() {
+    if (this.sp) return this.sp;
+    const card = this;
+    const sp = (this.sp = {
+      tok: null, exp: 0, player: null, devices: [], err: null, poll: null,
+      token(force) {
+        if (!force && this.tok && Date.now() < this.exp) return Promise.resolve(this.tok);
+        return card._hass.callWS({ type: "ar_4c_dash/listen", op: "spotify_token" }).then((r) => {
+          if (!r || !r.token) { this.err = (r && r.error) || "Spotify isn't available"; throw new Error(this.err); }
+          this.err = null; this.tok = r.token; this.exp = r.expires_at ? r.expires_at * 1000 - 60000 : Date.now() + 50 * 60000;
+          return this.tok;
+        });
+      },
+      api(method, path, body, retried) {
+        return this.token(false).then((tok) => fetch(path.indexOf("http") === 0 ? path : "https://api.spotify.com/v1" + path, { method, headers: Object.assign({ Authorization: "Bearer " + tok }, body ? { "Content-Type": "application/json" } : {}), body: body ? JSON.stringify(body) : undefined }).then((r) => {
+          if (r.status === 401 && !retried) { this.tok = null; return this.api(method, path, body, true); }
+          if (r.status === 204 || r.status === 202) return null;
+          return r.text().then((t) => { let j = null; try { j = t ? JSON.parse(t) : null; } catch (e) {} if (!r.ok) throw new Error((j && j.error && (j.error.message || j.error.reason)) || "HTTP " + r.status); return j; });
+        }));
+      },
+      refresh() {
+        return Promise.all([this.api("GET", "/me/player").catch(() => null), this.api("GET", "/me/player/devices").catch(() => null)]).then((r) => {
+          this.player = r[0]; this.devices = (r[1] && r[1].devices) || this.devices;
+          if (card.page === "music" && card.lmode() === "spotify") card._render(true);
+        }).catch((e) => { this.err = e.message; card._render(true); });
+      },
+      start() { if (this.poll) return; this.refresh(); this.poll = setInterval(() => this.refresh(), 4000); },
+      stop() { clearInterval(this.poll); this.poll = null; },
+      active() { return this.devices.filter((d) => d.is_active)[0] || (this.player && this.player.device) || null; },
+      later(ms) { setTimeout(() => this.refresh(), ms || 700); },
+    });
+    return sp;
+  }
+  spHtml() {
+    const sp = this.spot();
+    sp.start();
+    const pl = sp.player || {}, it = pl.item, dev = sp.active();
+    const vh = this.opt["SP#vol"];
+    const vol = vh && vh.until > Date.now() ? vh.v : dev && dev.volume_percent != null ? dev.volume_percent : null;
+    let h = this.nowCard({ art: it && it.album && it.album.images && it.album.images[0] ? it.album.images[0].url : "", title: it ? it.name : sp.err ? "Spotify isn't connected" : "Pick something to play", sub: it ? (it.artists || []).map((a) => a.name).join(", ") : sp.err || "", where: dev ? "on " + dev.name : "", playing: !!pl.is_playing, act: "sact", vol, volKey: "SP", volKind: "svol" });
+    const tab = this.spTab || "playlists";
+    if (tab !== "group" && tab !== "search") {
+      h += '<div class="lbl">Spotify speakers</div><div class="spk">';
+      if (!sp.devices.length) h += '<div class="hint" style="text-align:left;padding:8px 2px">' + (sp.err ? "Spotify: " + esc(sp.err) : "No Spotify speakers awake: open Spotify on one first.") + "</div>";
+      sp.devices.forEach((d) => (h += '<div class="sk' + (d.is_active ? " on" : "") + '" data-act="spick" data-v="' + esc(d.id) + '">' + line("speaker") + "<b>" + esc(d.name) + "</b><small>" + (d.is_active ? "Playing on" : "Tap to switch") + "</small></div>"));
+      h += "</div>";
+    }
+    h += '<div class="chips" style="padding:0">';
+    [["playlists", "Playlists"], ["liked", "Liked songs"], ["search", "Search"], ["group", "Group"]].forEach((x) => (h += '<div class="chip' + (x[0] === tab ? " on" : "") + '" data-act="stab2" data-v="' + x[0] + '">' + x[1] + "</div>"));
+    h += '</div><div class="card lib">';
+    if (tab === "group") h += this.spGroupHtml();
+    else if (this.libOpen && this.libOpen.kind === "sp") h += this.tracksHtml("strack");
+    else if (tab === "search") h += '<input class="inp" data-in="sq" placeholder="Search Spotify" value="' + esc(this.sq || "") + '" autocomplete="off"><div class="lres">' + this.spSearchHtml() + "</div>";
+    else {
+      const c = this.spLib || (this.spLib = {});
+      const items = c[tab];
+      if (!items) {
+        if (!c["_" + tab]) {
+          c["_" + tab] = true;
+          (tab === "liked" ? sp.api("GET", "/me/tracks?limit=50").then((j) => ((j && j.items) || []).map((x) => x.track)) : sp.api("GET", "/me/playlists?limit=50").then((j) => (j && j.items) || []))
+            .then((l) => (c[tab] = l.filter(Boolean))).catch((e) => (c[tab] = { err: e.message })).then(() => { c["_" + tab] = false; this._render(true); });
+        }
+        h += '<div class="empty" style="padding:20px">Loading…</div>';
+      } else if (items.err) h += '<div class="empty" style="padding:20px">Spotify: ' + esc(items.err) + "</div>";
+      else if (!items.length) h += '<div class="empty" style="padding:20px">' + (tab === "liked" ? "No liked songs yet." : "No playlists in this Spotify account.") + "</div>";
+      else h += items.map((x, i) => this.libRow(this.spItem(x, it), "sitem", ' data-v="' + tab + ":" + i + '"')).join("");
+    }
+    return h + "</div>";
+  }
+  spItem(x, now) {
+    const imgs = (x.album && x.album.images) || x.images || [];
+    const img = imgs.length ? imgs[imgs.length - 1].url : "";
+    const t = x.type;
+    return { name: x.name, image: img, sub: t === "playlist" ? "Playlist" + (x.owner && x.owner.display_name ? " · " + x.owner.display_name : "") : t === "artist" ? "Artist" : (x.artists || []).map((a) => a.name).join(", "), round: t === "artist", chev: t === "playlist" || t === "artist", now: !!(now && now.uri === x.uri) };
+  }
+  spSearchHtml() {
+    const r = this.sres;
+    if (!this.sq) return '<div class="empty" style="padding:16px">Type an artist, song or playlist.</div>';
+    if (!r) return '<div class="empty" style="padding:16px">Searching…</div>';
+    if (r.err) return '<div class="empty" style="padding:16px">Spotify: ' + esc(r.err) + "</div>";
+    let h = "";
+    [["tracks", "Songs"], ["playlists", "Playlists"], ["artists", "Artists"]].forEach((g) => {
+      const l = ((r[g[0]] && r[g[0]].items) || []).filter(Boolean);
+      if (!l.length) return;
+      h += '<div class="lbl" style="padding:8px 4px 2px">' + g[1] + "</div>" + l.map((x, i) => this.libRow(this.spItem(x), "sitem", ' data-v="s' + g[0] + ":" + i + '"')).join("");
+    });
+    return h || '<div class="empty" style="padding:16px">Nothing found.</div>';
+  }
+  spFind(key) {
+    const [tab, i] = key.split(":");
+    if (tab[0] === "s" && tab !== "sq") { const g = (this.sres || {})[tab.slice(1)]; return ((g && g.items) || []).filter(Boolean)[Number(i)]; }
+    return ((this.spLib || {})[tab] || [])[Number(i)];
+  }
+  // Spotify plays on one speaker; speakers of the same make join it in sync (Home Assistant grouping)
+  spLead() {
+    const d = this.spot().active();
+    if (!d) return null;
+    const n = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const all = this.musicAll(), dn = n(d.name);
+    return all.filter((e) => n(this.name(e)) === dn)[0] || all.filter((e) => dn && (n(this.name(e)).indexOf(dn) >= 0 || dn.indexOf(n(this.name(e))) >= 0))[0] || null;
+  }
+  musicAll() { const s = []; this.rooms.forEach((r) => r.music.forEach((e) => { if (s.indexOf(e) < 0) s.push(e); })); return s; }
+  canGroup(e) { const s = this.st(e); return !!s && ((s.attributes.supported_features || 0) & 524288) !== 0; }
+  plat(e) { const x = this._hass.entities && this._hass.entities[e]; return (x && x.platform) || ""; }
+  spGroupHtml() {
+    const d = this.spot().active();
+    if (!d) return '<div class="empty" style="padding:16px">Pick a speaker first: Spotify plays there, the others join it.</div>';
+    const lead = this.spLead();
+    let h = '<div class="lbl" style="padding:2px 4px 6px">Playing on ' + esc(d.name) + "</div>";
+    if (!lead || !this.canGroup(lead)) return h + '<div class="empty" style="padding:12px">' + (lead ? esc(this.name(lead)) + " can't group with other speakers." : "This speaker isn't one of the rooms' speakers in Setup, so it can't be grouped here.") + "</div>";
+    const mem = this.maMembers(lead);
+    this.musicAll().filter((e) => e !== lead).forEach((e) => {
+      const g = mem.indexOf(e) >= 0, ok = this.canGroup(e) && this.plat(e) === this.plat(lead);
+      h += '<div class="li"' + (ok ? ' data-act="sjoin" data-e="' + esc(e) + '"' : ' style="opacity:.5"') + '><div class="a">' + line("speaker") + "</div><div><b>" + esc(this.name(e)) + "</b><small>" + (ok ? (g ? "Playing along" : "Tap to play along") : "Can't group with " + esc(this.name(lead))) + "</small></div>" + (ok ? '<span class="chip' + (g ? " on" : "") + '" style="height:30px">' + (g ? "Joined" : "Add") + "</span>" : "") + "</div>";
+    });
+    return h;
+  }
+
+  // ===== Watch: sources (as on the panels), or the room's TVs =====
+  pWatch() {
+    const r = this.room();
+    if (!r.sources.length) return this.pMedia();
+    const room = this.ri, act = ((this.wst || {}).active || {})[String(room)];
+    const wv = this.wv || (this.wv = {});
+    if (wv.room !== room) { wv.room = room; wv.view = null; }
+    if (!wv.view) { wv.view = act ? "remote" : "pick"; wv.src = act; }
+    if (wv.view === "start") return this.watchStart();
+    if (wv.view === "remote" && this.srcOf(wv.src || act)) return this.watchRemote(this.srcOf(wv.src || act));
+    wv.view = "pick";
+    let h = '<div class="ask">What would you like to watch?</div><div class="srcs">';
+    const last = (this.wLast || {})[room];
+    r.sources.forEach((s) => (h += '<div class="src' + (s.id === last ? " last" : "") + '" data-act="wgo" data-v="' + esc(s.id) + '"><div class="lg">' + this.logo(s) + "</div><span>" + esc(s.name) + "</span></div>"));
+    return '<div class="scroll">' + h + "</div></div>";
+  }
+  srcOf(id) { return this.room().sources.filter((s) => s.id === id)[0] || null; }
+  logo(s) {
+    const src = s && s.logo && s.logo.src;
+    if (src && src.indexOf("lib:") === 0 && libSrc(src.slice(4))) return '<img alt="" src="' + esc(libSrc(src.slice(4))) + '">';
+    if (src && src.indexOf("media:") === 0) { const m = this.media.icons.filter((x) => x.id === src.slice(6))[0]; if (m) return '<img alt="" src="' + esc(m.url) + '">'; }
+    if (src && src.indexOf("lib:") !== 0 && src.indexOf("media:") !== 0) return '<img alt="" src="' + esc(src) + '">';
+    return line("watch");
+  }
+  stepText(st) {
+    const n = st.e ? this.name(st.e) : "", v = st.v ? String(st.v) : "", btn = /^(input_)?button\./.test(st.e || "");
+    if (st.t === "on") return [(btn ? "Pressing " : "Turning on ") + n, ""];
+    if (st.t === "press") return ["Pressing " + n, ""];
+    if (st.t === "input") return ["Switching to " + (v || n), v ? n : ""];
+    if (st.t === "source") return ["Source " + (v || n), v ? n : ""];
+    if (st.t === "app") return ["Opening " + (v || n), v ? n : ""];
+    if (st.t === "scene") return ["Running " + n, ""];
+    if (st.t === "wait") return ["Waiting " + (st.s || 0) + " s", ""];
+    if (st.t === "cmd") return ["Sending " + v, n];
+    return [st.label || v || "Action", n];
+  }
+  myRun() {
+    const wv = this.wv, run = (this.wst || {}).run;
+    return run && run.id !== wv.prevRun && run.room === wv.room && wv.src && run.src === wv.src ? run : null;
+  }
+  watchStart() {
+    const wv = this.wv, s = this.srcOf(wv.src);
+    if (!s) { wv.view = "pick"; return this.pWatch(); }
+    const run = this.myRun();
+    const steps = run ? run.steps : (s.steps || []).map((x) => this.stepText(x));
+    const state = run ? run.state : steps.map((x, i) => (i === 0 ? "go" : "wait"));
+    let h = '<div class="start"><div class="lg big">' + this.logo(s) + '</div><div class="chk"><h3>Getting ' + esc(s.name) + " ready</h3>";
+    steps.forEach((x, i) => {
+      const st = state[i] || "wait";
+      h += '<div class="st ' + st + '"><i>' + (st === "done" || st === "skip" ? "✓" : st === "fail" ? "!" : "") + "</i><span>" + esc(x[0]) + "</span><small>" + esc(st === "skip" ? "already" : st === "fail" ? "didn't answer" : x[1] || "") + "</small></div>";
+    });
+    if (!steps.length) h += '<div class="st done"><i>✓</i><span>Nothing to switch on</span></div>';
+    if (!run && Date.now() - wv.t0 > 8500) h += '<div class="hint">Home Assistant didn\'t answer.</div><div class="chip on" style="align-self:center" data-act="wgo" data-v="' + esc(s.id) + '">Try again</div>';
+    h += "</div></div>";
+    if (run && run.done && !wv.doneT) {
+      if (run.fails) this._toast(run.fails === 1 ? "One step didn't answer" : run.fails + " steps didn't answer");
+      wv.doneT = setTimeout(() => { wv.doneT = null; if (wv.view === "start") { wv.view = "remote"; this._render(true); } }, 500);
+    }
+    return '<div class="scroll">' + h + "</div>";
+  }
+  watchRemote(s) {
+    const hasRemote = !!(s.remote && s.remote.e), hasPlayer = !!s.player, volE = s.volume || s.player;
+    let h = '<div class="card"><div class="nowc"><div class="lg">' + this.logo(s) + "</div><div><b>" + esc(s.name) + "</b><small>" + esc(this.room().name + (s.player ? " · " + this.name(s.player) : "")) + '</small></div></div><div class="two"><div class="chip" data-act="wchange">' + line("watch") + 'Change source</div><div class="chip" data-act="woff">' + line("power") + "TV off</div></div></div>";
+    if (hasRemote || hasPlayer) {
+      h += '<div class="card">';
+      if (hasRemote) h += '<div class="dpad"><div class="dk u" data-hold="key" data-v="up">' + line("up") + '</div><div class="dk l" data-hold="key" data-v="left">' + line("chevl") + '</div><div class="dk r" data-hold="key" data-v="right">' + line("chevr") + '</div><div class="dk d" data-hold="key" data-v="down">' + line("down") + '</div><div class="okk" data-act="wkey" data-v="ok">OK</div></div>';
+      const keys = hasRemote ? [["back", line("chevl")], ["home", line("home")], ["menu", MENU], ["rew", line("prev")], ["play", PLAY], ["ff", line("next")]] : [["rew", line("prev")], ["play", PLAY], ["ff", line("next")]];
+      h += '<div class="keys">' + keys.map((k) => '<div class="ib' + (k[0] === "play" ? " big" : "") + '" data-act="wkey" data-v="' + k[0] + '">' + k[1] + "</div>").join("") + "</div></div>";
+    }
+    if (volE) h += '<div class="card"><div class="wvol"><div class="ib" data-hold="vol" data-v="-1">' + line("minus") + '</div><div class="n"><span class="lbl">Volume</span><b>' + esc(this.name(volE)) + '</b></div><div class="ib" data-hold="vol" data-v="1">' + line("plus") + '</div><div class="ib" data-act="wmute">' + line("mute") + "</div></div></div>";
+    return '<div class="scroll">' + h + "</div>";
+  }
+  watchCmd(kind, v) {
+    const room = this.ri;
+    if (kind === "key") this._hass.callWS({ type: "ar_4c_dash/watch", action: "key", room, k: v }).catch(() => {});
+    else if (kind === "vol") this._hass.callWS({ type: "ar_4c_dash/watch", action: "vol", room, d: Number(v) }).catch(() => {});
   }
   pScenes() {
     let h = "";
@@ -863,7 +1354,7 @@ class Ar4cDash extends HTMLElement {
     }
     const tab = this.setTab || "icons";
     let h = '<div class="chips" style="padding:0 4px 4px"><div class="chip' + (tab === "icons" ? " on" : "") + '" data-act="stab" data-v="icons">Icons</div><div class="chip' + (tab === "look" ? " on" : "") + '" data-act="stab" data-v="look">Look</div>' + (this.admin ? '<div class="chip' + (tab === "setup" ? " on" : "") + '" data-act="stab" data-v="setup">Setup</div>' : "") + "</div>";
-    if (tab === "setup" && this.admin) return '<div class="sheet"><div class="shh"><b>Settings</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + this.setupHtml() + "</div>" + (this.pick ? this.pickHtml() : "") + "</div>";
+    if (tab === "setup" && this.admin) return '<div class="sheet"><div class="shh"><b>Settings</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + this.setupHtml() + "</div>" + (this.pick ? this.pickHtml() : "") + (this.logoPick ? this.logoPickHtml() : "") + "</div>";
     if (tab === "icons") {
       h += '<div class="hint" style="text-align:left;padding:4px 4px 2px">An icon you change here changes on every phone.</div>';
       ORDER.filter((k) => this.cats().indexOf(k) >= 0).forEach((k) => {
@@ -923,15 +1414,20 @@ class Ar4cDash extends HTMLElement {
     let h = '<div class="lbl" style="padding:10px 4px 2px">Rooms</div>';
     d.rooms.forEach((rm, i) => {
       const n = SETUP_CATS.reduce((t, c) => t + ((rm[c[0]] || []).length), 0);
-      h += '<div class="it' + (this.sOpen === i ? " open" : "") + '"><div class="ih" data-act="s-open" data-v="' + i + '"><span class="now">' + line("home") + "</span><b>" + esc(rm.name || "Room " + (i + 1)) + "</b><small>" + n + (n === 1 ? " device" : " devices") + "</small></div>";
+      h += '<div class="it' + (this.sOpen === i ? " open" : "") + '"><div class="ih" data-act="s-open" data-v="' + i + '"><span class="now">' + line(rm.whole ? "rooms" : "home") + "</span><b>" + esc(rm.name || "Room " + (i + 1)) + "</b><small>" + (rm.whole ? "All rooms" : n + (n === 1 ? " device" : " devices") + ((rm.sources || []).length ? " \u00b7 " + rm.sources.length + " to watch" : "")) + "</small></div>";
       if (this.sOpen === i) {
         h += '<div class="sbody"><input class="inp" data-in="name" data-v="' + i + '" value="' + esc(rm.name || "") + '" placeholder="Room name" maxlength="40">';
-        SETUP_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(rm[c[0]], i + ":" + c[0])));
+        if (rm.whole) h += '<div class="hint" style="text-align:left;padding:0">Everything from every room: the lights, comfort, speakers, TVs, shades and scenes. Move it to where you want it in the list.</div>';
+        else {
+          SETUP_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(rm[c[0]], i + ":" + c[0])));
+          h += this.sourcesHtml(rm, i);
+        }
         h += '<div class="wrapc" style="justify-content:flex-start;margin-top:6px">' + (i > 0 ? '<div class="chip" data-act="s-mv" data-v="' + i + '" data-d="-1">' + line("up") + "Move up</div>" : "") + (i < d.rooms.length - 1 ? '<div class="chip" data-act="s-mv" data-v="' + i + '" data-d="1">' + line("down") + "Move down</div>" : "") + '<div class="chip" data-act="s-del" data-v="' + i + '" style="color:#ff9a8a">' + (this.delArm === i ? "Tap again to delete" : "Delete room") + "</div></div></div>";
       }
       h += "</div>";
     });
-    h += '<div class="chip" style="margin:10px 0 0;border-style:dashed;justify-content:center" data-act="s-add">' + line("plus") + "Add room</div>";
+    h += '<div class="wrapc" style="justify-content:flex-start;margin-top:10px"><div class="chip" style="border-style:dashed" data-act="s-add">' + line("plus") + "Add room</div>" + (d.rooms.some((x) => x.whole) ? "" : '<div class="chip" style="border-style:dashed" data-act="s-whole">' + line("plus") + "Add Whole House</div>") + "</div>";
+    if (this.li && this.li.ma && this.li.spotify) h += '<div class="lbl" style="padding:18px 4px 6px">Listen opens on</div><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (d.listenStart !== "spotify" ? " on" : "") + '" data-act="s-lstart" data-v="ma">Music Assistant</div><div class="chip' + (d.listenStart === "spotify" ? " on" : "") + '" data-act="s-lstart" data-v="spotify">Spotify</div></div>';
     h += '<div class="lbl" style="padding:18px 4px 2px">Whole home</div><div class="card" style="background:transparent;padding:12px">';
     HOUSE_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(d[c[0]], "h:" + c[0])));
     h += '<div class="lbl">Weather</div>' + this.chipsFor(d.weather ? [d.weather] : [], "h:weather");
@@ -946,13 +1442,67 @@ class Ar4cDash extends HTMLElement {
     h += '<div style="position:sticky;bottom:0;padding:16px 0 4px;background:linear-gradient(transparent,rgba(16,15,19,.98) 30%)"><div class="pill" data-act="s-save" style="justify-content:center;background:' + (this.dirty ? "rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent" : "var(--glass)") + '">' + (this.dirty ? "Save for everyone" : "Saved") + "</div></div>";
     return h;
   }
+  // ---- Watch sources (the same format as the panels') ----
+  sourcesHtml(rm, i) {
+    let h = '<div class="lbl" style="margin-top:6px">Watch sources</div><div class="hint" style="text-align:left;padding:0">"What would you like to watch?": each source switches on what it needs, step by step, then shows its remote.</div>';
+    (rm.sources || []).forEach((sc, j) => {
+      const key = i + ":" + j, open = this.wsOpen === key;
+      h += '<div class="it' + (open ? " open" : "") + '" style="margin-top:4px"><div class="ih" data-act="w-open" data-v="' + key + '"><span class="now lgs">' + this.logo(sc) + "</span><b>" + esc(sc.name || "Source") + "</b><small>" + (sc.steps || []).length + " steps</small></div>";
+      if (open) {
+        h += '<div class="sbody"><input class="inp" data-in="sname" data-v="' + key + '" value="' + esc(sc.name || "") + '" placeholder="Name, e.g. Netflix" maxlength="40">';
+        h += '<div class="wrapc" style="justify-content:flex-start"><div class="chip" data-act="s-logo" data-v="' + key + '">' + line("icons") + "Choose logo</div></div>";
+        h += '<div class="lbl">Steps</div>';
+        (sc.steps || []).forEach((st, k) => (h += this.stepHtml(st, key + ":" + k)));
+        h += '<div class="chip" style="border-style:dashed;align-self:flex-start" data-act="st-add" data-v="' + key + '">' + line("plus") + "Add step</div>";
+        const one = (label, f, val, extra) => '<div class="lbl">' + label + '</div><div class="wrapc" style="justify-content:flex-start">' + (val ? '<div class="chip" data-act="w-clr" data-v="' + key + ":" + f + '">' + esc(this.name(val)) + line("x") + "</div>" : '<div class="chip" style="border-style:dashed" data-act="s-pick" data-w="w:' + key + ":" + f + '">' + line("plus") + "Choose</div>") + (extra || "") + "</div>";
+        const kind = (sc.remote && sc.remote.kind) || "appletv";
+        h += one("Remote", "remote", sc.remote && sc.remote.e, sc.remote && sc.remote.e ? '<select class="inp sel" data-in="rkind" data-v="' + key + '">' + [["appletv", "Apple TV"], ["androidtv", "Android TV"], ["roku", "Roku"], ["ir", "IR / other"]].map((o) => '<option value="' + o[0] + '"' + (o[0] === kind ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select>" : "");
+        h += one("Player (play / pause)", "player", sc.player);
+        h += one("Volume", "volume", sc.volume);
+        h += '<div class="wrapc" style="justify-content:flex-start;margin-top:6px"><div class="chip" data-act="w-del" data-v="' + key + '" style="color:#ff9a8a">' + (this.wDelArm === key ? "Tap again to delete" : "Delete source") + "</div></div></div>";
+      }
+      h += "</div>";
+    });
+    return h + '<div class="chip" style="border-style:dashed;align-self:flex-start;margin-top:4px" data-act="w-add" data-v="' + i + '">' + line("plus") + "Add source</div>";
+  }
+  stepHtml(st, key) {
+    const T = [["on", "Turn on"], ["input", "Switch input"], ["app", "Open app"], ["scene", "Run scene / script"], ["wait", "Wait"], ["cmd", "Remote command"], ["press", "Press button"]];
+    let h = '<div class="stp"><select class="inp sel" data-in="stt" data-v="' + key + '">' + T.map((o) => '<option value="' + o[0] + '"' + (o[0] === st.t ? " selected" : "") + ">" + o[1] + "</option>").join("") + (T.some((o) => o[0] === st.t) ? "" : '<option selected value="' + esc(st.t) + '">' + esc(st.t) + "</option>") + "</select>";
+    if (st.t === "wait") h += '<input class="inp" type="number" min="0" max="30" step="1" data-in="sts" data-v="' + key + '" value="' + esc(st.s || 2) + '" style="width:84px"><span class="lbl">seconds</span>';
+    else h += st.e ? '<div class="chip" data-act="s-pick" data-w="w:' + key + '">' + esc(this.name(st.e)) + "</div>" : '<div class="chip" style="border-style:dashed" data-act="s-pick" data-w="w:' + key + '">' + line("plus") + "Device</div>";
+    if (st.t === "input" || st.t === "app" || st.t === "source" || st.t === "cmd") {
+      const sl = st.e && this.st(st.e) && this.st(st.e).attributes.source_list;
+      const dl = "dl" + key.replace(/:/g, "-");
+      h += '<input class="inp" data-in="stv" data-v="' + key + '" value="' + esc(st.v || "") + '" placeholder="' + (st.t === "cmd" ? "Command" : st.t === "app" ? "App" : "Input") + '"' + (Array.isArray(sl) ? ' list="' + dl + '"><datalist id="' + dl + '">' + sl.slice(0, 80).map((x) => '<option value="' + esc(x) + '">').join("") + "</datalist" : "") + ">";
+    }
+    return h + '<div class="ib sm" data-act="st-up" data-v="' + key + '">' + line("up") + '</div><div class="ib sm" data-act="st-rm" data-v="' + key + '">' + line("x") + "</div></div>";
+  }
+  srcAt(key) { const k = key.split(":").map(Number); return this.draft.rooms[k[0]].sources[k[1]]; }
+  logoPickHtml() {
+    const cur = (this.srcAt(this.logoPick).logo || {}).src || "";
+    let g = '<div class="ig">';
+    const tile = (v, html, l) => (g += '<div class="tile' + (cur === v ? " on" : "") + '" data-act="logo-set" data-v="' + esc(v) + '"><i>' + html + "</i><span>" + esc(l) + "</span></div>");
+    tile("", line("watch"), "None");
+    this.media.icons.forEach((m) => tile("media:" + m.id, '<img alt="" src="' + esc(m.url) + '">', m.name || "Uploaded"));
+    Object.keys(LIB || {}).forEach((n) => tile("lib:" + n, '<img alt="" src="' + esc(libSrc(n)) + '">', LIB[n].n || n));
+    return '<div class="pick"><div class="shh"><b>Logo</b><div class="ib" data-act="logo-x">' + line("x") + '</div></div><div class="hint" style="text-align:left">Icons uploaded in AR Lighting Scenes show first.</div><div class="shb">' + g + "</div></div></div>";
+  }
   pickHtml() {
     return '<div class="pick"><div class="shh"><b>Add</b><div class="ib" data-act="p-done">' + line("x") + '</div></div><div style="padding:0 12px 8px"><input class="inp" data-in="q" placeholder="Search" value="' + esc(this.pickQ || "") + '"></div><div class="shb pres">' + this.pickList() + "</div></div>";
   }
   pickList() {
     const w = this.pick.split(":"), k = w[1];
-    const doms = PICK_DOM[k] || [];
-    const have = this.pickArr() || [];
+    let doms = PICK_DOM[k] || [];
+    let have = w[0] === "w" ? [] : this.pickArr() || [];
+    if (w[0] === "w") {
+      const f = w[3];
+      if (f === "remote") doms = ["remote", "media_player"];
+      else if (f === "player" || f === "volume") doms = ["media_player"];
+      else {
+        const t = (this.srcAt(w[1] + ":" + w[2]).steps[Number(f)] || {}).t;
+        doms = { on: ["media_player", "remote", "switch", "button", "input_button", "light", "fan"], input: ["media_player", "remote", "button", "input_button"], app: ["media_player", "remote", "button"], source: ["media_player", "remote", "button"], scene: ["scene", "script"], cmd: ["remote"], press: ["button", "input_button"] }[t] || ["media_player", "remote", "switch", "button"];
+      }
+    }
     const q = (this.pickQ || "").toLowerCase();
     const ids = Object.keys(this._hass.states).filter((e) => doms.indexOf(domain(e)) >= 0 && have.indexOf(e) < 0 && (!q || e.toLowerCase().indexOf(q) >= 0 || this.name(e).toLowerCase().indexOf(q) >= 0));
     ids.sort((a, b) => this.name(a).localeCompare(this.name(b)));
@@ -979,8 +1529,10 @@ class Ar4cDash extends HTMLElement {
         const o = { name: r.name || "Room " + (i + 1) };
         ROOM_KEYS.forEach((k) => (o[k] = L(r[k])));
         if (r.rsImage) o.image = r.rsImage;
+        if (Array.isArray(r.rsWatch) && r.rsWatch.length) o.sources = JSON.parse(JSON.stringify(r.rsWatch));
         return o;
       });
+      if (el.wholeHouse) rooms.unshift({ whole: true, name: "Whole House" });
       const rtsp = (Array.isArray(el.rtsp) ? el.rtsp : []).filter((x) => x && typeof x.url === "string" && x.url).map((x, i) => ({ name: x.name || "Camera " + (i + 1), url: x.url }));
       this.draft = { rooms, cameras: L(el.cameras), rtsp, security: L(el.security), utilities: el.utilitiesOn ? L(el.utilities) : [], lightTypes: rs.lightTypes || {}, lightTone: rs.lightTone, houseImage: rs.houseImage, weather: this.draft && this.draft.weather };
       this.dirty = true;
@@ -1008,11 +1560,11 @@ class Ar4cDash extends HTMLElement {
     const room = this.room();
     switch (act) {
       case "go": this.page = t.getAttribute("data-k"); this.code = null; if (this.page === "cameras") this._camLoop(); break;
-      case "back": this.page = "home"; this.viewCam = null; this.code = null; this._stopLive(); break;
+      case "back": if (this.sp) this.sp.stop(); this.libOpen = null; this.page = "home"; this.viewCam = null; this.code = null; this._stopLive(); break;
       case "rooms": this.sheet = this.sheet === "rooms" ? null : "rooms"; this._sheetIn = !!this.sheet; break;
       case "settings": this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
       case "close": if (this.dirty) this._toast("Setup not saved"); this.sheet = null; this.draft = null; this.dirty = false; this.pick = null; break;
-      case "room": this.ri = Number(v); this.P.room = this.ri; this.sheet = null; this.cl = null; this._save(); if (this.page !== "home" && this.page !== "cameras" && this.page !== "security" && this.page !== "utilities" && !this.room()[this.page].length) this.page = "home"; break;
+      case "room": this.ri = Number(v); this.P.room = this.ri; this.sheet = null; this.cl = null; this._save(); this.libOpen = null; if (this.wv) this.wv.view = null; if (this.page !== "home" && this.cats().indexOf(this.page) < 0) this.page = "home"; break;
       case "roomoff": room.lights.forEach((x) => this.setOpt(x, { on: false })); if (room.lights.length) this.call("homeassistant", "turn_off", { entity_id: room.lights }); this._toast(room.name + ": lights off"); break;
       case "allon": room.lights.forEach((x) => this.setOpt(x, { on: true, v: 100 })); this.call("homeassistant", "turn_on", { entity_id: room.lights }); break;
       case "alloff": room.lights.forEach((x) => this.setOpt(x, { on: false })); this.call("homeassistant", "turn_off", { entity_id: room.lights }); break;
@@ -1046,6 +1598,76 @@ class Ar4cDash extends HTMLElement {
       }
       case "cam": this._stopLive(); this.viewCam = e; this._camLoop(); break;
       case "camx": this._stopLive(); this.viewCam = null; this._camLoop(); break;
+      case "lsrc": this.lsrc = v; this.P.lsrc = v; this._save(); this.libOpen = null; if (v !== "spotify" && this.sp) this.sp.stop(); break;
+      case "ltab": this.libTab = v; this.libOpen = null; break;
+      case "stab2": this.spTab = v; this.libOpen = null; break;
+      case "lback": this.libOpen = null; break;
+      case "mact": { const tg = this.maTarget(); if (tg) this.call("media_player", v === "play" ? "media_play_pause" : v === "next" ? "media_next_track" : "media_previous_track", { entity_id: tg }); return; }
+      case "mpick": this.maT = e; break;
+      case "mjoin": {
+        ev.stopPropagation();
+        const tg = this.maTarget(), inG = this.maMembers(tg).indexOf(e) >= 0;
+        if (inG) this.call("media_player", "unjoin", { entity_id: e }); else this.call("media_player", "join", { entity_id: tg, group_members: [e] });
+        this._toast(inG ? this.name(e) + " removed" : this.name(e) + " joins " + this.name(tg));
+        return;
+      }
+      case "mitem": {
+        const it = this.maFind(v), tg = this.maTarget();
+        if (!it || !tg) return;
+        if (it.media_type === "playlist" || it.media_type === "album" || it.media_type === "artist") this.openLib(it, tg, "ma");
+        else { this.maPlay(tg, [it.uri], it.media_type); return; }
+        break;
+      }
+      case "mtrack": {
+        const lo = this.libOpen, tg = this.maTarget();
+        if (!lo || !tg) return;
+        if (v === "all") this.maPlay(tg, [lo.uri], lo.type);
+        else if (lo.tracks && !lo.tracks.err) this.maPlay(tg, lo.tracks.slice(Number(v)).map((x) => x.uri).slice(0, 100), "track");
+        return;
+      }
+      case "sact": {
+        const sp = this.spot(), pl = sp.player || {};
+        (v === "play" ? sp.api("PUT", "/me/player/" + (pl.is_playing ? "pause" : "play")) : sp.api("POST", "/me/player/" + (v === "next" ? "next" : "previous"))).catch((er) => this._toast("Spotify: " + er.message));
+        if (v === "play" && sp.player) sp.player.is_playing = !pl.is_playing;
+        sp.later(600);
+        break;
+      }
+      case "spick": { const sp = this.spot(); sp.api("PUT", "/me/player", { device_ids: [v], play: true }).then(() => sp.later(900)).catch((er) => this._toast("Spotify: " + er.message)); sp.devices.forEach((d) => (d.is_active = d.id === v)); break; }
+      case "sitem": {
+        const it = this.spFind(v), sp = this.spot();
+        if (!it) return;
+        if (it.type === "playlist" || it.type === "artist") this.openLib(it, null, "sp");
+        else { sp.api("PUT", "/me/player/play", { uris: [it.uri] }).then(() => sp.later()).catch((er) => this._toast("Spotify: " + er.message)); this._toast("Playing " + it.name); return; }
+        break;
+      }
+      case "strack": {
+        const lo = this.libOpen, sp = this.spot();
+        if (!lo) return;
+        const body = lo.type === "playlist" ? { context_uri: lo.uri, offset: v === "all" ? undefined : { position: Number(v) } } : { uris: (lo.tracks || []).slice(v === "all" ? 0 : Number(v)).map((x) => x.uri) };
+        sp.api("PUT", "/me/player/play", body).then(() => sp.later()).catch((er) => this._toast("Spotify: " + er.message));
+        this._toast("Playing");
+        return;
+      }
+      case "sjoin": {
+        const lead = this.spLead(), inG = this.maMembers(lead).indexOf(e) >= 0;
+        if (inG) this.call("media_player", "unjoin", { entity_id: e }); else this.call("media_player", "join", { entity_id: lead, group_members: [e] });
+        this._toast(inG ? this.name(e) + " removed" : this.name(e) + " plays along");
+        return;
+      }
+      case "wgo": {
+        const wv = this.wv;
+        wv.prevRun = (this.wst && this.wst.run && this.wst.run.id) || null;
+        wv.t0 = Date.now(); wv.src = v; wv.view = "start";
+        (this.wLast || (this.wLast = {}))[this.ri] = v;
+        this._hass.callWS({ type: "ar_4c_dash/watch", action: "start", room: this.ri, src: v }).catch((er) => this._toast(er && er.message ? er.message : "That didn't work"));
+        clearTimeout(wv.timer);
+        wv.timer = setTimeout(() => { if (wv.view === "start" && !this.myRun()) this._render(true); }, 9000);
+        break;
+      }
+      case "wchange": this.wv.view = "pick"; break;
+      case "woff": { const s0 = this.srcOf(this.wv.src); this._hass.callWS({ type: "ar_4c_dash/watch", action: "off", room: this.ri }).catch(() => {}); this.wv.view = null; this.wv.src = null; this._toast(((s0 && s0.name) || "TV") + " off"); this.page = "home"; break; }
+      case "wkey": this.watchCmd("key", v); return;
+      case "wmute": this._hass.callWS({ type: "ar_4c_dash/watch", action: "mute", room: this.ri }).catch(() => {}); this._toast("Mute"); return;
       case "stab": this.setTab = v; if (v === "setup") this.draftStart(); break;
       case "menu": this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true })); return;
       case "setup": this.sheet = "settings"; this._sheetIn = true; this.setTab = "setup"; this.draftStart(); break;
@@ -1055,8 +1677,26 @@ class Ar4cDash extends HTMLElement {
       case "s-mv": { const i = Number(v), j = i + Number(t.getAttribute("data-d")); const a = this.draft.rooms; [a[i], a[j]] = [a[j], a[i]]; this.sOpen = j; this.dirty = true; break; }
       case "s-rm": { this.pick = t.getAttribute("data-w"); const w = this.pick.split(":"); if (w[1] === "weather") delete this.draft.weather; else this.pickArr(true).splice(Number(v), 1); this.pick = null; this.dirty = true; break; }
       case "s-pick": this.pick = t.getAttribute("data-w"); this.pickQ = ""; break;
-      case "p-add": { const w = this.pick.split(":"); if (w[1] === "weather") { this.draft.weather = e; this.pick = null; } else this.pickArr(true).push(e); this.dirty = true; break; }
+      case "p-add": if (this.pick.indexOf("w:") === 0) {
+        const w = this.pick.split(":"), sc = this.srcAt(w[1] + ":" + w[2]), f = w[3];
+        if (f === "remote") sc.remote = { e, kind: (sc.remote && sc.remote.kind) || "appletv" };
+        else if (f === "player" || f === "volume") sc[f] = e;
+        else sc.steps[Number(f)].e = e;
+        this.pick = null; this.dirty = true; break;
+      } else { const w = this.pick.split(":"); if (w[1] === "weather") { this.draft.weather = e; this.pick = null; } else this.pickArr(true).push(e); this.dirty = true; break; }
       case "p-done": this.pick = null; break;
+      case "s-whole": this.draft.rooms.unshift({ whole: true, name: "Whole House" }); this.sOpen = 0; this.dirty = true; break;
+      case "s-lstart": this.draft.listenStart = v; this.dirty = true; break;
+      case "w-open": this.wsOpen = this.wsOpen === v ? null : v; this.wDelArm = null; break;
+      case "w-add": { const rm = this.draft.rooms[Number(v)]; (rm.sources = rm.sources || []).push({ id: "src" + Date.now().toString(36), name: "New source", steps: [] }); this.wsOpen = v + ":" + (rm.sources.length - 1); this.dirty = true; break; }
+      case "w-del": { if (this.wDelArm !== v) { this.wDelArm = v; break; } const k = v.split(":").map(Number); this.draft.rooms[k[0]].sources.splice(k[1], 1); this.wDelArm = null; this.wsOpen = null; this.dirty = true; break; }
+      case "w-clr": { const k = v.split(":"); const sc = this.srcAt(k[0] + ":" + k[1]); delete sc[k[2]]; this.dirty = true; break; }
+      case "st-add": { const sc = this.srcAt(v); (sc.steps = sc.steps || []).push({ t: (sc.steps || []).length ? "input" : "on" }); this.dirty = true; break; }
+      case "st-rm": { const k = v.split(":"); this.srcAt(k[0] + ":" + k[1]).steps.splice(Number(k[2]), 1); this.dirty = true; break; }
+      case "st-up": { const k = v.split(":"), a = this.srcAt(k[0] + ":" + k[1]).steps, n = Number(k[2]); if (n > 0) { [a[n - 1], a[n]] = [a[n], a[n - 1]]; this.dirty = true; } break; }
+      case "s-logo": this.logoPick = v; break;
+      case "logo-x": this.logoPick = null; break;
+      case "logo-set": { const sc = this.srcAt(this.logoPick); if (v) sc.logo = { src: v }; else delete sc.logo; this.logoPick = null; this.dirty = true; break; }
       case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
       case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;

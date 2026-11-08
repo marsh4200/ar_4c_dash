@@ -6,6 +6,10 @@ ar_4c_dash/subscribe  any logged-in user: the setup now and after every change, 
 ar_4c_dash/save       admins: replace the setup (from the dash's Setup page)
 ar_4c_dash/set_icon   any logged-in user: one home button's icon, for every phone
 ar_4c_dash/stream     any logged-in user: live video of an RTSP camera (HLS address)
+ar_4c_dash/watch      any logged-in user: start a Watch source, remote keys, volume, TV off
+ar_4c_dash/watch_subscribe  which source is on in each room and the steps of the last start
+ar_4c_dash/listen     any logged-in user: what Listen can use; Music Assistant library and
+                      search; a Spotify token
 
 RTSP addresses carry the camera's password, so only admins are sent them; phones
 get the names and ask Home Assistant for the stream or a snapshot by number.
@@ -26,6 +30,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
+from . import listen, watch
 from .const import DOMAIN, MAX_ROOMS, STORE_KEY, STORE_VERSION
 
 _DATA = f"{DOMAIN}_store"
@@ -53,9 +58,17 @@ def clean(cfg: Any) -> dict[str, Any]:
     for r in (cfg.get("rooms") or [])[:MAX_ROOMS]:
         if not isinstance(r, dict):
             continue
+        if r.get("whole"):
+            # Whole House: everything from every room; it only has a name and a place in the order
+            if not any(x.get("whole") for x in rooms):
+                rooms.append({"whole": True, "name": _text(r.get("name"), 40) or "Whole House"})
+            continue
         room: dict[str, Any] = {"name": _text(r.get("name"), 40) or f"Room {len(rooms) + 1}"}
         for k in ROOM_LISTS:
             room[k] = _ids(r.get(k))
+        srcs = [_source(x) for x in (r.get("sources") or [])[:16] if isinstance(x, dict)]
+        if any(srcs):
+            room["sources"] = [x for x in srcs if x]
         if _text(r.get("image"), 500):
             room["image"] = _text(r.get("image"), 500)
         rooms.append(room)
@@ -70,6 +83,8 @@ def clean(cfg: Any) -> dict[str, Any]:
         out["lightTypes"] = {e: t for e, t in types.items() if isinstance(e, str) and t in ("lamp", "edison", "downlight", "bulb")}
     if cfg.get("lightTone") in ("warm", "soft", "neutral", "cool", "daylight"):
         out["lightTone"] = cfg["lightTone"]
+    if cfg.get("listenStart") in ("ma", "spotify"):
+        out["listenStart"] = cfg["listenStart"]
     icons = cfg.get("icons")
     if isinstance(icons, dict):
         out["icons"] = {k: v for k, v in icons.items() if k in ICON_KEYS and _icon(v)}
@@ -79,6 +94,51 @@ def clean(cfg: Any) -> dict[str, Any]:
             rtsp.append({"name": _text(c.get("name"), 40) or f"Camera {len(rtsp) + 1}", "url": _text(c.get("url"), 1000)})
     if rtsp:
         out["rtsp"] = rtsp
+    return out
+
+
+def _ent(v: Any) -> str | None:
+    return v if isinstance(v, str) and "." in v and len(v) < 255 else None
+
+
+def _source(s: dict[str, Any]) -> dict[str, Any] | None:
+    """One Watch source (the same format as AR NSPanel Pro's)."""
+    sid = _text(s.get("id"), 60)
+    if not sid:
+        return None
+    out: dict[str, Any] = {"id": sid, "name": _text(s.get("name"), 40) or "Source"}
+    logo = s.get("logo")
+    if isinstance(logo, dict) and _text(logo.get("src"), 500):
+        out["logo"] = {"src": _text(logo.get("src"), 500)}
+    steps = []
+    for st in (s.get("steps") or [])[:24]:
+        if not isinstance(st, dict) or st.get("t") not in watch.STEP_TYPES:
+            continue
+        x: dict[str, Any] = {"t": st["t"]}
+        for k in ("e", "offE"):
+            if _ent(st.get(k)):
+                x[k] = st[k]
+        for k in ("v", "offV", "label"):
+            if _text(st.get(k), 200):
+                x[k] = _text(st.get(k), 200)
+        if isinstance(st.get("s"), (int, float)):
+            x["s"] = max(0, min(30, float(st["s"])))
+        if st.get("off") is False:
+            x["off"] = False
+        if st["t"] == "action" and isinstance(st.get("d"), dict):
+            x["d"] = {str(k)[:40]: v for k, v in list(st["d"].items())[:10] if isinstance(v, (str, int, float, bool))}
+        steps.append(x)
+    out["steps"] = steps
+    rem = s.get("remote")
+    if isinstance(rem, dict) and _ent(rem.get("e")):
+        out["remote"] = {"e": rem["e"], "kind": rem.get("kind") if rem.get("kind") in watch.KEYS else "appletv"}
+        if isinstance(rem.get("keys"), dict):
+            out["remote"]["keys"] = {k: _text(v, 200) for k, v in rem["keys"].items() if k in watch.ADB_KEYS and _text(v, 200)}
+    for k in ("player", "volume"):
+        if _ent(s.get(k)):
+            out[k] = s[k]
+    if s.get("offAll"):
+        out["offAll"] = True
     return out
 
 
@@ -164,6 +224,9 @@ def async_setup(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_save)
     websocket_api.async_register_command(hass, ws_set_icon)
     websocket_api.async_register_command(hass, ws_stream)
+    websocket_api.async_register_command(hass, ws_watch)
+    websocket_api.async_register_command(hass, ws_watch_subscribe)
+    websocket_api.async_register_command(hass, ws_listen)
     hass.http.register_view(SnapView)
 
 
@@ -230,3 +293,42 @@ async def ws_stream(hass: HomeAssistant, connection: websocket_api.ActiveConnect
         connection.send_result(msg["id"], {"url": stream.endpoint_url(HLS_PROVIDER)})
     except Exception as err:  # noqa: BLE001
         connection.send_error(msg["id"], "stream", str(err) or "The camera can't be streamed")
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/watch", vol.Required("action"): vol.In(("start", "key", "vol", "mute", "off")), vol.Required("room"): int, vol.Optional("src"): str, vol.Optional("k"): str, vol.Optional("d"): int})
+@websocket_api.async_response
+async def ws_watch(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    st = await async_store(hass)
+    try:
+        await watch.async_action(hass, st["config"], msg["action"], msg)
+        connection.send_result(msg["id"])
+    except Exception as err:  # noqa: BLE001
+        connection.send_error(msg["id"], "watch", str(err) or "That didn't work")
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/watch_subscribe"})
+@callback
+def ws_watch_subscribe(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    @callback
+    def send() -> None:
+        connection.send_message(websocket_api.event_message(msg["id"], watch.state(hass)))
+
+    connection.subscriptions[msg["id"]] = async_dispatcher_connect(hass, watch.SIGNAL_WATCH, send)
+    connection.send_result(msg["id"])
+    send()
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/listen", vol.Required("op"): vol.In(("info", "library", "search", "spotify_token")), vol.Optional("media_type"): str, vol.Optional("favorite"): bool, vol.Optional("q"): str, vol.Optional("limit"): int})
+@websocket_api.async_response
+async def ws_listen(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    op = msg["op"]
+    try:
+        if op == "info":
+            res: Any = listen.info(hass)
+        elif op == "spotify_token":
+            res = await listen.spotify_token(hass)
+        else:
+            res = await listen.ma_call(hass, op, msg)
+        connection.send_result(msg["id"], res)
+    except Exception as err:  # noqa: BLE001
+        connection.send_error(msg["id"], "listen", str(err) or "That didn't work")
