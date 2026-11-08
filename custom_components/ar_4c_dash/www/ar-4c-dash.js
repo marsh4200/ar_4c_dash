@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
@@ -172,6 +172,8 @@ svg{flex:none}
 .nm small{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .pc{position:relative;font-size:24px;font-weight:300;font-variant-numeric:tabular-nums;min-width:56px;text-align:right}
 .off .pc{color:var(--muted);font-size:18px}
+.lgh{display:flex;align-items:center;justify-content:space-between;padding:8px 6px 0;flex:none}.lgh b{display:block;font-size:17px;font-weight:600}.lgh small{color:var(--muted);font-size:12px}.lgh+.lt{margin-top:-2px}
+.lt.rn{cursor:default;padding:0 14px}.lt.rn .nm{flex:1;min-width:0}.lt.rn input{width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;color:inherit;font:inherit;font-size:16px;padding:8px 10px;margin-bottom:3px}.lt.rn small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sw{position:relative;width:46px;height:28px;border-radius:14px;background:rgba(255,255,255,.14);flex:none;cursor:pointer}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#bbb;transition:transform .15s}
 .sw.on{background:rgba(var(--accrgb),.9)}
@@ -305,13 +307,16 @@ svg{flex:none}
 .chip svg[viewBox]{width:14px;height:14px}
 .ask{font-size:22px;font-weight:300;text-align:center;padding:10px 0 4px;text-wrap:balance}
 .srcs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.src{position:relative;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:rgba(16,14,18,.62);padding:16px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer}
+.src{position:relative;border-radius:20px;padding:12px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;min-width:0}
+.src .lg{height:84px}.src.bare .lg{height:100px}
+.src span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 6px rgba(0,0,0,.6)}
 .src:active{transform:scale(.97)}
 .src span{font-size:14px;text-align:center}
-.src.last{border-color:rgba(var(--accrgb),.7)}
-.src.last::after{content:"Last watched";position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--acc);color:#2a2116;padding:2px 8px;border-radius:9px;white-space:nowrap}
+.src.last .lg{filter:drop-shadow(0 0 14px rgba(var(--accrgb),.45))}
+.src.last::after{content:"Last watched";position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--acc);color:#2a2116;padding:2px 8px;border-radius:9px;white-space:nowrap}
 .lg{width:100%;height:70px;border-radius:14px;display:grid;place-items:center;color:var(--muted)}
-.lg img{max-width:100%;max-height:100%;object-fit:contain}
+.lg img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.45))}
+.lgs{display:grid;place-items:center}
 .lg svg{width:34px;height:34px}
 .lg.big{width:150px;height:104px}
 .start{display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:8px}
@@ -360,9 +365,138 @@ svg{flex:none}
 .rtr{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid rgba(255,255,255,.1);border-radius:14px}
 .rtr .chip{align-self:flex-end}
 .chip svg{width:14px;height:14px}
+.lup{border-radius:18px;height:200px;display:grid;place-items:center;padding:18px;background:linear-gradient(160deg,rgba(40,36,44,.9),rgba(12,11,14,.95)),repeating-conic-gradient(rgba(255,255,255,.04) 0 25%,transparent 0 50%) 0 0/16px 16px}
+.lup img{max-width:100%;max-height:100%;object-fit:contain}
+.tile{position:relative}.tile.up{border-style:dashed}.tile .tdel{position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;background:#3a3438;display:grid;place-items:center}.tile .tdel svg{width:11px;height:11px}
+.rng{width:100%;accent-color:var(--acc)}
+.ib.hid{background:none;border-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-tap-highlight-color:transparent}
+.ib.gear{animation:gearIn .35s ease-out}@keyframes gearIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
 .pick{position:absolute;inset:0;z-index:7;background:rgb(16,15,19);border-radius:26px 26px 0 0;display:flex;flex-direction:column}
 .msg{position:absolute;left:50%;bottom:76px;transform:translateX(-50%);background:rgba(20,20,24,.95);border:1px solid var(--line);padding:9px 16px;border-radius:18px;font-size:14px;z-index:9;white-space:nowrap;pointer-events:none}
 `;
+
+// ---- logo cut-out (as in AR Lighting Scenes): takes a plain background off an
+// uploaded logo. The background colour is read from the picture's edge; only
+// background joined to the edge goes (a white mark inside the logo stays), edges
+// get soft alpha with the background un-mixed (no halo on the dark dash), then
+// the logo is trimmed to its own shape.
+function logoCutout(src, opt) {
+  const W = src.width, H = src.height;
+  const g0 = src.getContext("2d", { willReadFrequently: true });
+  const im = g0.getImageData(0, 0, W, H);
+  const d = im.data, n = W * H;
+  // edge pixels: already transparent? plain background?
+  const edge = [];
+  for (let x = 0; x < W; x++) edge.push(x, (H - 1) * W + x);
+  for (let y = 1; y < H - 1; y++) edge.push(y * W, y * W + W - 1);
+  let clear = 0;
+  for (const i of edge) if (d[i * 4 + 3] < 200) clear++;
+  const hasAlpha = opt.info ? opt.info.hasAlpha : clear > edge.length * 0.3;
+  const ch = [[], [], []];
+  for (const i of edge) if (d[i * 4 + 3] >= 200) for (let c = 0; c < 3; c++) ch[c].push(d[i * 4 + c]);
+  const med = (a) => { if (!a.length) return 255; a.sort((x, y) => x - y); return a[a.length >> 1]; };
+  const bg = opt.info ? opt.info.bg : [med(ch[0]), med(ch[1]), med(ch[2])];
+  const dist = (i) => { const r = d[i * 4] - bg[0], gg = d[i * 4 + 1] - bg[1], b = d[i * 4 + 2] - bg[2]; return Math.sqrt(r * r + gg * gg + b * b); };
+  let near = 0, opq = 0;
+  for (const i of edge) if (d[i * 4 + 3] >= 200) { opq++; if (dist(i) < 40) near++; }
+  const plain = opq > 0 && near / opq > 0.6;
+  const info = opt.info ? Object.assign({}, opt.info) : { hasAlpha, plain, bg };
+  const A = new Float32Array(n); // 0..1 alpha from the colour
+  for (let i = 0; i < n; i++) A[i] = d[i * 4 + 3] / 255;
+  if (opt.remove && !hasAlpha) {
+    const hi = opt.tol, lo = opt.tol * 0.45;
+    const D = new Float32Array(n);
+    for (let i = 0; i < n; i++) D[i] = d[i * 4 + 3] < 128 ? 0 : dist(i); // empty room around a zoomed-out picture is background
+    const inBg = new Uint8Array(n);
+    if (opt.holes) {
+      for (let i = 0; i < n; i++) if (D[i] < hi) inBg[i] = 1;
+    } else {
+      const q = new Int32Array(n);
+      let qh = 0, qt = 0;
+      for (const i of edge) if (!inBg[i] && D[i] < hi) { inBg[i] = 1; q[qt++] = i; }
+      while (qh < qt) {
+        const i = q[qh++], x = i % W, y = (i / W) | 0;
+        // spread only through clear background: soft edge pixels are taken but
+        // don't carry on, so a thin outline can't leak into the icon
+        if (D[i] >= lo) continue;
+        const nb = [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, y > 0 ? i - W : -1, y < H - 1 ? i + W : -1];
+        for (const j of nb) if (j >= 0 && !inBg[j] && D[j] < hi) { inBg[j] = 1; q[qt++] = j; }
+      }
+    }
+    // the cut edge: background pixels that aren't clear, and icon pixels up to
+    // 2 px from the background (the blend between icon and background)
+    const near = inBg.slice();
+    for (let k = 0; k < 2; k++) {
+      const nx = near.slice();
+      for (let i = 0; i < n; i++) {
+        if (near[i]) continue;
+        const x = i % W, y = (i / W) | 0;
+        if ((x > 0 && near[i - 1]) || (x < W - 1 && near[i + 1]) || (y > 0 && near[i - W]) || (y < H - 1 && near[i + W])) nx[i] = 1;
+      }
+      near.set(nx);
+    }
+    const floor = lo * 0.5; // JPEG noise in the background
+    for (let i = 0; i < n; i++) {
+      if (inBg[i] && D[i] < lo) { A[i] = 0; continue; }
+      if (!near[i]) continue;
+      // how far this pixel is from the background, against the icon colour next to it
+      const x = i % W, y = (i / W) | 0;
+      let fg = 0;
+      for (let dy = -3; dy <= 3; dy++) {
+        const yy = y + dy; if (yy < 0 || yy >= H) continue;
+        for (let dx = -3; dx <= 3; dx++) {
+          const xx = x + dx; if (xx < 0 || xx >= W) continue;
+          const j = yy * W + xx;
+          if (!inBg[j] && D[j] > fg) fg = D[j];
+        }
+      }
+      if (fg <= hi) fg = Math.max(fg, D[i]); // no solid icon colour close by
+      if (fg <= floor) continue;
+      const a = Math.max(0, Math.min(1, (D[i] - floor) / (fg - floor)));
+      A[i] = Math.min(A[i], a);
+      if (a > 0 && a < 1) {
+        // un-mix the background from the edge colour (no white fringe)
+        for (let c = 0; c < 3; c++) d[i * 4 + c] = Math.max(0, Math.min(255, Math.round((d[i * 4 + c] - (1 - a) * bg[c]) / a)));
+      }
+    }
+    // smooth the cut edge a touch (1-2-1), never adding alpha the colour didn't have
+    const B = new Float32Array(n);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        let s = 0, w = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          const yy = y + dy; if (yy < 0 || yy >= H) continue;
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x + dx; if (xx < 0 || xx >= W) continue;
+            const k = (dx ? 1 : 2) * (dy ? 1 : 2); s += A[yy * W + xx] * k; w += k;
+          }
+        }
+        B[y * W + x] = Math.min(A[y * W + x], (A[y * W + x] + s / w) / 2);
+      }
+    for (let i = 0; i < n; i++) A[i] = B[i];
+  }
+  let lum = 0, cnt = 0;
+  for (let i = 0; i < n; i++) {
+    d[i * 4 + 3] = Math.round(A[i] * 255);
+    if (A[i] > 0.9) { lum += 0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2]; cnt++; }
+    if (opt.white && A[i] > 0) { d[i * 4] = 255; d[i * 4 + 1] = 255; d[i * 4 + 2] = 255; }
+  }
+  info.dark = cnt > 0 && lum / cnt < 80; // hard to see on the dark panel
+  const tmp = document.createElement("canvas");
+  tmp.width = W; tmp.height = H;
+  tmp.getContext("2d").putImageData(im, 0, 0);
+  // trim to the icon and centre it with a little room around
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 10) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  const out = document.createElement("canvas");
+  if (x1 < 0) { out.width = out.height = 8; info.empty = true; return { canvas: out, info }; }
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1, sc = Math.min(1, opt.size / Math.max(bw, bh)), pad = Math.round(Math.max(bw, bh) * sc * 0.03);
+  out.width = Math.round(bw * sc) + pad * 2; out.height = Math.round(bh * sc) + pad * 2;
+  const g = out.getContext("2d");
+  g.imageSmoothingQuality = "high";
+  g.drawImage(tmp, x0, y0, bw, bh, pad, pad, bw * sc, bh * sc);
+  return { canvas: out, info };
+}
 
 class Ar4cDash extends HTMLElement {
   static getStubConfig() { return {}; }
@@ -432,6 +566,9 @@ class Ar4cDash extends HTMLElement {
     });
     this.shadowRoot.addEventListener("input", (ev) => {
       const t = ev.target, k = t.getAttribute && t.getAttribute("data-in");
+      if (k === "logofile") { this.logoFile(t.files && t.files[0]); t.value = ""; return; }
+      if (k === "lutol" && this.logoUp) { this.logoUp.tol = Number(t.value); clearTimeout(this._luT); this._luT = setTimeout(() => this.logoCut(), 60); return; }
+      if (k === "lname") { (this.renDraft = this.renDraft || {})[t.getAttribute("data-e")] = t.value; return; }
       if (k === "name" && this.draft) {
         const rm = this.draft.rooms[Number(t.getAttribute("data-v"))];
         if (rm) { rm.name = t.value; this.dirty = true; const b = t.closest(".it").querySelector(".ih b"); if (b) b.textContent = t.value || "Room"; const sv = this.shadowRoot.querySelector('[data-act="s-save"]'); if (sv) { sv.textContent = "Save for everyone"; sv.style.cssText = "justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent"; } }
@@ -519,8 +656,12 @@ class Ar4cDash extends HTMLElement {
       if (r.whole) {
         // Whole House: everything from every room (no Watch sources of its own)
         const o = { name: r.name || "Whole House", whole: true, sources: [] };
+        // every room's Watch sources, each still run in its own room
+        cr.forEach((x, xi) => { if (!x.whole && Array.isArray(x.sources)) x.sources.forEach((sc) => o.sources.push(Object.assign({}, sc, { id: xi + "/" + sc.id, _id: sc.id, _r: xi, _rn: x.name || "Room " + (xi + 1) }))); });
         ROOM_KEYS.forEach((k) => (o[k] = []));
         cr.forEach((x) => { if (!x.whole) ROOM_KEYS.forEach((k) => list(x[k]).forEach((e) => { if (o[k].indexOf(e) < 0) o[k].push(e); })); });
+        // lights stay in their rooms on the Lights page
+        o.groups = cr.filter((x) => !x.whole && list(x.lights).length).map((x) => ({ name: x.name || "Room", lights: list(x.lights) }));
         return o;
       }
       const o = { name: r.name || "Room " + (i + 1), image: r.image, sources: Array.isArray(r.sources) ? r.sources : [] };
@@ -541,7 +682,8 @@ class Ar4cDash extends HTMLElement {
 
   // ---- state helpers -----------------------------------------------------
   st(e) { return (this._hass && this._hass.states[e]) || null; }
-  name(e) { const s = this.st(e); return (s && s.attributes.friendly_name) || e.split(".")[1].replace(/_/g, " "); }
+  name(e) { const nm = this.conf && this.conf.names && this.conf.names[e]; if (nm) return nm; return this.haName(e); }
+  haName(e) { const s = this.st(e); return (s && s.attributes.friendly_name) || e.split(".")[1].replace(/_/g, " "); }
   room() { return this.rooms[this.ri]; }
   call(dom, svc, data) { return this._hass.callService(dom, svc, data).catch((e) => this._toast(e && e.message ? e.message : "That didn't work")); }
   isOn(e) {
@@ -677,7 +819,7 @@ class Ar4cDash extends HTMLElement {
     });
     const hasLights = this.room().lights.length;
     return (
-      '<div class="top"><div class="ib" data-act="menu" title="Home Assistant menu">' + MENU + '</div><div class="room" data-act="rooms">' + this.roomName() + line("down") + '</div><div class="sp"></div><div class="ib" data-act="settings">' + line("icons") + "</div></div>" +
+      '<div class="top"><div class="ib" data-act="menu" title="Home Assistant menu">' + MENU + '</div><div class="room" data-act="rooms">' + this.roomName() + line("down") + '</div><div class="sp"></div>' + (this.gearUntil > Date.now() ? '<div class="ib gear" data-act="settings">' + line("icons") + "</div>" : '<div class="ib hid" data-act="gtap"></div>') + "</div>" +
       '<div class="clock"><div class="t">' + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + '</div><div class="d">' + now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + (wtxt ? "<i>" + esc(wtxt) + "</i>" : "") + "</div></div>" +
       (this.empty ? '<div class="empty" style="margin-top:auto">' + (this.admin ? 'Nothing set up yet.<br><br><span class="pill" style="display:inline-flex" data-act="setup">' + line("rooms") + "Set up rooms</span>" : "Nothing set up yet. Ask the person who looks after Home Assistant to set up the 4C Dash.") + "</div>" : '<div class="grid">' + (g || '<div class="empty" style="grid-column:1/-1">Nothing set up for this room yet.</div>') + "</div>") +
       '<div class="bot">' + (hasLights ? '<div class="pill" data-act="roomoff">' + line("power") + "Room Off</div>" : "<span></span>") + "</div>"
@@ -695,19 +837,36 @@ class Ar4cDash extends HTMLElement {
 
   // ---- lights ------------------------------------------------------------------
   pLights() {
-    const es = this.room().lights;
-    let chips = '<div class="chips"><div class="chip dot" data-act="allon"><i></i>All on</div>';
-    this.room().scenes.forEach((e) => (chips += '<div class="chip dot sc" data-act="scene" data-e="' + esc(e) + '"><i></i>' + esc(this.name(e)) + "</div>"));
-    chips += '<div class="chip dot off" data-act="alloff"><i></i>All off</div></div>';
-    let rows = "";
-    es.forEach((e) => {
+    const es = this.room().lights, ren = !!this.ren;
+    let chips = '<div class="chips">';
+    if (ren) chips += '<div class="chip dot" data-act="ren-done" style="background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent">Done</div><div class="chip" data-act="ren-cancel">Cancel</div>';
+    else {
+      chips += '<div class="chip dot" data-act="allon"><i></i>All on</div>';
+      this.room().scenes.forEach((e) => (chips += '<div class="chip dot sc" data-act="scene" data-e="' + esc(e) + '"><i></i>' + esc(this.name(e)) + "</div>"));
+      chips += '<div class="chip dot off" data-act="alloff"><i></i>All off</div>' + (es.length ? '<div class="chip" data-act="ren">' + line("pencil") + "Rename</div>" : "");
+    }
+    chips += "</div>";
+    const row = (e) => {
+      if (ren) {
+        const v = this.renDraft && e in this.renDraft ? this.renDraft[e] : (this.conf && this.conf.names && this.conf.names[e]) || "";
+        return '<div class="lt rn"><div class="nm"><input data-in="lname" data-e="' + esc(e) + '" value="' + esc(v) + '" placeholder="' + esc(this.haName(e)) + '" maxlength="40"><small>' + esc(this.haName(e)) + " \u00b7 " + esc(e) + "</small></div></div>";
+      }
       const on = this.isOn(e), dim = this.dimmable(e), v = this.lightPct(e);
       const lc = this.lampRgb(e).join(",");
       const t = (this.rc.lightTypes && LAMP_NAME[this.rc.lightTypes[e]]) || (dim ? "Dimmer" : "Switch");
-      rows += '<div class="lt ' + (on ? "on" : "off") + '" data-lt="' + esc(e) + '" style="--lc:' + lc + '"><div class="fill" style="width:' + (dim ? v : 100) + '%"></div><canvas data-lamp="' + esc(e) + '"></canvas><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(t) + '</small></div><div class="pc">' + (on ? (dim ? v + "%" : "On") : "Off") + '</div><div class="sw' + (on ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div></div>';
+      return '<div class="lt ' + (on ? "on" : "off") + '" data-lt="' + esc(e) + '" style="--lc:' + lc + '"><div class="fill" style="width:' + (dim ? v : 100) + '%"></div><canvas data-lamp="' + esc(e) + '"></canvas><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(t) + '</small></div><div class="pc">' + (on ? (dim ? v + "%" : "On") : "Off") + '</div><div class="sw' + (on ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div></div>';
+    };
+    let rows = "";
+    const groups = this.room().groups;
+    if (groups) groups.forEach((g, gi) => {
+      const n = g.lights.filter((e) => this.isOn(e)).length;
+      rows += '<div class="lgh"><div><b>' + esc(g.name) + "</b><small>" + n + " of " + g.lights.length + " on</small></div>" + (ren ? "" : '<div class="sw' + (n ? " on" : "") + '" data-act="grp" data-v="' + gi + '"></div>') + "</div>";
+      g.lights.forEach((e) => (rows += row(e)));
     });
+    else es.forEach((e) => (rows += row(e)));
     const n = es.filter((e) => this.isOn(e)).length;
-    return chips + '<div class="scroll">' + (rows || '<div class="empty">No lights in this room.</div>') + '</div><div class="hint">Slide a light to dim it \u00b7 tap it to switch on or off</div><div class="bot"><div class="pill" data-act="roomoff">' + line("power") + 'Room Off</div><span class="lbl">' + n + " of " + es.length + " on</span></div>";
+    const hint = ren ? "Type a new name \u00b7 leave it empty to use the Home Assistant name \u00b7 every phone shows it" : "Slide a light to dim it \u00b7 tap it to switch on or off";
+    return chips + '<div class="scroll">' + (rows || '<div class="empty">No lights in this room.</div>') + '</div><div class="hint">' + hint + '</div><div class="bot"><div class="pill" data-act="roomoff">' + line("power") + 'Room Off</div><span class="lbl">' + n + " of " + es.length + " on</span></div>";
   }
   lampRgb(e) {
     const s = this.st(e);
@@ -1140,7 +1299,8 @@ class Ar4cDash extends HTMLElement {
   pWatch() {
     const r = this.room();
     if (!r.sources.length) return this.pMedia();
-    const room = this.ri, act = ((this.wst || {}).active || {})[String(room)];
+    const room = this.ri, actv = (this.wst || {}).active || {};
+    const act = r.whole ? (r.sources.filter((s) => actv[String(s._r)] === s._id)[0] || {}).id : actv[String(room)];
     const wv = this.wv || (this.wv = {});
     if (wv.room !== room) { wv.room = room; wv.view = null; }
     if (!wv.view) { wv.view = act ? "remote" : "pick"; wv.src = act; }
@@ -1149,10 +1309,23 @@ class Ar4cDash extends HTMLElement {
     wv.view = "pick";
     let h = '<div class="ask">What would you like to watch?</div><div class="srcs">';
     const last = (this.wLast || {})[room];
-    r.sources.forEach((s) => (h += '<div class="src' + (s.id === last ? " last" : "") + '" data-act="wgo" data-v="' + esc(s.id) + '"><div class="lg">' + this.logo(s) + "</div><span>" + esc(s.name) + "</span></div>"));
+    const tile = (s) => '<div class="src' + (s.id === last ? " last" : "") + (s.hideName ? " bare" : "") + '" data-act="wgo" data-v="' + esc(s.id) + '"><div class="lg">' + this.logo(s) + "</div>" + (s.hideName ? "" : "<span>" + esc(s.name) + "</span>") + "</div>";
+    if (r.whole) {
+      // Whole House: the sources under their rooms
+      h = '<div class="ask">What would you like to watch?</div>';
+      let rn = null;
+      r.sources.forEach((s) => {
+        if (s._rn !== rn) { h += (rn === null ? "" : "</div>") + '<div class="lgh"><div><b>' + esc(s._rn) + '</b></div></div><div class="srcs">'; rn = s._rn; }
+        h += tile(s);
+      });
+      return '<div class="scroll">' + h + "</div></div>";
+    }
+    r.sources.forEach((s) => (h += tile(s)));
     return '<div class="scroll">' + h + "</div></div>";
   }
   srcOf(id) { return this.room().sources.filter((s) => s.id === id)[0] || null; }
+  // the room a source runs in (Whole House runs each source in its own room)
+  wTarget(id) { const s = id && this.srcOf(id); return s && s._r != null ? { room: s._r, src: s._id } : { room: this.ri, src: id }; }
   logo(s) {
     const src = s && s.logo && s.logo.src;
     if (src && src.indexOf("lib:") === 0 && libSrc(src.slice(4))) return '<img alt="" src="' + esc(libSrc(src.slice(4))) + '">';
@@ -1174,7 +1347,8 @@ class Ar4cDash extends HTMLElement {
   }
   myRun() {
     const wv = this.wv, run = (this.wst || {}).run;
-    return run && run.id !== wv.prevRun && run.room === wv.room && wv.src && run.src === wv.src ? run : null;
+    const tg = this.wTarget(wv.src);
+    return run && run.id !== wv.prevRun && run.room === tg.room && wv.src && run.src === tg.src ? run : null;
   }
   watchStart() {
     const wv = this.wv, s = this.srcOf(wv.src);
@@ -1198,7 +1372,7 @@ class Ar4cDash extends HTMLElement {
   }
   watchRemote(s) {
     const hasRemote = !!(s.remote && s.remote.e), hasPlayer = !!s.player, volE = s.volume || s.player;
-    let h = '<div class="card"><div class="nowc"><div class="lg">' + this.logo(s) + "</div><div><b>" + esc(s.name) + "</b><small>" + esc(this.room().name + (s.player ? " · " + this.name(s.player) : "")) + '</small></div></div><div class="two"><div class="chip" data-act="wchange">' + line("watch") + 'Change source</div><div class="chip" data-act="woff">' + line("power") + "TV off</div></div></div>";
+    let h = '<div class="card"><div class="nowc"><div class="lg">' + this.logo(s) + "</div><div><b>" + esc(s.name) + "</b><small>" + esc((s._rn || this.room().name) + (s.player ? " · " + this.name(s.player) : "")) + '</small></div></div><div class="two"><div class="chip" data-act="wchange">' + line("watch") + 'Change source</div><div class="chip" data-act="woff">' + line("power") + "TV off</div></div></div>";
     if (hasRemote || hasPlayer) {
       h += '<div class="card">';
       if (hasRemote) h += '<div class="dpad"><div class="dk u" data-hold="key" data-v="up">' + line("up") + '</div><div class="dk l" data-hold="key" data-v="left">' + line("chevl") + '</div><div class="dk r" data-hold="key" data-v="right">' + line("chevr") + '</div><div class="dk d" data-hold="key" data-v="down">' + line("down") + '</div><div class="okk" data-act="wkey" data-v="ok">OK</div></div>';
@@ -1209,7 +1383,7 @@ class Ar4cDash extends HTMLElement {
     return '<div class="scroll">' + h + "</div>";
   }
   watchCmd(kind, v) {
-    const room = this.ri;
+    const room = this.wTarget(this.wv && this.wv.src).room;
     if (kind === "key") this._hass.callWS({ type: "ar_4c_dash/watch", action: "key", room, k: v }).catch(() => {});
     else if (kind === "vol") this._hass.callWS({ type: "ar_4c_dash/watch", action: "vol", room, d: Number(v) }).catch(() => {});
   }
@@ -1451,6 +1625,7 @@ class Ar4cDash extends HTMLElement {
       if (open) {
         h += '<div class="sbody"><input class="inp" data-in="sname" data-v="' + key + '" value="' + esc(sc.name || "") + '" placeholder="Name, e.g. Netflix" maxlength="40">';
         h += '<div class="wrapc" style="justify-content:flex-start"><div class="chip" data-act="s-logo" data-v="' + key + '">' + line("icons") + "Choose logo</div></div>";
+        h += '<div class="lbl">On the Watch page</div><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (sc.hideName ? "" : " on") + '" data-act="s-hname" data-v="' + key + '" data-h="0">Name under logo</div><div class="chip' + (sc.hideName ? " on" : "") + '" data-act="s-hname" data-v="' + key + '" data-h="1">Logo only</div></div>';
         h += '<div class="lbl">Steps</div>';
         (sc.steps || []).forEach((st, k) => (h += this.stepHtml(st, key + ":" + k)));
         h += '<div class="chip" style="border-style:dashed;align-self:flex-start" data-act="st-add" data-v="' + key + '">' + line("plus") + "Add step</div>";
@@ -1479,13 +1654,52 @@ class Ar4cDash extends HTMLElement {
   }
   srcAt(key) { const k = key.split(":").map(Number); return this.draft.rooms[k[0]].sources[k[1]]; }
   logoPickHtml() {
-    const cur = (this.srcAt(this.logoPick).logo || {}).src || "";
+    const sc = this.srcAt(this.logoPick), cur = (sc.logo || {}).src || "";
+    const up = this.logoUp;
+    if (up) {
+      // the uploaded picture as it will be saved, on the dash's own background
+      return '<div class="pick"><div class="shh"><b>Upload logo</b><div class="ib" data-act="lu-x">' + line("x") + '</div></div><div class="shb" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:12px"><div class="lup"><img data-lu alt="" src="' + up.url + '"></div>' +
+        (up.info.hasAlpha ? '<div class="hint" style="padding:0">This picture already has a see-through background.</div>' :
+          '<div class="wrapc" style="justify-content:flex-start"><div class="chip' + (up.rm ? " on" : "") + '" data-act="lu-rm" data-v="1">Remove background</div><div class="chip' + (up.rm ? "" : " on") + '" data-act="lu-rm" data-v="0">Keep background</div></div>' +
+          (up.rm ? '<div class="lbl">How much to remove</div><input type="range" class="rng" data-in="lutol" min="15" max="140" value="' + up.tol + '"><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (up.holes ? " on" : "") + '" data-act="lu-holes">Inside gaps too</div></div>' : "")) +
+        '<div class="pill" data-act="lu-ok" style="justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent">' + (up.busy ? "Saving\u2026" : "Use this logo") + "</div></div></div>";
+    }
     let g = '<div class="ig">';
-    const tile = (v, html, l) => (g += '<div class="tile' + (cur === v ? " on" : "") + '" data-act="logo-set" data-v="' + esc(v) + '"><i>' + html + "</i><span>" + esc(l) + "</span></div>");
+    const tile = (v, html, l, del) => (g += '<div class="tile' + (cur === v ? " on" : "") + '" data-act="logo-set" data-v="' + esc(v) + '"><i>' + html + "</i><span>" + esc(l) + "</span>" + (del ? '<b class="tdel" data-act="logo-del" data-v="' + esc(v) + '">' + line("x") + "</b>" : "") + "</div>");
+    g += '<label class="tile up"><i>' + line("plus") + '</i><span>Upload</span><input type="file" accept="image/*" data-in="logofile" hidden></label>';
     tile("", line("watch"), "None");
+    (this.logos || []).forEach((u) => tile(u, '<img alt="" src="' + esc(u) + '">', "Yours", true));
     this.media.icons.forEach((m) => tile("media:" + m.id, '<img alt="" src="' + esc(m.url) + '">', m.name || "Uploaded"));
     Object.keys(LIB || {}).forEach((n) => tile("lib:" + n, '<img alt="" src="' + esc(libSrc(n)) + '">', LIB[n].n || n));
-    return '<div class="pick"><div class="shh"><b>Logo</b><div class="ib" data-act="logo-x">' + line("x") + '</div></div><div class="hint" style="text-align:left">Icons uploaded in AR Lighting Scenes show first.</div><div class="shb">' + g + "</div></div></div>";
+    return '<div class="pick"><div class="shh"><b>Logo</b><div class="ib" data-act="logo-x">' + line("x") + '</div></div><div class="hint" style="text-align:left">Upload a logo: a plain background is taken off so only the logo shows. Your logos show first, then icons from AR Lighting Scenes.</div><div class="shb">' + g + "</div></div></div>";
+  }
+  logoFile(f) {
+    if (!f) return;
+    const img = new Image(), u = URL.createObjectURL(f);
+    img.onload = () => {
+      const k = Math.min(1, 900 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      c.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u);
+      const info = logoCutout(c, { remove: false, tol: 60, size: 8 }).info;
+      this.logoUp = { c, info, rm: !info.hasAlpha, tol: 60, holes: false };
+      this.logoCut(); this._render(true);
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); this._toast("That picture can't be opened"); };
+    img.src = u;
+  }
+  logoCut() {
+    const up = this.logoUp; if (!up) return;
+    const src = document.createElement("canvas");
+    src.width = up.c.width; src.height = up.c.height;
+    src.getContext("2d", { willReadFrequently: true }).drawImage(up.c, 0, 0);
+    up.out = logoCutout(src, { remove: up.rm, tol: up.tol, holes: up.holes, size: 512, info: up.info }).canvas;
+    up.url = up.out.toDataURL("image/png");
+    const im = this.shadowRoot.querySelector("img[data-lu]"); if (im) im.src = up.url;
+  }
+  logoList() {
+    return this._hass.callWS({ type: "ar_4c_dash/logo", op: "list" }).then((r) => { this.logos = (r && r.logos) || []; this._render(true); }).catch(() => {});
   }
   pickHtml() {
     return '<div class="pick"><div class="shh"><b>Add</b><div class="ib" data-act="p-done">' + line("x") + '</div></div><div style="padding:0 12px 8px"><input class="inp" data-in="q" placeholder="Search" value="' + esc(this.pickQ || "") + '"></div><div class="shb pres">' + this.pickList() + "</div></div>";
@@ -1562,7 +1776,18 @@ class Ar4cDash extends HTMLElement {
       case "go": this.page = t.getAttribute("data-k"); this.code = null; if (this.page === "cameras") this._camLoop(); break;
       case "back": if (this.sp) this.sp.stop(); this.libOpen = null; this.page = "home"; this.viewCam = null; this.code = null; this._stopLive(); break;
       case "rooms": this.sheet = this.sheet === "rooms" ? null : "rooms"; this._sheetIn = !!this.sheet; break;
-      case "settings": this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
+      case "gtap": {
+        // the settings button stays hidden from guests: 10 quick taps where it sits show it for 20 seconds
+        const now = Date.now();
+        this.gTaps = now - (this.gLast || 0) < 1500 ? (this.gTaps || 0) + 1 : 1;
+        this.gLast = now;
+        if (this.gTaps < 10) return;
+        this.gTaps = 0; this.gearUntil = now + 20000;
+        clearTimeout(this._gearT);
+        this._gearT = setTimeout(() => { this.gearUntil = 0; this._render(true); }, 20000);
+        break;
+      }
+      case "settings": clearTimeout(this._gearT); this.gearUntil = 0; this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
       case "close": if (this.dirty) this._toast("Setup not saved"); this.sheet = null; this.draft = null; this.dirty = false; this.pick = null; break;
       case "room": this.ri = Number(v); this.P.room = this.ri; this.sheet = null; this.cl = null; this._save(); this.libOpen = null; if (this.wv) this.wv.view = null; if (this.page !== "home" && this.cats().indexOf(this.page) < 0) this.page = "home"; break;
       case "roomoff": room.lights.forEach((x) => this.setOpt(x, { on: false })); if (room.lights.length) this.call("homeassistant", "turn_off", { entity_id: room.lights }); this._toast(room.name + ": lights off"); break;
@@ -1570,6 +1795,25 @@ class Ar4cDash extends HTMLElement {
       case "alloff": room.lights.forEach((x) => this.setOpt(x, { on: false })); this.call("homeassistant", "turn_off", { entity_id: room.lights }); break;
       case "scene": this.call(domain(e) === "script" ? "script" : "scene", "turn_on", { entity_id: e }); t.classList.add("hit"); setTimeout(() => t.classList.remove("hit"), 600); this._toast(this.name(e)); return;
       case "toggle": ev.stopPropagation(); this.toggle(e); return;
+      case "grp": {
+        ev.stopPropagation();
+        const g = room.groups && room.groups[Number(v)]; if (!g) return;
+        const on = !g.lights.some((x) => this.isOn(x));
+        g.lights.forEach((x) => this.setOpt(x, on ? { on: true, v: 100 } : { on: false }));
+        this.call("homeassistant", on ? "turn_on" : "turn_off", { entity_id: g.lights });
+        break;
+      }
+      case "ren": this.ren = true; this.renDraft = {}; break;
+      case "ren-cancel": this.ren = false; this.renDraft = null; break;
+      case "ren-done": {
+        const d = this.renDraft || {}; this.ren = false; this.renDraft = null;
+        const ks = Object.keys(d); if (!ks.length) break;
+        const names = Object.assign({}, this.conf.names);
+        ks.forEach((k) => { const x = d[k].trim(); if (x) names[k] = x; else delete names[k]; });
+        this.conf.names = names;
+        this._hass.callWS({ type: "ar_4c_dash/set_names", names: d }).then(() => this._toast("Names saved: every phone shows them")).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save the names"));
+        break;
+      }
       case "cl": this.cl = e; break;
       case "tmp": {
         const c = this.cl, s = this.st(c); if (!s) return;
@@ -1659,15 +1903,16 @@ class Ar4cDash extends HTMLElement {
         wv.prevRun = (this.wst && this.wst.run && this.wst.run.id) || null;
         wv.t0 = Date.now(); wv.src = v; wv.view = "start";
         (this.wLast || (this.wLast = {}))[this.ri] = v;
-        this._hass.callWS({ type: "ar_4c_dash/watch", action: "start", room: this.ri, src: v }).catch((er) => this._toast(er && er.message ? er.message : "That didn't work"));
+        const tg = this.wTarget(v);
+        this._hass.callWS({ type: "ar_4c_dash/watch", action: "start", room: tg.room, src: tg.src }).catch((er) => this._toast(er && er.message ? er.message : "That didn't work"));
         clearTimeout(wv.timer);
         wv.timer = setTimeout(() => { if (wv.view === "start" && !this.myRun()) this._render(true); }, 9000);
         break;
       }
       case "wchange": this.wv.view = "pick"; break;
-      case "woff": { const s0 = this.srcOf(this.wv.src); this._hass.callWS({ type: "ar_4c_dash/watch", action: "off", room: this.ri }).catch(() => {}); this.wv.view = null; this.wv.src = null; this._toast(((s0 && s0.name) || "TV") + " off"); this.page = "home"; break; }
+      case "woff": { const s0 = this.srcOf(this.wv.src); this._hass.callWS({ type: "ar_4c_dash/watch", action: "off", room: this.wTarget(this.wv.src).room }).catch(() => {}); this.wv.view = null; this.wv.src = null; this._toast(((s0 && s0.name) || "TV") + " off"); this.page = "home"; break; }
       case "wkey": this.watchCmd("key", v); return;
-      case "wmute": this._hass.callWS({ type: "ar_4c_dash/watch", action: "mute", room: this.ri }).catch(() => {}); this._toast("Mute"); return;
+      case "wmute": this._hass.callWS({ type: "ar_4c_dash/watch", action: "mute", room: this.wTarget(this.wv && this.wv.src).room }).catch(() => {}); this._toast("Mute"); return;
       case "stab": this.setTab = v; if (v === "setup") this.draftStart(); break;
       case "menu": this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true })); return;
       case "setup": this.sheet = "settings"; this._sheetIn = true; this.setTab = "setup"; this.draftStart(); break;
@@ -1694,8 +1939,27 @@ class Ar4cDash extends HTMLElement {
       case "st-add": { const sc = this.srcAt(v); (sc.steps = sc.steps || []).push({ t: (sc.steps || []).length ? "input" : "on" }); this.dirty = true; break; }
       case "st-rm": { const k = v.split(":"); this.srcAt(k[0] + ":" + k[1]).steps.splice(Number(k[2]), 1); this.dirty = true; break; }
       case "st-up": { const k = v.split(":"), a = this.srcAt(k[0] + ":" + k[1]).steps, n = Number(k[2]); if (n > 0) { [a[n - 1], a[n]] = [a[n], a[n - 1]]; this.dirty = true; } break; }
-      case "s-logo": this.logoPick = v; break;
-      case "logo-x": this.logoPick = null; break;
+      case "s-logo": this.logoPick = v; this.logoUp = null; this.logoList(); break;
+      case "logo-x": this.logoPick = null; this.logoUp = null; break;
+      case "s-hname": { const sc = this.srcAt(v); if (t.getAttribute("data-h") === "1") sc.hideName = true; else delete sc.hideName; this.dirty = true; break; }
+      case "lu-x": this.logoUp = null; break;
+      case "lu-rm": this.logoUp.rm = v === "1"; this.logoCut(); break;
+      case "lu-holes": this.logoUp.holes = !this.logoUp.holes; this.logoCut(); break;
+      case "lu-ok": {
+        const up = this.logoUp; if (!up || up.busy) return;
+        up.busy = true;
+        this._hass.callWS({ type: "ar_4c_dash/logo", op: "upload", data: up.url }).then((r) => {
+          const sc = this.srcAt(this.logoPick); sc.logo = { src: r.url }; this.dirty = true;
+          this.logoUp = null; this.logoPick = null; this.logoList(); this._toast("Logo added: Save to show it on every phone");
+        }).catch((er) => { up.busy = false; this._toast(er && er.message ? er.message : "Couldn't save the logo"); this._render(true); });
+        break;
+      }
+      case "logo-del": {
+        ev.stopPropagation();
+        this.logos = (this.logos || []).filter((x) => x !== v);
+        this._hass.callWS({ type: "ar_4c_dash/logo", op: "delete", url: v }).then((r) => { this.logos = r.logos || []; this._render(true); }).catch(() => {});
+        break;
+      }
       case "logo-set": { const sc = this.srcAt(this.logoPick); if (v) sc.logo = { src: v }; else delete sc.logo; this.logoPick = null; this.dirty = true; break; }
       case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
       case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;

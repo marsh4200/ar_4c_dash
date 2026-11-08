@@ -8,3 +8,5 @@ PANEL_JS = "ar-4c-dash.js"
 STORE_KEY = f"{DOMAIN}.config"
 STORE_VERSION = 1
 MAX_ROOMS = 30
+LOGO_URL = "/ar_4c_dash_logos"
+LOGO_DIR = "ar_4c_dash/logos"  # in the Home Assistant config folder

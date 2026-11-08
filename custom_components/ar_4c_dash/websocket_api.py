@@ -5,6 +5,8 @@ ar_4c_dash/subscribe  any logged-in user: the setup now and after every change, 
                       every open phone updates straight away
 ar_4c_dash/save       admins: replace the setup (from the dash's Setup page)
 ar_4c_dash/set_icon   any logged-in user: one home button's icon, for every phone
+ar_4c_dash/set_names  any logged-in user: the dash's own names for lights, for every phone
+ar_4c_dash/logo       admins: upload, list and delete Watch logos (PNG, background already removed)
 ar_4c_dash/stream     any logged-in user: live video of an RTSP camera (HLS address)
 ar_4c_dash/watch      any logged-in user: start a Watch source, remote keys, volume, TV off
 ar_4c_dash/watch_subscribe  which source is on in each room and the steps of the last start
@@ -17,6 +19,11 @@ get the names and ask Home Assistant for the stream or a snapshot by number.
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
+from pathlib import Path
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -31,7 +38,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dis
 from homeassistant.helpers.storage import Store
 
 from . import listen, watch
-from .const import DOMAIN, MAX_ROOMS, STORE_KEY, STORE_VERSION
+from .const import DOMAIN, LOGO_DIR, LOGO_URL, MAX_ROOMS, STORE_KEY, STORE_VERSION
 
 _DATA = f"{DOMAIN}_store"
 ROOM_LISTS = ("lights", "climate", "music", "watch", "shades", "scenes")
@@ -88,6 +95,9 @@ def clean(cfg: Any) -> dict[str, Any]:
     icons = cfg.get("icons")
     if isinstance(icons, dict):
         out["icons"] = {k: v for k, v in icons.items() if k in ICON_KEYS and _icon(v)}
+    names = cfg.get("names")
+    if isinstance(names, dict):
+        out["names"] = {e: _text(n, 40) for e, n in list(names.items())[:500] if _ent(e) and _text(n, 40)}
     rtsp = []
     for c in (cfg.get("rtsp") or [])[:12]:
         if isinstance(c, dict) and _text(c.get("url"), 1000).lower().startswith(("rtsp://", "rtsps://", "http://", "https://")):
@@ -110,6 +120,8 @@ def _source(s: dict[str, Any]) -> dict[str, Any] | None:
     logo = s.get("logo")
     if isinstance(logo, dict) and _text(logo.get("src"), 500):
         out["logo"] = {"src": _text(logo.get("src"), 500)}
+    if s.get("hideName"):
+        out["hideName"] = True
     steps = []
     for st in (s.get("steps") or [])[:24]:
         if not isinstance(st, dict) or st.get("t") not in watch.STEP_TYPES:
@@ -223,6 +235,8 @@ def async_setup(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_subscribe)
     websocket_api.async_register_command(hass, ws_save)
     websocket_api.async_register_command(hass, ws_set_icon)
+    websocket_api.async_register_command(hass, ws_set_names)
+    websocket_api.async_register_command(hass, ws_logo)
     websocket_api.async_register_command(hass, ws_stream)
     websocket_api.async_register_command(hass, ws_watch)
     websocket_api.async_register_command(hass, ws_watch_subscribe)
@@ -262,6 +276,7 @@ async def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
     cfg = dict(msg["config"])
     # the Setup page sends the icons it had; keep the newest ones from the store
     cfg["icons"] = st["config"].get("icons", {})
+    cfg["names"] = st["config"].get("names", {})
     cfg = await _store_and_tell(hass, clean(cfg))
     connection.send_result(msg["id"], {"config": cfg})
 
@@ -280,6 +295,60 @@ async def ws_set_icon(hass: HomeAssistant, connection: websocket_api.ActiveConne
     cfg["icons"] = icons
     await _store_and_tell(hass, clean(cfg))
     connection.send_result(msg["id"], {"icons": icons})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/set_names", vol.Required("names"): dict})
+@websocket_api.async_response
+async def ws_set_names(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Rename lights on the dash (an empty name goes back to Home Assistant's)."""
+    st = await async_store(hass)
+    cfg = dict(st["config"])
+    names = dict(cfg.get("names", {}))
+    for e, n in list(msg["names"].items())[:200]:
+        n = _text(n, 40)
+        if not _ent(e):
+            continue
+        if n:
+            names[e] = n
+        else:
+            names.pop(e, None)
+    cfg["names"] = names
+    cfg = await _store_and_tell(hass, clean(cfg))
+    connection.send_result(msg["id"], {"names": cfg.get("names", {})})
+
+
+@websocket_api.require_admin
+@websocket_api.websocket_command({
+    vol.Required("type"): "ar_4c_dash/logo",
+    vol.Required("op"): vol.In(("list", "upload", "delete")),
+    vol.Optional("data"): str,
+    vol.Optional("url"): str,
+})
+@websocket_api.async_response
+async def ws_logo(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Watch logos uploaded on the dash (the phone cuts the background out first)."""
+    folder = Path(hass.config.path(LOGO_DIR))
+
+    def run() -> Any:
+        folder.mkdir(parents=True, exist_ok=True)
+        if msg["op"] == "upload":
+            data = base64.b64decode(msg.get("data", "").split(",")[-1], validate=True)
+            if not data.startswith(b"\x89PNG\r\n\x1a\n") or len(data) > 3_000_000:
+                raise ValueError("That isn't a logo picture")
+            name = hashlib.sha1(data).hexdigest()[:12] + ".png"
+            (folder / name).write_bytes(data)
+            return {"url": f"{LOGO_URL}/{name}"}
+        if msg["op"] == "delete":
+            name = Path(msg.get("url", "")).name
+            if re.fullmatch(r"[0-9a-f]{12}\.png", name):
+                (folder / name).unlink(missing_ok=True)
+        files = sorted(folder.glob("*.png"), key=lambda f: f.stat().st_mtime, reverse=True)
+        return {"logos": [f"{LOGO_URL}/{f.name}" for f in files if re.fullmatch(r"[0-9a-f]{12}\.png", f.name)]}
+
+    try:
+        connection.send_result(msg["id"], await hass.async_add_executor_job(run))
+    except (ValueError, binascii.Error, OSError) as err:
+        connection.send_error(msg["id"], "logo", str(err) or "Couldn't save the logo")
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/stream", vol.Required("index"): int})
