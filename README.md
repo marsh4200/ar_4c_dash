@@ -49,6 +49,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 
 ## Changes
 
+- **1.3.4**: Full screen on a phone: the top bar (menu, back, home) sits below the phone's status bar so it can be tapped, and Room Off stays above the gesture bar.
+
 - **1.3.3**: Who's home can also show device trackers (e.g. the Home Assistant app on a phone), not only people.
 
 - **1.3.2**: Listen On / Off per room. Setup shows whether Music Assistant and Spotify are linked, with a button to link them in Home Assistant.

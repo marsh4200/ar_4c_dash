@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.3.3";
+const VERSION = "1.3.4";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
@@ -124,7 +124,7 @@ svg{flex:none}
 .bg{position:absolute;inset:0;background:#111 center/cover no-repeat;transition:opacity .4s}
 .bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,12,.4),rgba(8,8,12,.1) 30%,rgba(8,8,12,.55) 70%,rgba(8,8,12,.9))}
 .app.inner .bg{filter:blur(16px) brightness(.6);transform:scale(1.08)}
-.pg{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
+.pg{position:relative;flex:1;display:flex;flex-direction:column;min-height:0;margin:var(--dash-top,0px) 0 var(--dash-bot,0px)}
 .top{display:flex;align-items:center;gap:8px;padding:14px 16px 0}
 .ib{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--glass);display:grid;place-items:center;flex:none;cursor:pointer;color:var(--fg)}
 .ib svg{width:19px;height:19px}
@@ -404,7 +404,7 @@ svg{flex:none}
 .efc-host{margin:0 -6px}
 .srow{display:flex;align-items:center;justify-content:space-between;gap:8px}.srow small{color:var(--muted);font-size:12.5px}
 .pick{position:absolute;inset:0;z-index:7;background:rgb(16,15,19);border-radius:26px 26px 0 0;display:flex;flex-direction:column}
-.msg{position:absolute;left:50%;bottom:76px;transform:translateX(-50%);background:rgba(20,20,24,.95);border:1px solid var(--line);padding:9px 16px;border-radius:18px;font-size:14px;z-index:9;white-space:nowrap;pointer-events:none}
+.msg{position:absolute;left:50%;bottom:calc(76px + var(--dash-bot,0px));transform:translateX(-50%);background:rgba(20,20,24,.95);border:1px solid var(--line);padding:9px 16px;border-radius:18px;font-size:14px;z-index:9;white-space:nowrap;pointer-events:none}
 `;
 
 // ---- logo cut-out (as in AR Lighting Scenes): takes a plain background off an
@@ -535,9 +535,15 @@ class Ar4cDash extends HTMLElement {
   setConfig(c) { this._cfg = Object.assign({}, c || {}); if (this._ready) this._load(); if (this.isConnected) this._fullScreen(); }
   // full_screen: on its own dashboard the dash fills the phone and Home Assistant's
   // title bar is hidden (shown again while the dashboard is being edited)
+  // full screen on a phone: the top bar goes below the status bar (where taps don't
+  // reach) and Room Off above the gesture bar
+  _safe() {
+    this.style.setProperty("--dash-top", "max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px), 26px)");
+    this.style.setProperty("--dash-bot", "max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px))");
+  }
   _fullScreen(off) {
     const fs = !off && this._cfg && this._cfg.full_screen;
-    if (fs) { this.style.setProperty("--dash-h", "100dvh"); this.style.setProperty("--dash-r", "0"); }
+    if (fs) { this.style.setProperty("--dash-h", "100dvh"); this.style.setProperty("--dash-r", "0"); this._safe(); }
     let n = this, root = null;
     for (let i = 0; i < 40 && n; i++) { if (n.tagName === "HUI-ROOT") { root = n; break; } n = n.parentNode || n.host; }
     if (!root || !root.shadowRoot) return;
@@ -2261,6 +2267,7 @@ class Ar4cDashPanel extends Ar4cDash {
     // full screen (set here: an element may not touch its attributes while being created)
     this.style.setProperty("--dash-h", "100dvh");
     this.style.setProperty("--dash-r", "0");
+    this._safe();
     this.style.display = "block";
     super.connectedCallback();
   }
