@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
@@ -221,7 +221,8 @@ svg{flex:none}
 .view img{flex:1;min-height:0;width:100%;object-fit:contain}
 .view .top{position:absolute;top:0;left:0;right:0}
 /* sheets */
-.sheet{position:absolute;left:0;right:0;bottom:0;top:64px;z-index:5;background:rgba(16,15,19,.98);border-radius:26px 26px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;animation:up .22s ease-out}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:64px;z-index:5;background:rgba(16,15,19,.98);border-radius:26px 26px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column}
+.sheet.in{animation:up .22s ease-out}
 @keyframes up{from{transform:translateY(30px);opacity:0}}
 .shh{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 6px}
 .shh b{font-weight:400;font-size:21px}
@@ -328,6 +329,7 @@ class Ar4cDash extends HTMLElement {
     this._render();
   }
   _setup() {
+    this._watch = null;
     const c = this.conf || { rooms: [] };
     this.rc = { lightTypes: c.lightTypes || {}, lightTone: c.lightTone, houseImage: c.houseImage };
     this.rooms = (Array.isArray(c.rooms) ? c.rooms : []).map((r, i) => {
@@ -407,8 +409,30 @@ class Ar4cDash extends HTMLElement {
   }
 
   // ---- render ----------------------------------------------------------------
+  // the entities on screen anywhere in the dash (rooms, whole home, weather)
+  watched() {
+    if (this._watch) return this._watch;
+    const w = [];
+    (this.rooms || []).forEach((r) => ROOM_KEYS.forEach((k) => (r[k] || []).forEach((e) => w.push(e))));
+    const hs = this.house || {};
+    ["cameras", "security", "utilities"].forEach((k) => (hs[k] || []).forEach((e) => w.push(e)));
+    if (this.conf && this.conf.weather) w.push(this.conf.weather);
+    else { const wx = Object.keys(this._hass.states).filter((e) => e.indexOf("weather.") === 0)[0]; if (wx) w.push(wx); }
+    return (this._watch = w);
+  }
   _changed() {
     if (!this._ready || this.dragging) return;
+    // Home Assistant hands over new states for every change in the house, many a
+    // second; Home Assistant keeps unchanged states as the same objects, so only
+    // a change to one of this dash's own entities redraws it
+    const seen = this._seen || (this._seen = {});
+    let diff = false;
+    this.watched().forEach((e) => {
+      const o = this._hass.states[e];
+      if (seen[e] !== o) { seen[e] = o; diff = true; }
+    });
+    if (!diff) return;
+    if (this._down) { this._later = true; return; } // a finger is on the screen: redraw when it lifts
     if (this.sheet === "settings" && this.setTab === "setup") return; // typing: leave the setup page alone
     if (this._raf) return;
     this._raf = requestAnimationFrame(() => { this._raf = 0; this._render(true); });
@@ -429,7 +453,10 @@ class Ar4cDash extends HTMLElement {
     let h = this.page === "home" ? this.home() : this.inner();
     if (this.sheet) h += this.sheetHtml();
     if (this.viewCam) h += this.camView();
+    if (pg.__h === h) return; // nothing on screen changed
+    pg.__h = h;
     pg.innerHTML = h;
+    if (this._sheetIn) { const sh = pg.querySelector(".sheet"); if (sh) sh.classList.add("in"); this._sheetIn = false; }
     if (soft) { const s2 = pg.querySelector(".scroll,.dialw"); if (s2) s2.scrollTop = y; const s3 = this.app.querySelector(".sheet .shb"); if (s3) s3.scrollTop = shy; }
     pg.querySelectorAll("canvas[data-lamp]").forEach((c) => this.lamp(c, c.getAttribute("data-lamp")));
     if (this.page === "climate") this.paintDial();
@@ -521,6 +548,14 @@ class Ar4cDash extends HTMLElement {
     // lights: slide along a row to dim; a tap switches it. Sliders: shades, volume.
     const R = this.shadowRoot;
     let cur = null;
+    // no redraw while a finger is down (a tap must land on the button it started on)
+    R.addEventListener("pointerdown", () => (this._down = true), true);
+    const lift = () => {
+      this._down = false;
+      if (this._later) { this._later = false; setTimeout(() => !this._down && this._render(true), 50); }
+    };
+    R.addEventListener("pointerup", lift, true);
+    R.addEventListener("pointercancel", lift, true);
     R.addEventListener("pointerdown", (ev) => {
       if (ev.target.closest("[data-act]")) return;
       const row = ev.target.closest(".lt");
@@ -676,7 +711,8 @@ class Ar4cDash extends HTMLElement {
   camSrc(e) {
     const s = this.st(e);
     const t = s && s.attributes.access_token;
-    return "/api/camera_proxy/" + e + "?token=" + encodeURIComponent(t || "") + "&t=" + Math.floor(Date.now() / 1000);
+    const at = (this._camAt || (this._camAt = {}))[e] || (this._camAt[e] = Date.now());
+    return "/api/camera_proxy/" + e + "?token=" + encodeURIComponent(t || "") + "&t=" + at;
   }
   pCameras() {
     let h = "";
@@ -695,7 +731,8 @@ class Ar4cDash extends HTMLElement {
         const e = im.getAttribute("data-cam");
         const n = new Image();
         n.onload = () => (im.src = n.src);
-        n.src = this.camSrc(e).replace(/t=\d+/, "t=" + Date.now());
+        (this._camAt || (this._camAt = {}))[e] = Date.now();
+        n.src = this.camSrc(e);
       });
     }, this.viewCam ? 1000 : 8000);
   }
@@ -863,8 +900,8 @@ class Ar4cDash extends HTMLElement {
     switch (act) {
       case "go": this.page = t.getAttribute("data-k"); this.code = null; if (this.page === "cameras") this._camLoop(); break;
       case "back": this.page = "home"; this.viewCam = null; this.code = null; break;
-      case "rooms": this.sheet = this.sheet === "rooms" ? null : "rooms"; break;
-      case "settings": this.sheet = "settings"; this.icOpen = this.icOpen || this.cats()[0]; break;
+      case "rooms": this.sheet = this.sheet === "rooms" ? null : "rooms"; this._sheetIn = !!this.sheet; break;
+      case "settings": this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
       case "close": if (this.dirty) this._toast("Setup not saved"); this.sheet = null; this.draft = null; this.dirty = false; this.pick = null; break;
       case "room": this.ri = Number(v); this.P.room = this.ri; this.sheet = null; this.cl = null; this._save(); if (this.page !== "home" && this.page !== "cameras" && this.page !== "security" && this.page !== "utilities" && !this.room()[this.page].length) this.page = "home"; break;
       case "roomoff": room.lights.forEach((x) => this.setOpt(x, { on: false })); if (room.lights.length) this.call("homeassistant", "turn_off", { entity_id: room.lights }); this._toast(room.name + ": lights off"); break;
@@ -902,7 +939,7 @@ class Ar4cDash extends HTMLElement {
       case "camx": this.viewCam = null; this._camLoop(); break;
       case "stab": this.setTab = v; if (v === "setup") this.draftStart(); break;
       case "menu": this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true })); return;
-      case "setup": this.sheet = "settings"; this.setTab = "setup"; this.draftStart(); break;
+      case "setup": this.sheet = "settings"; this._sheetIn = true; this.setTab = "setup"; this.draftStart(); break;
       case "s-open": this.sOpen = this.sOpen === Number(v) ? null : Number(v); this.delArm = null; break;
       case "s-add": this.draft.rooms.push({ name: "Room " + (this.draft.rooms.length + 1), lights: [], climate: [], music: [], watch: [], shades: [], scenes: [] }); this.sOpen = this.draft.rooms.length - 1; this.dirty = true; break;
       case "s-del": { const i = Number(v); if (this.delArm !== i) { this.delArm = i; break; } this.draft.rooms.splice(i, 1); this.delArm = null; this.sOpen = null; this.dirty = true; break; }

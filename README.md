@@ -37,3 +37,8 @@ Icons, look, background and the last room are saved with each person's Home Assi
 ## Also as a card
 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
+
+## Changes
+
+- **1.0.1**: No more glitching. The dash only redraws when one of its own devices changes (it was redrawing for every change anywhere in Home Assistant, many times a second), never while a finger is on the screen, and the settings sheet slides in only when it opens. Camera pictures refresh on their own timer instead of reloading with every redraw.
+- **1.0.0**: First version.
