@@ -42,8 +42,8 @@ from .const import DOMAIN, MAX_ROOMS, STORE_KEY, STORE_VERSION, UPLOADS
 
 _DATA = f"{DOMAIN}_store"
 ROOM_LISTS = ("lights", "climate", "music", "watch", "shades", "scenes")
-HOUSE_LISTS = ("cameras", "security", "utilities")
-ICON_KEYS = ("lights", "climate", "music", "watch", "shades", "cameras", "utilities", "security", "scenes")
+HOUSE_LISTS = ("cameras", "security", "utilities", "garage")
+ICON_KEYS = ("lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes")
 SOLAR_KEYS = ("solar_power", "grid_power", "battery_power", "battery_soc", "home_power", "solar_daily", "grid_import_daily", "grid_export_daily", "home_daily")
 INVERTERS = ("default", "sunsynk", "deye", "inverex", "solis_hybrid", "goodwe_hybrid", "growatt", "victron", "solaredge", "fronius_gen24", "huawei_luna")
 SIGNAL = f"{DOMAIN}_changed"
@@ -113,6 +113,9 @@ def clean(cfg: Any) -> dict[str, Any]:
             if solar.get(k):
                 so[k] = True
         out["solar"] = so
+    gs = cfg.get("garageSensors")
+    if isinstance(gs, dict):
+        out["garageSensors"] = {d: e for d, e in gs.items() if d in out.get("garage", []) and _ent(e)}
     people = cfg.get("people")
     if isinstance(people, dict):
         out["people"] = {"on": bool(people.get("on")), "list": _ids(people.get("list"))}

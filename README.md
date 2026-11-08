@@ -24,7 +24,9 @@ Open 4C Dash → tap the empty top-right corner **10 times quickly** → the gea
 - **Watch sources**: "What would you like to watch?" Each source (Netflix, DStv…) has a name, a logo (pick one, or **Upload** your own: a plain background is taken off so only the logo shows), Name under logo or Logo only, and steps run in order: Turn on, Switch input, Open app, Wait. Turning on is skipped when the device is already on. After the steps, the phone shows that TV's remote.
 - **Who's home**: Off / Show, then the people (or phones: device trackers such as the Home Assistant app) to show under the clock (photo in colour with a green dot when home; greyed with Away or the zone name when not).
 - **Solar (in Utilities)**: Off, Dash view (the dash's own solar flow and today's totals) or Energy Flow Card (your HACS Energy Flow Card, sized for the phone). Pick the sensors once for either; leave out what you don't have.
-- **Whole home**: Cameras, Alarm, Utilities (pumps, geysers, sensors…) and the Weather shown on the home screen.
+- **Whole home**: Cameras, Alarm, **Garage doors**, Utilities (pumps, geysers, sensors…) and the Weather shown on the home screen.
+- **Garage doors**: garage doors and gates (covers), or a relay / button wired to the motor. Shown on the Whole House home screen with Open and Close. Optional per door: an open/closed sensor (e.g. a door contact) so the dash shows whether it's open.
+- **Names**: the dash's own name for any device (lights, aircons, speakers, TVs, shades, scenes, garage doors…). Leave empty for the Home Assistant name. Every phone shows it.
 - **RTSP cameras**: cameras that aren't in Home Assistant, by their RTSP address. Home Assistant turns them into live video for the phones; only admins ever see the address (it has the camera's password in it).
 - **Copy from an AR NSPanel Pro panel** (only shown when AR NSPanel Pro is installed): takes the rooms, devices, lamp types and background from a panel's Device Setup in one go. Check it, then Save.
 - **Save for everyone**: every phone shows the new setup.
@@ -48,6 +50,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
 
 ## Changes
+
+- **1.3.5**: Garage doors on the Whole House home screen (open / close, optional open/closed sensor). Names in Setup for every device. Utilities: all switches in one card, Solar on its own tab; the Energy Flow Card no longer rebuilds (looked like a reload) when something else changes. Watch logos keep to their size (a single source no longer shows huge).
 
 - **1.3.4**: Full screen on a phone: the top bar (menu, back, home) sits below the phone's status bar so it can be tapped, and Room Off stays above the gesture bar.
 

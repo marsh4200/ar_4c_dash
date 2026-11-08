@@ -10,16 +10,18 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.3.4";
+const VERSION = "1.3.5";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
-const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
+const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
+const HOUSE_KEYS = ["cameras", "security", "utilities", "garage"]; // whole home, the same in every room
 const SOLAR_KEYS = [["solar_power", "Solar power"], ["grid_power", "Grid power (+ in, \u2212 out)"], ["battery_power", "Battery power (+ charging)"], ["battery_soc", "Battery %"], ["home_power", "Home use"], ["solar_daily", "Solar today"], ["grid_import_daily", "Grid in today"], ["grid_export_daily", "Grid out today"], ["home_daily", "Home today"]];
 const INVERTERS = [["default", "Other"], ["sunsynk", "Sunsynk"], ["deye", "Deye"], ["inverex", "Inverex"], ["solis_hybrid", "Solis"], ["goodwe_hybrid", "GoodWe"], ["growatt", "Growatt"], ["victron", "Victron"], ["solaredge", "SolarEdge"], ["fronius_gen24", "Fronius"], ["huawei_luna", "Huawei"]];
-const PICK_DOM = { lights: ["light", "switch"], climate: ["climate"], music: ["media_player"], watch: ["media_player", "remote"], shades: ["cover"], scenes: ["scene", "script"], cameras: ["camera"], security: ["alarm_control_panel"], utilities: ["switch", "input_boolean", "sensor", "binary_sensor", "fan", "light", "valve", "water_heater", "lock"], weather: ["weather"], solar: ["sensor"], people: ["person", "device_tracker"] };
+const PICK_DOM = { lights: ["light", "switch"], climate: ["climate"], music: ["media_player"], watch: ["media_player", "remote"], shades: ["cover"], scenes: ["scene", "script"], cameras: ["camera"], security: ["alarm_control_panel"], utilities: ["switch", "input_boolean", "sensor", "binary_sensor", "fan", "light", "valve", "water_heater", "lock"], weather: ["weather"], solar: ["sensor"], gsensor: ["binary_sensor", "sensor", "input_boolean"], garage: ["cover", "switch", "button", "input_button", "lock"], people: ["person", "device_tracker"] };
 const BASE = "/ar_4c_dash_static";
 const PREF_KEY = "ar_4c_dash";
 const LINE = {
+  garage: '<path d="M3 10.5L12 4l9 6.5V20H3z"/><path d="M6.5 20v-8h11v8M6.5 14.7h11M6.5 17.4h11"/>',
   icons: '<circle cx="7.5" cy="7.5" r="3.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><path d="M7.5 13.5l4 6.5h-8z"/><circle cx="16.5" cy="16.5" r="3.5"/>',
   chev: '<path d="M9 6l6 6-6 6"/>',
   rooms: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
@@ -66,11 +68,11 @@ const LINE = {
 };
 const PRESETS = {"villa": "villa.jpg", "cape": "cape.jpg", "sunset-sea": "sunset-sea.jpg", "mountains": "mountains.jpg", "forest-mist": "forest-mist.jpg", "dunes": "dunes.jpg", "stars": "stars.jpg", "aurora": "aurora.jpg", "city-night": "city-night.jpg", "lounge": "lounge.jpg", "marble-white": "marble-white.jpg", "marble-black": "marble-black.jpg", "slate": "slate.jpg", "concrete": "concrete.jpg", "steel": "steel.jpg", "walnut": "walnut.jpg", "oak": "oak.jpg", "leather": "leather.jpg", "linen": "linen.jpg", "colour-midnight": "colour-midnight.jpg", "colour-emerald": "colour-emerald.jpg", "colour-bordeaux": "colour-bordeaux.jpg", "colour-champagne": "colour-champagne.jpg", "colour-graphite": "colour-graphite.jpg", "colour-twilight": "colour-twilight.jpg", "colour-lagoon": "colour-lagoon.jpg", "colour-amber": "colour-amber.jpg", "sky-blue": "sky-blue.jpg", "sky-high": "sky-high.jpg", "sky-golden": "sky-golden.jpg", "sky-dawn": "sky-dawn.jpg", "sky-moon": "sky-moon.jpg"};
 const BG_NAMES = { villa: "Villa at dusk", cape: "Cape dusk", "sunset-sea": "Sunset sea", mountains: "Misty mountains", "forest-mist": "Forest mist", dunes: "Desert dunes", stars: "Night sky", aurora: "Aurora", "city-night": "City lights", lounge: "Evening lounge", "marble-white": "White marble", "marble-black": "Black marble", slate: "Slate", concrete: "Concrete", steel: "Brushed steel", walnut: "Walnut", oak: "Oak", leather: "Leather", linen: "Linen", "colour-midnight": "Midnight blue", "colour-emerald": "Emerald", "colour-bordeaux": "Bordeaux", "colour-champagne": "Champagne silk", "colour-graphite": "Graphite silk", "colour-twilight": "Twilight", "colour-lagoon": "Lagoon", "colour-amber": "Amber glow", "sky-blue": "Blue sky", "sky-high": "High clouds", "sky-golden": "Golden hour", "sky-dawn": "Pastel dawn", "sky-moon": "Moonlit clouds" };
-const TITLES = { lights: "Lights", climate: "Comfort", music: "Listen", watch: "Watch", shades: "Shades", cameras: "Cameras", utilities: "Utilities", security: "Security", scenes: "Scenes" };
-const ORDER = ["lights", "climate", "music", "watch", "shades", "cameras", "utilities", "security", "scenes"];
+const TITLES = { garage: "Garage", lights: "Lights", climate: "Comfort", music: "Listen", watch: "Watch", shades: "Shades", cameras: "Cameras", utilities: "Utilities", security: "Security", scenes: "Scenes" };
+const ORDER = ["lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes"];
 const ROOM_KEYS = ["lights", "climate", "music", "watch", "shades", "scenes"];
 const IC_CATS = ["Lighting", "Climate", "Security", "Media", "Doors & shades", "Utilities", "Scenes & rooms"];
-const IC_FOR = { lights: "Lighting", climate: "Climate", security: "Security", cameras: "Security", music: "Media", watch: "Media", shades: "Doors & shades", utilities: "Utilities", scenes: "Scenes & rooms" };
+const IC_FOR = { garage: "Doors & shades", lights: "Lighting", climate: "Climate", security: "Security", cameras: "Security", music: "Media", watch: "Media", shades: "Doors & shades", utilities: "Utilities", scenes: "Scenes & rooms" };
 const LAMP_K = { warm: 2700, soft: 3000, neutral: 4000, cool: 5000, daylight: 6500, dim: 2200 };
 const LAMP_NAME = { lamp: "Pendant", edison: "Filament", downlight: "Downlight", bulb: "Bulb" };
 const MODE = { off: "Off", heat: "Heat", cool: "Cool", heat_cool: "Heat / cool", auto: "Auto", dry: "Dry", fan_only: "Fan" };
@@ -182,6 +184,19 @@ svg{flex:none}
 .sw.on::after{transform:translateX(18px);background:#fff}
 .card{border-radius:22px;border:1px solid rgba(255,255,255,.12);background:rgba(16,14,18,.62);padding:14px;display:flex;flex-direction:column;gap:12px;flex:none}
 .row{display:flex;align-items:center;gap:12px}
+.gd{gap:14px}.gdh{display:flex;align-items:flex-start;justify-content:space-between}.gdh b{display:block;font-size:18px;font-weight:500}.gdh small{color:var(--muted);font-size:13px}
+.gdot{width:10px;height:10px;border-radius:50%;background:#7fd6a0;box-shadow:0 0 10px #7fd6a0;margin-top:6px}
+.gd.open .gdot,.gd.opening .gdot,.gd.closing .gdot{background:var(--acc);box-shadow:0 0 12px var(--acc)}.gd.na .gdot{background:#ff8a7a;box-shadow:none}.gd.relay .gdot{display:none}
+.gd.opening .gdot,.gd.closing .gdot{animation:gblink 1s ease-in-out infinite}@keyframes gblink{50%{opacity:.3}}
+.gdoor{position:relative;aspect-ratio:2/1;border-radius:14px 14px 6px 6px;overflow:hidden;cursor:pointer;border:6px solid rgba(255,255,255,.1);border-bottom-width:0;background:linear-gradient(180deg,rgba(255,196,128,.18),rgba(20,18,22,.9) 70%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.5)}
+.gin{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 14% 6%}.gin svg{width:100%;fill:rgba(255,255,255,.08)}
+.gd.open .gdoor,.gd.opening .gdoor{background:linear-gradient(180deg,rgba(255,206,140,.42),rgba(40,30,24,.9) 75%)}
+.gpan{position:absolute;inset:0;background:repeating-linear-gradient(180deg,#c9c3ba 0 calc(25% - 3px),#8f8a82 calc(25% - 3px) 25%);box-shadow:0 4px 10px rgba(0,0,0,.5);transition:transform 1.4s cubic-bezier(.4,0,.2,1)}
+.gpan::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.18),transparent 20%,transparent 80%,rgba(0,0,0,.18))}
+.gd.relay .gpan{transform:none}
+.gbt{display:flex;gap:8px;justify-content:center}.gbt .pill{flex:1;justify-content:center;height:46px;font-size:15px}
+.gmain{background:rgba(var(--accrgb),.92) !important;color:#2a2116;border-color:transparent !important}
+.ulist{gap:0;padding:4px 14px}.urow{min-height:58px;border-top:1px solid rgba(255,255,255,.08)}.urow:first-child{border-top:0}
 .row>svg{width:22px;height:22px;color:var(--muted)}
 .hint{font-size:12px;color:var(--muted);text-align:center;padding:2px 16px 6px;overflow-wrap:anywhere}
 .empty{color:var(--muted);text-align:center;padding:40px 20px;font-size:15px}
@@ -309,18 +324,19 @@ svg{flex:none}
 .chip svg[viewBox]{width:14px;height:14px}
 .ask{font-size:22px;font-weight:300;text-align:center;padding:10px 0 4px;text-wrap:balance}
 .srcs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.srcs:has(> .src:only-child){grid-template-columns:minmax(0,190px);justify-content:center}
 .src{position:relative;border-radius:20px;padding:12px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;min-width:0}
-.src .lg{height:84px}.src.bare .lg{height:100px}
+.src .lg{height:72px}.src.bare .lg{height:88px}
 .src span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 6px rgba(0,0,0,.6)}
 .src:active{transform:scale(.97)}
 .src span{font-size:14px;text-align:center}
 .src.last .lg{filter:drop-shadow(0 0 14px rgba(var(--accrgb),.45))}
 .src.last::after{content:"Last watched";position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--acc);color:#2a2116;padding:2px 8px;border-radius:9px;white-space:nowrap}
-.lg{width:100%;height:70px;border-radius:14px;display:grid;place-items:center;color:var(--muted)}
-.lg img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.45))}
+.lg{width:100%;height:70px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);overflow:hidden}
+.lg img{width:100%;height:100%;min-width:0;min-height:0;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.45))}
 .lgs{display:grid;place-items:center}
 .lg svg{width:34px;height:34px}
-.lg.big{width:150px;height:104px}
+.lg.big{width:150px;height:84px;flex:none}
 .start{display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:8px}
 .chk{width:100%;display:flex;flex-direction:column;gap:8px}
 .chk h3{font-weight:400;font-size:18px;margin:0 0 4px;text-align:center}
@@ -631,6 +647,11 @@ class Ar4cDash extends HTMLElement {
       if (k === "iconfile") { this._upFor = { kind: "icon", k: t.getAttribute("data-k") }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "bgfile") { this.bgFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "lutol" && this.logoUp) { this.logoUp.tol = Number(t.value); clearTimeout(this._luT); this._luT = setTimeout(() => this.logoCut(), 60); return; }
+      if (k === "nm") {
+        (this.nameDraft = this.nameDraft || {})[t.getAttribute("data-e")] = t.value; this.dirty = true;
+        const sv = this.shadowRoot.querySelector('[data-act="s-save"]'); if (sv) { sv.textContent = "Save for everyone"; sv.style.cssText = "justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent"; }
+        return;
+      }
       if (k === "lname") { (this.renDraft = this.renDraft || {})[t.getAttribute("data-e")] = t.value; return; }
       if (k === "name" && this.draft) {
         const rm = this.draft.rooms[Number(t.getAttribute("data-v"))];
@@ -740,7 +761,7 @@ class Ar4cDash extends HTMLElement {
     });
     this.empty = !this.rooms.length;
     if (this.empty) this.rooms = [{ name: "Home", image: "", lights: [], climate: [], music: [], watch: [], shades: [], scenes: [], sources: [] }];
-    this.house = { cameras: list(c.cameras).concat((Array.isArray(c.rtsp) ? c.rtsp : []).map((x, i) => "rtsp:" + i)), security: list(c.security), utilities: list(c.utilities) };
+    this.house = { cameras: list(c.cameras).concat((Array.isArray(c.rtsp) ? c.rtsp : []).map((x, i) => "rtsp:" + i)), security: list(c.security), utilities: list(c.utilities), garage: list(c.garage) };
     this.ri = clamp(typeof this.P.room === "number" ? this.P.room : 0, 0, this.rooms.length - 1);
   }
   _save() {
@@ -782,10 +803,11 @@ class Ar4cDash extends HTMLElement {
       if (k === "music") return r.listen && (r.music.length || li.ma || li.spotify);
       if (k === "watch") return r.watch.length || r.sources.length;
       if (k === "utilities") return this.house.utilities.length || !!this.solarCfg();
-      return (k === "cameras" || k === "security" || k === "utilities" ? this.house[k] : r[k]).length;
+      if (k === "garage") return this.house.garage.length && (r.whole || !(this.rooms || []).some((x) => x.whole)); // on the Whole House home
+      return (HOUSE_KEYS.indexOf(k) >= 0 ? this.house[k] : r[k]).length;
     });
   }
-  ents(k) { return k === "cameras" || k === "security" || k === "utilities" ? this.house[k] : this.room()[k]; }
+  ents(k) { return HOUSE_KEYS.indexOf(k) >= 0 ? this.house[k] : this.room()[k]; }
 
   // ---- icons + background ------------------------------------------------
   instIcon(k) {
@@ -823,7 +845,8 @@ class Ar4cDash extends HTMLElement {
     const w = [];
     (this.rooms || []).forEach((r) => ROOM_KEYS.forEach((k) => (r[k] || []).forEach((e) => w.push(e))));
     const hs = this.house || {};
-    ["cameras", "security", "utilities"].forEach((k) => (hs[k] || []).forEach((e) => w.push(e)));
+    HOUSE_KEYS.forEach((k) => (hs[k] || []).forEach((e) => w.push(e)));
+    Object.keys((this.conf && this.conf.garageSensors) || {}).forEach((k) => w.push(this.conf.garageSensors[k]));
     ((this.li && this.li.maPlayers) || []).forEach((e) => w.push(e));
     const so = this.solarCfg(); if (so) Object.keys(so.e).forEach((k) => w.push(so.e[k]));
     if (this.peopleOn()) this.conf.people.list.forEach((e) => w.push(e));
@@ -875,6 +898,12 @@ class Ar4cDash extends HTMLElement {
     if (this.page === "climate") this.paintDial();
     if (this.viewCam) this._attachLive();
     if (this.page === "utilities") this.efcMount();
+    if (this.page === "garage") {
+      // the door slides from where it was to where it is now
+      const gp = this._gp || (this._gp = {});
+      const els = [...pg.querySelectorAll(".gpan[data-to]")];
+      requestAnimationFrame(() => requestAnimationFrame(() => els.forEach((el) => { const to = el.getAttribute("data-to"); el.style.transform = "translateY(-" + to + "%)"; gp[el.getAttribute("data-e")] = to; })));
+    }
   }
   roomName() { return esc(this.room().name); }
   home() {
@@ -890,6 +919,7 @@ class Ar4cDash extends HTMLElement {
       else if (k === "climate") lit = es.some((e) => { const s = this.st(e); return s && s.state !== "off" && s.state !== "unavailable"; });
       else if (k === "music" || k === "watch") lit = es.some((e) => { const s = this.st(e); return s && s.state === "playing"; });
       else if (k === "security") lit = es.some((e) => { const s = this.st(e); return s && s.state.indexOf("armed") === 0; });
+      else if (k === "garage") lit = es.some((e) => { const s = this.st(e); return s && (s.state === "open" || s.state === "opening" || s.state === "unlocked"); });
       else if (k === "shades") lit = es.some((e) => { const s = this.st(e); return s && s.state === "open"; });
       g += '<div class="btn' + (lit ? " lit" : "") + '" data-act="go" data-k="' + k + '"><div class="ring">' + this.icon(k) + badge + "</div><span>" + TITLES[k] + "</span></div>";
     });
@@ -903,12 +933,12 @@ class Ar4cDash extends HTMLElement {
     );
   }
   head(title) {
-    const house = this.page === "cameras" || this.page === "security" || this.page === "utilities";
+    const house = HOUSE_KEYS.indexOf(this.page) >= 0;
     return '<div class="top"><div class="ib" data-act="back">' + line("chevl") + '</div><div class="room"' + (house ? "" : ' data-act="rooms"') + ">" + title + (house ? "" : "<small>" + this.roomName() + line("down") + "</small>") + '</div><div class="sp"></div><div class="ib" data-act="back">' + line("home") + "</div></div>";
   }
   inner() {
     const k = this.page;
-    const f = { lights: this.pLights, climate: this.pClimate, music: this.pListen, watch: this.pWatch, shades: this.pShades, scenes: this.pScenes, security: this.pSecurity, cameras: this.pCameras, utilities: this.pUtil }[k];
+    const f = { garage: this.pGarage, lights: this.pLights, climate: this.pClimate, music: this.pListen, watch: this.pWatch, shades: this.pShades, scenes: this.pScenes, security: this.pSecurity, cameras: this.pCameras, utilities: this.pUtil }[k];
     return this.head(TITLES[k]) + (f ? f.call(this) : "");
   }
 
@@ -1583,14 +1613,57 @@ class Ar4cDash extends HTMLElement {
     this._liveFail = false;
   }
   pUtil() {
+    // Utilities: all the switches and readings in one card; Solar on its own tab
+    const so = this.solarCfg(), items = this.house.utilities.filter((e) => this.st(e));
+    const tab = so && items.length ? (this.utab === "solar" ? "solar" : "items") : so ? "solar" : "items";
     let h = "";
-    this.house.utilities.forEach((e) => {
-      const s = this.st(e); if (!s) return;
-      const d = domain(e), tog = ["switch", "light", "fan", "input_boolean"].indexOf(d) >= 0;
+    if (so && items.length) h += '<div class="seg" style="margin-top:12px"><div data-act="utab" data-v="items" class="' + (tab === "items" ? "on" : "") + '">Utilities</div><div data-act="utab" data-v="solar" class="' + (tab === "solar" ? "on" : "") + '">Solar</div></div>';
+    if (tab === "solar") return h + '<div class="scroll">' + this.solarHtml() + "</div>";
+    let rows = "";
+    items.forEach((e) => {
+      const s = this.st(e), d = domain(e), tog = ["switch", "light", "fan", "input_boolean"].indexOf(d) >= 0;
       const val = tog ? "" : s.state + (s.attributes.unit_of_measurement ? " " + s.attributes.unit_of_measurement : "");
-      h += '<div class="card"><div class="row"><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(tog ? (this.isOn(e) ? "On" : "Off") : "") + "</small></div>" + (tog ? '<div class="sw' + (this.isOn(e) ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div>' : '<div class="pc" style="font-size:20px">' + esc(val) + "</div>") + "</div></div>";
+      rows += '<div class="row urow"><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(tog ? (this.isOn(e) ? "On" : "Off") : "") + "</small></div>" + (tog ? '<div class="sw' + (this.isOn(e) ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div>' : '<div class="pc" style="font-size:20px">' + esc(val) + "</div>") + "</div>";
     });
-    return '<div class="scroll">' + this.solarHtml() + (h || (this.solarCfg() ? "" : '<div class="empty">No utilities set up.</div>')) + "</div>";
+    return h + '<div class="scroll">' + (rows ? '<div class="card ulist">' + rows + "</div>" : '<div class="empty">No utilities set up.</div>') + "</div>";
+  }
+
+  // ---- garage doors (whole home) ------------------------------------------------
+  gState(e) {
+    const s = this.st(e), d = domain(e);
+    // an open/closed sensor, when one is set, says how the door is
+    const sn = this.conf && this.conf.garageSensors && this.conf.garageSensors[e], ss = sn && this.st(sn);
+    if (ss && ss.state !== "unavailable" && ss.state !== "unknown") {
+      const v = String(ss.state).toLowerCase(), open = ["on", "open", "opening", "true", "1"].indexOf(v) >= 0;
+      return { st: open ? "open" : "closed", pos: open ? 100 : 0, label: open ? "Open" : "Closed", sensor: true };
+    }
+    if (!s || s.state === "unavailable") return { st: "na", pos: 0, label: "Not answering" };
+    if (d === "cover") {
+      const p = s.attributes.current_position;
+      const st = s.state, pos = typeof p === "number" ? p : st === "open" ? 100 : st === "closed" ? 0 : st === "opening" ? 55 : 45;
+      const label = { open: "Open", closed: "Closed", opening: "Opening\u2026", closing: "Closing\u2026" }[st] || st;
+      return { st, pos, label: label + (typeof p === "number" && (st === "opening" || st === "closing" || (st === "open" && p < 100)) ? " " + p + "%" : "") };
+    }
+    if (d === "lock") return { st: s.state === "unlocked" ? "open" : "closed", pos: s.state === "unlocked" ? 100 : 0, label: s.state === "unlocked" ? "Unlocked" : "Locked" };
+    return { st: "relay", pos: 0, label: "Tap to open or close" }; // a relay or button: no open/closed of its own
+  }
+  ago(t) {
+    const m = Math.round((Date.now() - new Date(t).getTime()) / 60000);
+    return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " h ago" : Math.round(m / 1440) + " d ago";
+  }
+  pGarage() {
+    let h = "";
+    this.house.garage.forEach((e) => {
+      const s = this.st(e); if (!s) return;
+      const g = this.gState(e), moving = g.st === "opening" || g.st === "closing", open = g.st === "open" || g.st === "opening";
+      const main = g.st === "relay" ? ["press", "Open / close"] : open ? ["close", "Close"] : ["open", "Open"];
+      const at = s.last_changed && (g.sensor ? (this.st(this.conf.garageSensors[e]) || {}).last_changed : s.last_changed);
+      h += '<div class="card gd ' + g.st + '"><div class="gdh"><div><b>' + esc(this.name(e)) + "</b><small>" + esc(g.label) + (g.st !== "relay" && !moving && at ? " \u00b7 " + this.ago(at) : "") + '</small></div><i class="gdot"></i></div>' +
+        '<div class="gdoor" data-act="gdo" data-v="' + main[0] + '" data-e="' + esc(e) + '"><div class="gin"><svg viewBox="0 0 120 40"><path d="M14 34c2-9 9-14 22-15l14-8h28c9 0 15 4 21 10 6 1 9 4 9 9v4z"/><circle cx="32" cy="34" r="6"/><circle cx="90" cy="34" r="6"/></svg></div>' +
+        '<div class="gpan" data-e="' + esc(e) + '" data-to="' + Math.max(0, Math.min(96, g.pos)) + '" style="transform:translateY(-' + ((this._gp || {})[e] != null ? this._gp[e] : Math.max(0, Math.min(96, g.pos))) + '%)"></div></div>' +
+        '<div class="gbt"><div class="pill gmain" data-act="gdo" data-v="' + main[0] + '" data-e="' + esc(e) + '">' + line(main[0] === "close" ? "down" : main[0] === "open" ? "up" : "garage") + main[1] + "</div></div></div>";
+    });
+    return '<div class="scroll">' + (h || '<div class="empty">No garage doors set up.</div>') + "</div>";
   }
 
   // ---- solar (Utilities): the dash's own flow, or the Energy Flow Card --------------
@@ -1819,7 +1892,14 @@ class Ar4cDash extends HTMLElement {
     }
     if (this.li && this.li.ma && this.li.spotify) h += '<div class="lbl" style="padding:18px 4px 6px">Listen opens on</div><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (d.listenStart !== "spotify" ? " on" : "") + '" data-act="s-lstart" data-v="ma">Music Assistant</div><div class="chip' + (d.listenStart === "spotify" ? " on" : "") + '" data-act="s-lstart" data-v="spotify">Spotify</div></div>';
     h += '<div class="lbl" style="padding:18px 4px 2px">Whole home</div><div class="card" style="background:transparent;padding:12px">';
-    HOUSE_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(d[c[0]], "h:" + c[0])));
+    HOUSE_CATS.forEach((c) => {
+      h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(d[c[0]], "h:" + c[0]);
+      if (c[0] === "garage" && (d.garage || []).length) {
+        // each door: an optional sensor that says open or closed
+        h += '<div class="hint" style="text-align:left;padding:0">Shown on the Whole House home screen. Optional: a sensor that says whether each door is open or closed.</div>';
+        d.garage.forEach((e) => { const sn = (d.garageSensors || {})[e]; h += '<div class="srow"><small>' + esc(this.name(e)) + "</small>" + (sn ? '<div class="chip" data-act="gs-clr" data-e="' + esc(e) + '">' + esc(this.name(sn)) + line("x") + "</div>" : '<div class="chip" style="border-style:dashed" data-act="s-pick" data-w="h:gsensor:' + esc(e) + '">' + line("plus") + "Open/closed sensor</div>") + "</div>"; });
+      }
+    });
     h += '<div class="lbl">Weather</div>' + this.chipsFor(d.weather ? [d.weather] : [], "h:weather");
     // who's home on the home screen
     const pe = d.people || {};
@@ -1837,6 +1917,7 @@ class Ar4cDash extends HTMLElement {
     h += '<div class="lbl">RTSP cameras</div><div class="hint" style="text-align:left;padding:0">Cameras that aren\'t in Home Assistant: their address, e.g. rtsp://admin:password@192.168.1.64:554/Streaming/Channels/102. Only admins ever see the address.</div>';
     (d.rtsp || []).forEach((c, i) => (h += '<div class="rtr"><input class="inp" data-in="rname" data-v="' + i + '" value="' + esc(c.name || "") + '" placeholder="Name" maxlength="40"><input class="inp" data-in="rurl" data-v="' + i + '" value="' + esc(c.url || "") + '" placeholder="rtsp://\u2026" autocapitalize="off" autocomplete="off" spellcheck="false"><div class="chip" data-act="r-rm" data-v="' + i + '">' + line("x") + "Remove</div></div>"));
     h += '<div class="chip" style="border-style:dashed;align-self:flex-start" data-act="r-add">' + line("plus") + "Add RTSP camera</div></div>";
+    h += this.namesHtml(d);
     if (this.nsp && this.nsp.length) {
       h += '<div class="lbl" style="padding:18px 4px 6px">Copy from an AR NSPanel Pro panel</div><div class="wrapc" style="justify-content:flex-start">';
       this.nsp.forEach((pn) => (h += '<div class="chip" data-act="s-import" data-v="' + esc(pn.device_id) + '">' + (this.impArm === pn.device_id ? "Tap again: replaces this setup" : esc(pn.name || pn.device_id)) + "</div>"));
@@ -1964,6 +2045,7 @@ class Ar4cDash extends HTMLElement {
     if (w[0] === "h") {
       if (w[1] === "weather") return d.weather ? [d.weather] : [];
       if (w[1] === "solar") { const v = ((d.solar || {}).e || {})[w[2]]; return v ? [v] : []; }
+      if (w[1] === "gsensor") { const v = (d.garageSensors || {})[w.slice(2).join(":")]; return v ? [v] : []; }
       if (w[1] === "people") { d.people = d.people || { on: true, list: [] }; if (!Array.isArray(d.people.list)) d.people.list = []; return d.people.list; }
       if (create && !Array.isArray(d[w[1]])) d[w[1]] = [];
       return d[w[1]];
@@ -1992,8 +2074,29 @@ class Ar4cDash extends HTMLElement {
       this._render(true);
     }).catch(() => this._toast("Couldn't read that panel"));
   }
+  // Names: the dash's own name for any device on it (lights, aircons, speakers, TVs...)
+  namesHtml(d) {
+    const groups = [];
+    const add = (label, arr) => { const es = (arr || []).filter((e) => typeof e === "string" && e.indexOf("rtsp:") !== 0); if (!es.length) return; const g = groups.filter((x) => x[0] === label)[0]; if (g) es.forEach((e) => g[1].indexOf(e) < 0 && g[1].push(e)); else groups.push([label, es.slice()]); };
+    (d.rooms || []).forEach((rm) => SETUP_CATS.forEach((c) => add(c[1], rm[c[0]])));
+    HOUSE_CATS.forEach((c) => add(c[1], d[c[0]]));
+    const n = groups.reduce((a, g) => a + g[1].length, 0);
+    let h = '<div class="it' + (this.namesOpen ? " open" : "") + '" style="margin-top:14px"><div class="ih" data-act="s-names"><span class="now">' + line("pencil") + "</span><b>Names</b><small>" + n + " devices</small></div>";
+    if (this.namesOpen) {
+      h += '<div class="sbody"><div class="hint" style="text-align:left;padding:0">The name every phone shows for each device. Leave it empty to use the Home Assistant name.</div>';
+      groups.forEach((g) => {
+        h += '<div class="lbl">' + esc(g[0]) + "</div>";
+        g[1].forEach((e) => { const v = this.nameDraft && e in this.nameDraft ? this.nameDraft[e] : (this.conf.names || {})[e] || ""; h += '<input class="inp" data-in="nm" data-e="' + esc(e) + '" value="' + esc(v) + '" placeholder="' + esc(this.haName(e)) + '" maxlength="40">'; });
+      });
+      h += "</div>";
+    }
+    return h + "</div>";
+  }
   saveSetup() {
-    this._hass.callWS({ type: "ar_4c_dash/save", config: this.draft }).then((res) => {
+    const nd = this.nameDraft; this.nameDraft = null;
+    // names first (they're kept on their own), then the rest of the setup
+    const names = nd && Object.keys(nd).length ? this._hass.callWS({ type: "ar_4c_dash/set_names", names: nd }).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save the names")) : Promise.resolve();
+    names.then(() => this._hass.callWS({ type: "ar_4c_dash/save", config: this.draft })).then((res) => {
       this.conf = (res && res.config) || this.draft;
       this.draft = JSON.parse(JSON.stringify(this.conf));
       this.dirty = false;
@@ -2174,7 +2277,7 @@ class Ar4cDash extends HTMLElement {
         else if (f === "player" || f === "volume") sc[f] = e;
         else sc.steps[Number(f)].e = e;
         this.pick = null; this.dirty = true; break;
-      } else { const w = this.pick.split(":"); if (w[1] === "solar") { const so = (this.draft.solar = this.draft.solar || { mode: "simple" }); so.e = so.e || {}; so.e[w[2]] = e; this.pick = null; this.dirty = true; break; } if (w[1] === "weather") { this.draft.weather = e; this.pick = null; } else this.pickArr(true).push(e); this.dirty = true; break; }
+      } else { const w = this.pick.split(":"); if (w[1] === "gsensor") { (this.draft.garageSensors = this.draft.garageSensors || {})[w.slice(2).join(":")] = e; this.pick = null; this.dirty = true; break; } if (w[1] === "solar") { const so = (this.draft.solar = this.draft.solar || { mode: "simple" }); so.e = so.e || {}; so.e[w[2]] = e; this.pick = null; this.dirty = true; break; } if (w[1] === "weather") { this.draft.weather = e; this.pick = null; } else this.pickArr(true).push(e); this.dirty = true; break; }
       case "p-done": this.pick = null; break;
       case "s-whole": this.draft.rooms.unshift({ whole: true, name: "Whole House" }); this.sOpen = 0; this.dirty = true; break;
       case "s-lstart": this.draft.listenStart = v; this.dirty = true; break;
@@ -2219,6 +2322,19 @@ class Ar4cDash extends HTMLElement {
       case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
       case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;
+      case "gs-clr": delete this.draft.garageSensors[e]; this.dirty = true; break;
+      case "s-names": this.namesOpen = !this.namesOpen; break;
+      case "gdo": {
+        // garage: open, close, stop; a relay or button just gets pressed
+        const d = domain(e), nm = this.name(e);
+        if (d === "cover") this.call("cover", v === "close" ? "close_cover" : "open_cover", { entity_id: e });
+        else if (d === "lock") this.call("lock", v === "close" ? "lock" : "unlock", { entity_id: e });
+        else if (d === "button" || d === "input_button") this.call(d, "press", { entity_id: e });
+        else this.call("homeassistant", "turn_on", { entity_id: e });
+        this._toast(v === "close" ? nm + ": closing" : v === "open" ? nm + ": opening" : nm);
+        return;
+      }
+      case "utab": this.utab = v; break;
       case "s-listen": { const rm = this.draft.rooms[Number(v)]; rm.listen = t.getAttribute("data-on") === "1"; this.dirty = true; break; }
       case "s-goto": {
         // open a Home Assistant page in the app (Settings > Devices & services)
