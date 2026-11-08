@@ -18,9 +18,11 @@ Open 4C Dash → tap the empty top-right corner **10 times quickly** → the gea
 
 - **Add room**, name it, and add what is in it: Lights (lights and switches), Comfort (climate), Listen and Watch (media players), Shades (covers), Scenes (scenes and scripts). Tap a device to remove it; Move up / Move down sets the room order.
 - **Whole House room**: add it with the Whole House chip. It shows every room's lights (grouped by room), speakers and TVs together. Move it up or down like any other room, so it can sit at the top. Its **Whole-house scenes** show on the home screen and on Scenes and Lights in every room; a room's own scenes only show in that room.
+- **Listen in this room**: On / Off per room (and for Whole House), so Listen only shows where there are speakers. Rooms not set yet show it only if they have speakers under Listen.
+- **Music**: shows whether Music Assistant and Spotify are linked, with a Link / Open button. Music Assistant's server address and login go into Home Assistant's Music Assistant integration (Settings → Devices & services → Add integration → Music Assistant, e.g. `http://<server-ip>:8095`), not into the dash.
 - **Listen**: choose whether Listen opens on Music Assistant or Spotify. Music Assistant goes through Home Assistant's Music Assistant integration (which holds the Music Assistant login); its speakers are found by themselves. Spotify uses Home Assistant's Spotify integration or SpotifyPlus (HACS), no extra login. Nothing needs AR NSPanel Pro.
 - **Watch sources**: "What would you like to watch?" Each source (Netflix, DStv…) has a name, a logo (pick one, or **Upload** your own: a plain background is taken off so only the logo shows), Name under logo or Logo only, and steps run in order: Turn on, Switch input, Open app, Wait. Turning on is skipped when the device is already on. After the steps, the phone shows that TV's remote.
-- **Who's home**: Off / Show, then the people to show under the clock (photo in colour with a green dot when home; greyed with Away or the zone name when not).
+- **Who's home**: Off / Show, then the people (or phones: device trackers such as the Home Assistant app) to show under the clock (photo in colour with a green dot when home; greyed with Away or the zone name when not).
 - **Solar (in Utilities)**: Off, Dash view (the dash's own solar flow and today's totals) or Energy Flow Card (your HACS Energy Flow Card, sized for the phone). Pick the sensors once for either; leave out what you don't have.
 - **Whole home**: Cameras, Alarm, Utilities (pumps, geysers, sensors…) and the Weather shown on the home screen.
 - **RTSP cameras**: cameras that aren't in Home Assistant, by their RTSP address. Home Assistant turns them into live video for the phones; only admins ever see the address (it has the camera's password in it).
@@ -46,6 +48,10 @@ Icons are the same on every phone. Look, background and the last room are saved 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
 
 ## Changes
+
+- **1.3.3**: Who's home can also show device trackers (e.g. the Home Assistant app on a phone), not only people.
+
+- **1.3.2**: Listen On / Off per room. Setup shows whether Music Assistant and Spotify are linked, with a button to link them in Home Assistant.
 
 - **1.3.1**: 4C Dash is a real dashboard now (Settings → Dashboards): rename it per customer and set it as the default. Fixes: the dash sometimes didn't load when opened straight from a link, and didn't open on a fresh install before any rooms were set up. Who's home shows only the people you add (it no longer fills in everyone).
 

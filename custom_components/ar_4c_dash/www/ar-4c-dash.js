@@ -10,13 +10,13 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.3.1";
+const VERSION = "1.3.3";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
 const SOLAR_KEYS = [["solar_power", "Solar power"], ["grid_power", "Grid power (+ in, \u2212 out)"], ["battery_power", "Battery power (+ charging)"], ["battery_soc", "Battery %"], ["home_power", "Home use"], ["solar_daily", "Solar today"], ["grid_import_daily", "Grid in today"], ["grid_export_daily", "Grid out today"], ["home_daily", "Home today"]];
 const INVERTERS = [["default", "Other"], ["sunsynk", "Sunsynk"], ["deye", "Deye"], ["inverex", "Inverex"], ["solis_hybrid", "Solis"], ["goodwe_hybrid", "GoodWe"], ["growatt", "Growatt"], ["victron", "Victron"], ["solaredge", "SolarEdge"], ["fronius_gen24", "Fronius"], ["huawei_luna", "Huawei"]];
-const PICK_DOM = { lights: ["light", "switch"], climate: ["climate"], music: ["media_player"], watch: ["media_player", "remote"], shades: ["cover"], scenes: ["scene", "script"], cameras: ["camera"], security: ["alarm_control_panel"], utilities: ["switch", "input_boolean", "sensor", "binary_sensor", "fan", "light", "valve", "water_heater", "lock"], weather: ["weather"], solar: ["sensor"], people: ["person"] };
+const PICK_DOM = { lights: ["light", "switch"], climate: ["climate"], music: ["media_player"], watch: ["media_player", "remote"], shades: ["cover"], scenes: ["scene", "script"], cameras: ["camera"], security: ["alarm_control_panel"], utilities: ["switch", "input_boolean", "sensor", "binary_sensor", "fan", "light", "valve", "water_heater", "lock"], weather: ["weather"], solar: ["sensor"], people: ["person", "device_tracker"] };
 const BASE = "/ar_4c_dash_static";
 const PREF_KEY = "ar_4c_dash";
 const LINE = {
@@ -715,7 +715,7 @@ class Ar4cDash extends HTMLElement {
     this.rooms = cr.map((r, i) => {
       if (r.whole) {
         // Whole House: everything from every room (no Watch sources of its own)
-        const o = { name: r.name || "Whole House", whole: true, sources: [] };
+        const o = { name: r.name || "Whole House", whole: true, sources: [], listen: r.listen !== false };
         // every room's Watch sources, each still run in its own room
         cr.forEach((x, xi) => { if (!x.whole && Array.isArray(x.sources)) x.sources.forEach((sc) => o.sources.push(Object.assign({}, sc, { id: xi + "/" + sc.id, _id: sc.id, _r: xi, _rn: x.name || "Room " + (xi + 1) }))); });
         ROOM_KEYS.forEach((k) => (o[k] = []));
@@ -726,6 +726,8 @@ class Ar4cDash extends HTMLElement {
         return o;
       }
       const o = { name: r.name || "Room " + (i + 1), image: r.image, sources: Array.isArray(r.sources) ? r.sources : [] };
+      // Listen in this room: as set in Setup; until then, rooms with speakers
+      o.listen = typeof r.listen === "boolean" ? r.listen : list(r.music).length > 0;
       ROOM_KEYS.forEach((k) => (o[k] = list(r[k])));
       hs.forEach((e) => { if (o.scenes.indexOf(e) < 0) o.scenes.push(e); });
       return o;
@@ -771,7 +773,7 @@ class Ar4cDash extends HTMLElement {
   cats() {
     const r = this.room(), li = this.li || {};
     return ORDER.filter((k) => {
-      if (k === "music") return r.music.length || li.ma || li.spotify;
+      if (k === "music") return r.listen && (r.music.length || li.ma || li.spotify);
       if (k === "watch") return r.watch.length || r.sources.length;
       if (k === "utilities") return this.house.utilities.length || !!this.solarCfg();
       return (k === "cameras" || k === "security" || k === "utilities" ? this.house[k] : r[k]).length;
@@ -1680,7 +1682,8 @@ class Ar4cDash extends HTMLElement {
     let h = '<div class="ppl">';
     this.conf.people.list.forEach((e) => {
       const s = this.st(e); if (!s) return;
-      const home = s.state === "home", nm = this.name(e).split(" ")[0];
+      // people show their first name; a phone (device tracker) its own name
+      const home = s.state === "home", nm = domain(e) === "person" ? this.name(e).split(" ")[0] : this.name(e);
       const zone = home ? "Home" : s.state === "not_home" ? "Away" : s.state === "unknown" || s.state === "unavailable" ? "\u2013" : (this.st("zone." + s.state) ? this.name("zone." + s.state) : s.state.replace(/_/g, " "));
       const pic = s.attributes.entity_picture;
       const av = pic ? '<img alt="" src="' + esc(this._hass.hassUrl ? this._hass.hassUrl(pic) : pic) + '">' : "<span>" + esc(nm.slice(0, 1).toUpperCase()) + "</span>";
@@ -1790,7 +1793,9 @@ class Ar4cDash extends HTMLElement {
       if (this.sOpen === i) {
         h += '<div class="sbody"><input class="inp" data-in="name" data-v="' + i + '" value="' + esc(rm.name || "") + '" placeholder="Room name" maxlength="40">';
         if (rm.whole) h += '<div class="hint" style="text-align:left;padding:0">Everything from every room: the lights, speakers and TVs. Move it to where you want it in the list.</div><div class="lbl">Whole-house scenes</div><div class="hint" style="text-align:left;padding:0">Shown on the home screen, and on Scenes and Lights in every room.</div>' + this.chipsFor(rm.scenes, i + ":scenes");
-        else {
+        const lOn = typeof rm.listen === "boolean" ? rm.listen : rm.whole || list(rm.music).length > 0;
+        h += '<div class="lbl">Listen in this room</div><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (lOn ? " on" : "") + '" data-act="s-listen" data-v="' + i + '" data-on="1">On</div><div class="chip' + (lOn ? "" : " on") + '" data-act="s-listen" data-v="' + i + '" data-on="0">Off</div></div>';
+        if (!rm.whole) {
           SETUP_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(rm[c[0]], i + ":" + c[0])));
           h += this.sourcesHtml(rm, i);
         }
@@ -1799,6 +1804,13 @@ class Ar4cDash extends HTMLElement {
       h += "</div>";
     });
     h += '<div class="wrapc" style="justify-content:flex-start;margin-top:10px"><div class="chip" style="border-style:dashed" data-act="s-add">' + line("plus") + "Add room</div>" + (d.rooms.some((x) => x.whole) ? "" : '<div class="chip" style="border-style:dashed" data-act="s-whole">' + line("plus") + "Add Whole House</div>") + "</div>";
+    {
+      // where Listen's music comes from: Home Assistant's own integrations hold the logins
+      const li = this.li || {}, n = (li.maPlayers || []).length;
+      h += '<div class="lbl" style="padding:18px 4px 6px">Music</div><div class="card" style="background:transparent;padding:12px;gap:10px">';
+      h += '<div class="srow"><div><b style="font-weight:500">Music Assistant</b><div class="hint" style="text-align:left;padding:0">' + (li.ma ? "Linked through Home Assistant \u00b7 " + n + (n === 1 ? " speaker" : " speakers") : "Not linked yet: add the Music Assistant integration in Home Assistant with your Music Assistant server address and login.") + '</div></div><div class="chip" data-act="s-goto" data-v="' + (li.ma ? "/config/integrations/integration/music_assistant" : "/config/integrations/dashboard/add?domain=music_assistant") + '">' + (li.ma ? "Open" : "Link") + "</div></div>";
+      h += '<div class="srow"><div><b style="font-weight:500">Spotify</b><div class="hint" style="text-align:left;padding:0">' + (li.spotify ? "Linked through Home Assistant (Spotify or SpotifyPlus)" : "Not linked yet: add Spotify (or SpotifyPlus from HACS) in Home Assistant and sign in.") + '</div></div><div class="chip" data-act="s-goto" data-v="' + (li.spotify ? "/config/integrations/integration/spotify" : "/config/integrations/dashboard/add?domain=spotify") + '">' + (li.spotify ? "Open" : "Link") + "</div></div></div>";
+    }
     if (this.li && this.li.ma && this.li.spotify) h += '<div class="lbl" style="padding:18px 4px 6px">Listen opens on</div><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (d.listenStart !== "spotify" ? " on" : "") + '" data-act="s-lstart" data-v="ma">Music Assistant</div><div class="chip' + (d.listenStart === "spotify" ? " on" : "") + '" data-act="s-lstart" data-v="spotify">Spotify</div></div>';
     h += '<div class="lbl" style="padding:18px 4px 2px">Whole home</div><div class="card" style="background:transparent;padding:12px">';
     HOUSE_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(d[c[0]], "h:" + c[0])));
@@ -1806,7 +1818,7 @@ class Ar4cDash extends HTMLElement {
     // who's home on the home screen
     const pe = d.people || {};
     h += '<div class="lbl">Who\'s home (home screen)</div><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (pe.on ? "" : " on") + '" data-act="s-ppl" data-v="0">Off</div><div class="chip' + (pe.on ? " on" : "") + '" data-act="s-ppl" data-v="1">Show</div></div>';
-    if (pe.on) h += '<div class="hint" style="text-align:left;padding:0">Only the people added here show on the home screen.</div>' + this.chipsFor(pe.list || [], "h:people");
+    if (pe.on) h += '<div class="hint" style="text-align:left;padding:0">Only the people and phones added here show on the home screen (people, or device trackers such as the Home Assistant app on a phone).</div>' + this.chipsFor(pe.list || [], "h:people");
     // solar (Utilities)
     const so = d.solar || {}, sm = so.mode || "off";
     h += '<div class="lbl">Solar (in Utilities)</div><div class="wrapc" style="justify-content:flex-start">' + [["off", "Off"], ["simple", "Dash view"], ["card", "Energy Flow Card"]].map((x) => '<div class="chip' + (sm === x[0] ? " on" : "") + '" data-act="s-solar" data-v="' + x[0] + '">' + x[1] + "</div>").join("") + "</div>";
@@ -2201,6 +2213,14 @@ class Ar4cDash extends HTMLElement {
       case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
       case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;
+      case "s-listen": { const rm = this.draft.rooms[Number(v)]; rm.listen = t.getAttribute("data-on") === "1"; this.dirty = true; break; }
+      case "s-goto": {
+        // open a Home Assistant page in the app (Settings > Devices & services)
+        if (this.dirty) this._toast("Setup not saved");
+        history.pushState(null, "", v);
+        window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+        return;
+      }
       case "s-ppl": { const pe = (this.draft.people = this.draft.people || { list: [] }); pe.on = v === "1"; if (!Array.isArray(pe.list)) pe.list = []; this.dirty = true; break; }
       case "s-solar": { const so = (this.draft.solar = this.draft.solar || {}); so.mode = v; so.e = so.e || {}; this.dirty = true; break; }
       case "so-clr": delete this.draft.solar.e[v]; this.dirty = true; break;

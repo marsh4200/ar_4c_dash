@@ -71,11 +71,15 @@ def clean(cfg: Any) -> dict[str, Any]:
             # Whole House: everything from every room; it only has a name and a place in the order
             if not any(x.get("whole") for x in rooms):
                 whole = {"whole": True, "name": _text(r.get("name"), 40) or "Whole House"}
+                if isinstance(r.get("listen"), bool):
+                    whole["listen"] = r["listen"]
                 if _ids(r.get("scenes")):
                     whole["scenes"] = _ids(r.get("scenes"))  # whole-house scenes: shown in every room
                 rooms.append(whole)
             continue
         room: dict[str, Any] = {"name": _text(r.get("name"), 40) or f"Room {len(rooms) + 1}"}
+        if isinstance(r.get("listen"), bool):
+            room["listen"] = r["listen"]  # Listen shows in this room
         for k in ROOM_LISTS:
             room[k] = _ids(r.get(k))
         srcs = [_source(x) for x in (r.get("sources") or [])[:16] if isinstance(x, dict)]
