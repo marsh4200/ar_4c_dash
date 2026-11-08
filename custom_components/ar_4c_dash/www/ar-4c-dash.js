@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.3.0";
+const VERSION = "1.3.1";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
@@ -532,15 +532,35 @@ function logoCutout(src, opt) {
 
 class Ar4cDash extends HTMLElement {
   static getStubConfig() { return {}; }
-  setConfig(c) { this._cfg = Object.assign({}, c || {}); if (this._ready) this._load(); }
+  setConfig(c) { this._cfg = Object.assign({}, c || {}); if (this._ready) this._load(); if (this.isConnected) this._fullScreen(); }
+  // full_screen: on its own dashboard the dash fills the phone and Home Assistant's
+  // title bar is hidden (shown again while the dashboard is being edited)
+  _fullScreen(off) {
+    const fs = !off && this._cfg && this._cfg.full_screen;
+    if (fs) { this.style.setProperty("--dash-h", "100dvh"); this.style.setProperty("--dash-r", "0"); }
+    let n = this, root = null;
+    for (let i = 0; i < 40 && n; i++) { if (n.tagName === "HUI-ROOT") { root = n; break; } n = n.parentNode || n.host; }
+    if (!root || !root.shadowRoot) return;
+    const edit = !!(root.lovelace && root.lovelace.editMode);
+    let st = root.shadowRoot.getElementById("ar4c-fs");
+    if (fs && !edit) {
+      if (!st) {
+        st = document.createElement("style"); st.id = "ar4c-fs";
+        st.textContent = ":host{--header-height:0px !important}.header,.toolbar{display:none !important}#view,hui-view-container{padding-top:0 !important;min-height:100dvh !important}";
+        root.shadowRoot.appendChild(st);
+      }
+    } else if (st) st.remove();
+  }
   getCardSize() { return 12; }
   getGridOptions() { return { columns: "full", rows: "auto" }; }
   connectedCallback() {
+    this._fullScreen();
     this._clockT = setInterval(() => this._tick(), 15000);
     if (this._ready && !this._unsub && this.conf) { this._subscribe(); this._watchSub(); }
     if (this._ready && this.page === "cameras") this._camLoop();
   }
   disconnectedCallback() {
+    this._fullScreen(true);
     clearInterval(this._clockT);
     clearInterval(this._camT);
     this._stopLive();
@@ -559,6 +579,7 @@ class Ar4cDash extends HTMLElement {
       .catch(() => {});
   }
   set hass(h) {
+    if (this._cfg && this._cfg.full_screen) this._fullScreen();
     const first = !this._hass;
     this._hass = h;
     if (first) this._start();
@@ -710,7 +731,7 @@ class Ar4cDash extends HTMLElement {
       return o;
     });
     this.empty = !this.rooms.length;
-    if (this.empty) this.rooms = [{ name: "Home", image: "", lights: [], climate: [], music: [], watch: [], shades: [], scenes: [] }];
+    if (this.empty) this.rooms = [{ name: "Home", image: "", lights: [], climate: [], music: [], watch: [], shades: [], scenes: [], sources: [] }];
     this.house = { cameras: list(c.cameras).concat((Array.isArray(c.rtsp) ? c.rtsp : []).map((x, i) => "rtsp:" + i)), security: list(c.security), utilities: list(c.utilities) };
     this.ri = clamp(typeof this.P.room === "number" ? this.P.room : 0, 0, this.rooms.length - 1);
   }
@@ -1785,7 +1806,7 @@ class Ar4cDash extends HTMLElement {
     // who's home on the home screen
     const pe = d.people || {};
     h += '<div class="lbl">Who\'s home (home screen)</div><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (pe.on ? "" : " on") + '" data-act="s-ppl" data-v="0">Off</div><div class="chip' + (pe.on ? " on" : "") + '" data-act="s-ppl" data-v="1">Show</div></div>';
-    if (pe.on) h += this.chipsFor(pe.list || [], "h:people");
+    if (pe.on) h += '<div class="hint" style="text-align:left;padding:0">Only the people added here show on the home screen.</div>' + this.chipsFor(pe.list || [], "h:people");
     // solar (Utilities)
     const so = d.solar || {}, sm = so.mode || "off";
     h += '<div class="lbl">Solar (in Utilities)</div><div class="wrapc" style="justify-content:flex-start">' + [["off", "Off"], ["simple", "Dash view"], ["card", "Energy Flow Card"]].map((x) => '<div class="chip' + (sm === x[0] ? " on" : "") + '" data-act="s-solar" data-v="' + x[0] + '">' + x[1] + "</div>").join("") + "</div>";
@@ -2180,7 +2201,7 @@ class Ar4cDash extends HTMLElement {
       case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
       case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;
-      case "s-ppl": { const pe = (this.draft.people = this.draft.people || { list: [] }); pe.on = v === "1"; if (!Array.isArray(pe.list)) pe.list = []; if (pe.on && !pe.list.length) pe.list = Object.keys(this._hass.states).filter((x) => x.indexOf("person.") === 0); this.dirty = true; break; }
+      case "s-ppl": { const pe = (this.draft.people = this.draft.people || { list: [] }); pe.on = v === "1"; if (!Array.isArray(pe.list)) pe.list = []; this.dirty = true; break; }
       case "s-solar": { const so = (this.draft.solar = this.draft.solar || {}); so.mode = v; so.e = so.e || {}; this.dirty = true; break; }
       case "so-clr": delete this.draft.solar.e[v]; this.dirty = true; break;
       case "so-inv": this.draft.solar[v] = !this.draft.solar[v]; if (!this.draft.solar[v]) delete this.draft.solar[v]; this.dirty = true; break;
@@ -2228,8 +2249,19 @@ class Ar4cDashPanel extends Ar4cDash {
   set panel(v) {}
 }
 
-if (!customElements.get("ar-4c-dash")) customElements.define("ar-4c-dash", Ar4cDash);
-if (!customElements.get("ar-4c-dash-panel")) customElements.define("ar-4c-dash-panel", Ar4cDashPanel);
+// Home Assistant swaps in its own element registry while it starts; this file is
+// loaded alongside Home Assistant's own scripts, so wait for Home Assistant before
+// defining the card, or the card would land in the registry that gets replaced
+const define = () => {
+  if (!customElements.get("ar-4c-dash")) customElements.define("ar-4c-dash", Ar4cDash);
+  if (!customElements.get("ar-4c-dash-panel")) customElements.define("ar-4c-dash-panel", Ar4cDashPanel);
+};
+if (!document.querySelector("home-assistant") || customElements.get("home-assistant")) define();
+else {
+  const t0 = Date.now();
+  const wait = () => (customElements.get("home-assistant") || Date.now() - t0 > 30000 ? define() : setTimeout(wait, 50));
+  wait();
+}
 window.customCards = window.customCards || [];
 if (!window.customCards.some((c) => c.type === "ar-4c-dash")) window.customCards.push({ type: "ar-4c-dash", name: "AR 4C Dash", description: "The AR Smart Home Residence look as a phone dashboard (the same as the 4C Dash sidebar item).", preview: false });
 })();

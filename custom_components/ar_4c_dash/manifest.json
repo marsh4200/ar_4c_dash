@@ -1,15 +1,25 @@
 {
   "domain": "ar_4c_dash",
   "name": "AR 4C Dash",
-  "codeowners": ["@marsh4200"],
+  "codeowners": [
+    "@marsh4200"
+  ],
   "config_flow": true,
-  "dependencies": ["frontend", "http", "websocket_api"],
-  "after_dependencies": ["stream", "camera"],
+  "dependencies": [
+    "frontend",
+    "http",
+    "lovelace",
+    "websocket_api"
+  ],
+  "after_dependencies": [
+    "stream",
+    "camera"
+  ],
   "documentation": "https://github.com/marsh4200/ar_4c_dash",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/marsh4200/ar_4c_dash/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "1.3.0"
+  "version": "1.3.1"
 }

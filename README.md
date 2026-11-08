@@ -2,7 +2,7 @@
 
 The AR Smart Home **Residence** look as a phone dashboard, for Home Assistant.
 
-It adds a **4C Dash** item to the Home Assistant sidebar for every user. Open it in the **Home Assistant app** on a phone: it uses HA's own login and remote access and talks to Home Assistant directly. A phone needs nothing else: no ADB, no APK, no MQTT broker. It works at home and away, wherever the HA app works.
+It adds a **4C Dash** dashboard (Settings → Dashboards) for every user, in the sidebar. Open it in the **Home Assistant app** on a phone: it uses HA's own login and remote access and talks to Home Assistant directly. A phone needs nothing else: no ADB, no APK, no MQTT broker. It works at home and away, wherever the HA app works.
 
 A separate integration: it does not need AR NSPanel Pro.
 
@@ -10,7 +10,7 @@ A separate integration: it does not need AR NSPanel Pro.
 
 1. HACS → Integrations → ⋮ → Custom repositories → `https://github.com/marsh4200/ar_4c_dash` (category Integration) → install **AR 4C Dash**, then restart Home Assistant.
 2. Settings → Devices & services → Add integration → **AR 4C Dash**.
-3. **4C Dash** is now in the sidebar.
+3. **4C Dash** is now in Settings → Dashboards and in the sidebar. Like any dashboard: ⋮ → **Edit** to rename it for the customer (e.g. "Smith Residence") or change its icon, ⋮ → **Set as default** to open it first. Renames and deletes are kept: the integration makes the dashboard only once. It fills the phone (Home Assistant's title bar is hidden on it).
 
 ## Set it up (admins)
 
@@ -46,6 +46,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
 
 ## Changes
+
+- **1.3.1**: 4C Dash is a real dashboard now (Settings → Dashboards): rename it per customer and set it as the default. Fixes: the dash sometimes didn't load when opened straight from a link, and didn't open on a fresh install before any rooms were set up. Who's home shows only the people you add (it no longer fills in everyone).
 
 - **1.3.0**: Solar in Utilities: the dash's own solar view or your Energy Flow Card. Who's home under the clock (optional). Whole-house scenes on the home screen and in every room. Upload your own icons and background photos (no AR NSPanel Pro or AR Lighting Scenes needed). Spotify also works with SpotifyPlus.
 
