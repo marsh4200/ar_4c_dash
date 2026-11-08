@@ -20,7 +20,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from . import websocket_api
-from .const import DOMAIN, LOGO_DIR, LOGO_URL, PANEL_ELEMENT, PANEL_JS, PANEL_URL, STATIC_URL
+from .const import DOMAIN, PANEL_ELEMENT, PANEL_JS, PANEL_URL, STATIC_URL, UPLOADS
 
 _LOGGER = logging.getLogger(__name__)
 _WWW = Path(__file__).parent / "www"
@@ -42,13 +42,14 @@ def _version() -> str:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await websocket_api.async_store(hass)
     if not hass.data.get(f"{DOMAIN}_static"):
-        # uploaded Watch logos live in the config folder, so updates keep them
-        logos = Path(hass.config.path(LOGO_DIR))
-        await hass.async_add_executor_job(lambda: logos.mkdir(parents=True, exist_ok=True))
-        await hass.http.async_register_static_paths([
-            StaticPathConfig(STATIC_URL, str(_WWW), cache_headers=False),
-            StaticPathConfig(LOGO_URL, str(logos), cache_headers=True),
-        ])
+        # pictures uploaded on the dash (logos, icons, backgrounds) live in the
+        # config folder, so updates keep them
+        folders = [(url, Path(hass.config.path(d))) for url, d in UPLOADS.values()]
+        await hass.async_add_executor_job(lambda: [f.mkdir(parents=True, exist_ok=True) for _, f in folders])
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(STATIC_URL, str(_WWW), cache_headers=False)]
+            + [StaticPathConfig(url, str(f), cache_headers=True) for url, f in folders]
+        )
         hass.data[f"{DOMAIN}_static"] = True
     version = await hass.async_add_executor_job(_version)
     async_register_built_in_panel(

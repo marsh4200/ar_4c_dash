@@ -2,9 +2,9 @@
 
 Music Assistant: Home Assistant's Music Assistant integration (library, favourites,
 search with its own services; play, group and volume on its media players).
-Spotify: Home Assistant's Spotify integration holds the account; a phone asks for
-a short-lived access token and talks to Spotify's Web API itself, the same way the
-AR NSPanel Pro panels do.
+Spotify: Home Assistant's Spotify integration, or SpotifyPlus (HACS), holds the
+account; a phone asks for a short-lived access token and talks to Spotify's Web API
+itself. Nothing here needs AR NSPanel Pro.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from homeassistant.helpers import entity_registry as er
 
 _LOGGER = logging.getLogger(__name__)
 MA = "music_assistant"
+SPOTIFY = ("spotify", "spotifyplus")  # Home Assistant's own, or SpotifyPlus from HACS
 
 
 def _loaded(hass: HomeAssistant, domain: str) -> list[Any]:
@@ -31,7 +32,7 @@ def info(hass: HomeAssistant) -> dict[str, Any]:
     if ma:
         reg = er.async_get(hass)
         players = sorted(e.entity_id for e in reg.entities.values() if e.platform == MA and e.domain == "media_player" and not e.disabled_by)
-    return {"ma": bool(ma), "maPlayers": players, "spotify": bool(_loaded(hass, "spotify"))}
+    return {"ma": bool(ma), "maPlayers": players, "spotify": any(_loaded(hass, d) for d in SPOTIFY)}
 
 
 async def ma_call(hass: HomeAssistant, op: str, data: dict[str, Any]) -> Any:
@@ -54,9 +55,9 @@ async def ma_call(hass: HomeAssistant, op: str, data: dict[str, Any]) -> Any:
 
 
 async def spotify_token(hass: HomeAssistant) -> dict[str, Any]:
-    entries = _loaded(hass, "spotify")
+    entries = [e for d in SPOTIFY for e in _loaded(hass, d)]
     if not entries:
-        return {"error": "Add the Spotify integration in Home Assistant (Settings > Devices & services) first."}
+        return {"error": "Add the Spotify or SpotifyPlus integration in Home Assistant (Settings > Devices & services) first."}
     entry = entries[0]
     try:
         session = getattr(getattr(entry, "runtime_data", None), "session", None)

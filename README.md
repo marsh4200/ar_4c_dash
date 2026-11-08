@@ -17,9 +17,11 @@ A separate integration: it does not need AR NSPanel Pro.
 Open 4C Dash → tap the empty top-right corner **10 times quickly** → the gear shows for 20 seconds → gear → **Setup**. (The gear stays hidden so guests and clients don't find it.)
 
 - **Add room**, name it, and add what is in it: Lights (lights and switches), Comfort (climate), Listen and Watch (media players), Shades (covers), Scenes (scenes and scripts). Tap a device to remove it; Move up / Move down sets the room order.
-- **Whole House room**: add it with the Whole House chip. It shows every room's lights, speakers and TVs together. Move it up or down like any other room, so it can sit at the top.
-- **Listen**: choose whether Listen opens on Music Assistant or Spotify. Music Assistant speakers are found by themselves; Spotify uses Home Assistant's Spotify integration (no extra login).
+- **Whole House room**: add it with the Whole House chip. It shows every room's lights (grouped by room), speakers and TVs together. Move it up or down like any other room, so it can sit at the top. Its **Whole-house scenes** show on the home screen and on Scenes and Lights in every room; a room's own scenes only show in that room.
+- **Listen**: choose whether Listen opens on Music Assistant or Spotify. Music Assistant goes through Home Assistant's Music Assistant integration (which holds the Music Assistant login); its speakers are found by themselves. Spotify uses Home Assistant's Spotify integration or SpotifyPlus (HACS), no extra login. Nothing needs AR NSPanel Pro.
 - **Watch sources**: "What would you like to watch?" Each source (Netflix, DStv…) has a name, a logo (pick one, or **Upload** your own: a plain background is taken off so only the logo shows), Name under logo or Logo only, and steps run in order: Turn on, Switch input, Open app, Wait. Turning on is skipped when the device is already on. After the steps, the phone shows that TV's remote.
+- **Who's home**: Off / Show, then the people to show under the clock (photo in colour with a green dot when home; greyed with Away or the zone name when not).
+- **Solar (in Utilities)**: Off, Dash view (the dash's own solar flow and today's totals) or Energy Flow Card (your HACS Energy Flow Card, sized for the phone). Pick the sensors once for either; leave out what you don't have.
 - **Whole home**: Cameras, Alarm, Utilities (pumps, geysers, sensors…) and the Weather shown on the home screen.
 - **RTSP cameras**: cameras that aren't in Home Assistant, by their RTSP address. Home Assistant turns them into live video for the phones; only admins ever see the address (it has the camera's password in it).
 - **Copy from an AR NSPanel Pro panel** (only shown when AR NSPanel Pro is installed): takes the rooms, devices, lamp types and background from a panel's Device Setup in one go. Check it, then Save.
@@ -35,7 +37,7 @@ Open the Home Assistant app → sidebar → **4C Dash** (Settings → Profile ca
 - **Listen**: works like the panels. Music Assistant: now playing, speakers (tap one to join or leave the group), Favourites, Playlists, Artists, Radio and Search; open a playlist to play it or one song. Spotify: your playlists, Liked songs, Search, and which speaker plays.
 - **Watch**: pick a source; the phone shows each step as it happens (turning on, switching input, opening the app), then the remote: arrows and OK, back, home, menu, play/skip, volume and mute, Change source, TV off.
 - **Shades**: up/stop/down and position. **Scenes**, **Security** (arm/disarm; a keypad when the alarm needs a code), **Cameras** (pictures; tap one for live video, from Home Assistant cameras and RTSP cameras), **Utilities**.
-- Gear (10 taps top right) → **Icons**: change the home buttons' icons for the whole home: every phone shows the new icon straight away (by category: Lighting, Climate, Security, Media, Doors & shades, Utilities, Scenes & rooms; icons uploaded in AR Lighting Scenes show too). Gear → **Look**: Rings or Icons only, and the background.
+- Gear (10 taps top right) → **Icons**: change the home buttons' icons for the whole home: every phone shows the new icon straight away (by category, or **Upload** your own: a plain background is taken off; icons uploaded in AR Lighting Scenes show too). Gear → **Look**: Rings or Icons only, and the background (or **Upload photo**). Uploaded logos, icons and backgrounds are kept in Home Assistant's config folder (`ar_4c_dash/`), so updates keep them.
 
 Icons are the same on every phone. Look, background and the last room are saved with each person's Home Assistant login, so they follow them to every phone.
 
@@ -44,6 +46,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
 
 ## Changes
+
+- **1.3.0**: Solar in Utilities: the dash's own solar view or your Energy Flow Card. Who's home under the clock (optional). Whole-house scenes on the home screen and in every room. Upload your own icons and background photos (no AR NSPanel Pro or AR Lighting Scenes needed). Spotify also works with SpotifyPlus.
 
 - **1.2.1**: Whole House Lights are grouped by room, each room with an on/off switch. Rename lights on the dash. Watch: logos without a tile, the name under the logo or logo only, upload your own logo with the background taken off; Whole House shows every room's sources. The settings gear is hidden: tap the top-right corner 10 times to show it for 20 seconds.
 

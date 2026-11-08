@@ -6,7 +6,7 @@ ar_4c_dash/subscribe  any logged-in user: the setup now and after every change, 
 ar_4c_dash/save       admins: replace the setup (from the dash's Setup page)
 ar_4c_dash/set_icon   any logged-in user: one home button's icon, for every phone
 ar_4c_dash/set_names  any logged-in user: the dash's own names for lights, for every phone
-ar_4c_dash/logo       admins: upload, list and delete Watch logos (PNG, background already removed)
+ar_4c_dash/logo       upload, list and delete pictures: Watch logos (admins), icons and backgrounds
 ar_4c_dash/stream     any logged-in user: live video of an RTSP camera (HLS address)
 ar_4c_dash/watch      any logged-in user: start a Watch source, remote keys, volume, TV off
 ar_4c_dash/watch_subscribe  which source is on in each room and the steps of the last start
@@ -38,12 +38,14 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dis
 from homeassistant.helpers.storage import Store
 
 from . import listen, watch
-from .const import DOMAIN, LOGO_DIR, LOGO_URL, MAX_ROOMS, STORE_KEY, STORE_VERSION
+from .const import DOMAIN, MAX_ROOMS, STORE_KEY, STORE_VERSION, UPLOADS
 
 _DATA = f"{DOMAIN}_store"
 ROOM_LISTS = ("lights", "climate", "music", "watch", "shades", "scenes")
 HOUSE_LISTS = ("cameras", "security", "utilities")
 ICON_KEYS = ("lights", "climate", "music", "watch", "shades", "cameras", "utilities", "security", "scenes")
+SOLAR_KEYS = ("solar_power", "grid_power", "battery_power", "battery_soc", "home_power", "solar_daily", "grid_import_daily", "grid_export_daily", "home_daily")
+INVERTERS = ("default", "sunsynk", "deye", "inverex", "solis_hybrid", "goodwe_hybrid", "growatt", "victron", "solaredge", "fronius_gen24", "huawei_luna")
 SIGNAL = f"{DOMAIN}_changed"
 SNAP_URL = "/api/ar_4c_dash/snap/{index}"
 
@@ -68,7 +70,10 @@ def clean(cfg: Any) -> dict[str, Any]:
         if r.get("whole"):
             # Whole House: everything from every room; it only has a name and a place in the order
             if not any(x.get("whole") for x in rooms):
-                rooms.append({"whole": True, "name": _text(r.get("name"), 40) or "Whole House"})
+                whole = {"whole": True, "name": _text(r.get("name"), 40) or "Whole House"}
+                if _ids(r.get("scenes")):
+                    whole["scenes"] = _ids(r.get("scenes"))  # whole-house scenes: shown in every room
+                rooms.append(whole)
             continue
         room: dict[str, Any] = {"name": _text(r.get("name"), 40) or f"Room {len(rooms) + 1}"}
         for k in ROOM_LISTS:
@@ -95,6 +100,18 @@ def clean(cfg: Any) -> dict[str, Any]:
     icons = cfg.get("icons")
     if isinstance(icons, dict):
         out["icons"] = {k: v for k, v in icons.items() if k in ICON_KEYS and _icon(v)}
+    solar = cfg.get("solar")
+    if isinstance(solar, dict) and solar.get("mode") in ("simple", "card"):
+        so: dict[str, Any] = {"mode": solar["mode"], "e": {k: v for k, v in (solar.get("e") or {}).items() if k in SOLAR_KEYS and _ent(v)}}
+        if solar.get("preset") in INVERTERS:
+            so["preset"] = solar["preset"]
+        for k in ("invGrid", "invBat"):
+            if solar.get(k):
+                so[k] = True
+        out["solar"] = so
+    people = cfg.get("people")
+    if isinstance(people, dict):
+        out["people"] = {"on": bool(people.get("on")), "list": _ids(people.get("list"))}
     names = cfg.get("names")
     if isinstance(names, dict):
         out["names"] = {e: _text(n, 40) for e, n in list(names.items())[:500] if _ent(e) and _text(n, 40)}
@@ -155,7 +172,7 @@ def _source(s: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _icon(v: Any) -> bool:
-    return isinstance(v, str) and len(v) < 300 and (v == "line" or v.startswith(("lib:", "media:")))
+    return isinstance(v, str) and len(v) < 300 and (v == "line" or v.startswith(("lib:", "media:", UPLOADS["icon"][0] + "/")))
 
 
 def for_user(cfg: dict[str, Any], admin: bool) -> dict[str, Any]:
@@ -317,38 +334,52 @@ async def ws_set_names(hass: HomeAssistant, connection: websocket_api.ActiveConn
     connection.send_result(msg["id"], {"names": cfg.get("names", {})})
 
 
-@websocket_api.require_admin
 @websocket_api.websocket_command({
     vol.Required("type"): "ar_4c_dash/logo",
     vol.Required("op"): vol.In(("list", "upload", "delete")),
+    vol.Optional("kind", default="logo"): vol.In(tuple(UPLOADS)),
     vol.Optional("data"): str,
     vol.Optional("url"): str,
 })
 @websocket_api.async_response
 async def ws_logo(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
-    """Watch logos uploaded on the dash (the phone cuts the background out first)."""
-    folder = Path(hass.config.path(LOGO_DIR))
+    """Pictures uploaded on the dash: Watch logos (admins), home-button icons and
+    backgrounds (anyone, like changing an icon). The phone takes the background
+    off logos and icons and shrinks photos before sending them."""
+    kind = msg["kind"]
+    if kind == "logo" and not connection.user.is_admin:
+        connection.send_error(msg["id"], "unauthorized", "Only admins can change Watch logos")
+        return
+    url, sub = UPLOADS[kind]
+    folder = Path(hass.config.path(sub))
+    pat = re.compile(r"[0-9a-f]{12}\.(png|jpg)")
 
     def run() -> Any:
         folder.mkdir(parents=True, exist_ok=True)
         if msg["op"] == "upload":
             data = base64.b64decode(msg.get("data", "").split(",")[-1], validate=True)
-            if not data.startswith(b"\x89PNG\r\n\x1a\n") or len(data) > 3_000_000:
-                raise ValueError("That isn't a logo picture")
-            name = hashlib.sha1(data).hexdigest()[:12] + ".png"
+            if data.startswith(b"\x89PNG\r\n\x1a\n"):
+                ext = "png"
+            elif data.startswith(b"\xff\xd8\xff"):
+                ext = "jpg"
+            else:
+                raise ValueError("That isn't a picture")
+            if len(data) > 6_000_000:
+                raise ValueError("That picture is too big")
+            name = hashlib.sha1(data).hexdigest()[:12] + "." + ext
             (folder / name).write_bytes(data)
-            return {"url": f"{LOGO_URL}/{name}"}
+            return {"url": f"{url}/{name}"}
         if msg["op"] == "delete":
             name = Path(msg.get("url", "")).name
-            if re.fullmatch(r"[0-9a-f]{12}\.png", name):
+            if pat.fullmatch(name):
                 (folder / name).unlink(missing_ok=True)
-        files = sorted(folder.glob("*.png"), key=lambda f: f.stat().st_mtime, reverse=True)
-        return {"logos": [f"{LOGO_URL}/{f.name}" for f in files if re.fullmatch(r"[0-9a-f]{12}\.png", f.name)]}
+        files = sorted((f for f in folder.iterdir() if pat.fullmatch(f.name)), key=lambda f: f.stat().st_mtime, reverse=True)
+        return {"logos": [f"{url}/{f.name}" for f in files]}
 
     try:
         connection.send_result(msg["id"], await hass.async_add_executor_job(run))
     except (ValueError, binascii.Error, OSError) as err:
-        connection.send_error(msg["id"], "logo", str(err) or "Couldn't save the logo")
+        connection.send_error(msg["id"], "upload", str(err) or "Couldn't save the picture")
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/stream", vol.Required("index"): int})

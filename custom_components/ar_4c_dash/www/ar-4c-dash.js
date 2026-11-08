@@ -10,11 +10,13 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.2.1";
+const VERSION = "1.3.0";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
-const PICK_DOM = { lights: ["light", "switch"], climate: ["climate"], music: ["media_player"], watch: ["media_player", "remote"], shades: ["cover"], scenes: ["scene", "script"], cameras: ["camera"], security: ["alarm_control_panel"], utilities: ["switch", "input_boolean", "sensor", "binary_sensor", "fan", "light", "valve", "water_heater", "lock"], weather: ["weather"] };
+const SOLAR_KEYS = [["solar_power", "Solar power"], ["grid_power", "Grid power (+ in, \u2212 out)"], ["battery_power", "Battery power (+ charging)"], ["battery_soc", "Battery %"], ["home_power", "Home use"], ["solar_daily", "Solar today"], ["grid_import_daily", "Grid in today"], ["grid_export_daily", "Grid out today"], ["home_daily", "Home today"]];
+const INVERTERS = [["default", "Other"], ["sunsynk", "Sunsynk"], ["deye", "Deye"], ["inverex", "Inverex"], ["solis_hybrid", "Solis"], ["goodwe_hybrid", "GoodWe"], ["growatt", "Growatt"], ["victron", "Victron"], ["solaredge", "SolarEdge"], ["fronius_gen24", "Fronius"], ["huawei_luna", "Huawei"]];
+const PICK_DOM = { lights: ["light", "switch"], climate: ["climate"], music: ["media_player"], watch: ["media_player", "remote"], shades: ["cover"], scenes: ["scene", "script"], cameras: ["camera"], security: ["alarm_control_panel"], utilities: ["switch", "input_boolean", "sensor", "binary_sensor", "fan", "light", "valve", "water_heater", "lock"], weather: ["weather"], solar: ["sensor"], people: ["person"] };
 const BASE = "/ar_4c_dash_static";
 const PREF_KEY = "ar_4c_dash";
 const LINE = {
@@ -366,11 +368,41 @@ svg{flex:none}
 .rtr .chip{align-self:flex-end}
 .chip svg{width:14px;height:14px}
 .lup{border-radius:18px;height:200px;display:grid;place-items:center;padding:18px;background:linear-gradient(160deg,rgba(40,36,44,.9),rgba(12,11,14,.95)),repeating-conic-gradient(rgba(255,255,255,.04) 0 25%,transparent 0 50%) 0 0/16px 16px}
-.lup img{max-width:100%;max-height:100%;object-fit:contain}
+.lup img{width:100%;height:100%;object-fit:contain;min-height:0}
 .tile{position:relative}.tile.up{border-style:dashed}.tile .tdel{position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;background:#3a3438;display:grid;place-items:center}.tile .tdel svg{width:11px;height:11px}
 .rng{width:100%;accent-color:var(--acc)}
+.bgt{position:relative}.bgt.up i{display:grid;place-items:center;border:1.5px dashed rgba(255,255,255,.3);background:rgba(255,255,255,.04)}.bgt.up i svg{width:22px;height:22px}.bgt .tdel{position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;background:#3a3438;display:grid;place-items:center}.bgt .tdel svg{width:11px;height:11px}
+.hsc{padding:0 16px 4px;margin-top:auto}.hsc+.bot{margin-top:0}
 .ib.hid{background:none;border-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-tap-highlight-color:transparent}
 .ib.gear{animation:gearIn .35s ease-out}@keyframes gearIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+.ppl{display:flex;gap:14px;padding:14px 20px 2px;overflow-x:auto;scrollbar-width:none;flex:none}
+.pp{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:48px;opacity:.5;filter:grayscale(1);transition:opacity .4s,filter .4s}
+.pp.home{opacity:1;filter:none}
+.pp .av{position:relative;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);background:rgba(16,14,18,.55);display:grid;place-items:center}
+.pp.home .av{border-color:rgba(127,214,160,.9);box-shadow:0 0 14px rgba(127,214,160,.25)}
+.pp .av img{width:100%;height:100%;border-radius:50%;object-fit:cover}.pp .av span{font-size:16px}
+.pp .av i{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#77736d;border:2px solid #15131a}
+.pp.home .av i{background:#7fd6a0}
+.pp b{font-size:12px;font-weight:500;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pp small{font-size:10.5px;color:var(--muted);margin-top:-3px;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.solar .sh{display:flex;align-items:baseline;justify-content:space-between;padding:2px 4px 0}.solar .sh b{font-weight:500;font-size:17px}.solar .sh small{color:var(--muted);font-size:12.5px}
+.sbox{position:relative;width:100%;aspect-ratio:6/5;margin-top:-4px}
+.sflow{position:absolute;inset:0;width:100%;height:100%}
+.sflow .fl{stroke:rgba(255,255,255,.12);stroke-width:2;fill:none}
+.sflow .fd{stroke-width:3;stroke-linecap:round;stroke-dasharray:0.1 16;animation:fdot linear infinite;filter:drop-shadow(0 0 4px currentColor)}
+.sflow .fd.rev{animation-direction:reverse}
+@keyframes fdot{to{stroke-dashoffset:-16.1}}
+.sflow .hub{fill:rgba(16,14,18,.9);stroke:rgba(var(--accrgb),.8);stroke-width:2}
+.sn{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.sn .si{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:rgba(16,14,18,.78);border:1.5px solid var(--c);box-shadow:0 0 18px -4px var(--c);margin-bottom:3px}
+.sn svg{width:26px;height:26px;fill:none;stroke:var(--c);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.sn svg .bf{fill:var(--c);stroke:none}
+.sn b{font-size:15px;font-weight:500}.sn small{font-size:11px;color:var(--muted);white-space:nowrap}
+.sn.pv{--c:#f2b84b}.sn.gr{--c:#5fd3a0}.sn.hm{--c:#c9b6ff}.sn.bt{--c:#6cc7f0}
+.stot{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stot div{border-radius:14px;background:rgba(255,255,255,.05);padding:8px 4px;text-align:center;border-top:2px solid var(--c)}
+.stot div.pv{--c:#f2b84b}.stot div.gr{--c:#5fd3a0}.stot div.hm{--c:#c9b6ff}
+.stot b{display:block;font-size:15px;font-weight:500}.stot b i{font-style:normal;font-size:10px;color:var(--muted);margin-left:2px}.stot small{font-size:11px;color:var(--muted)}
+.efc-host{margin:0 -6px}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:8px}.srow small{color:var(--muted);font-size:12.5px}
 .pick{position:absolute;inset:0;z-index:7;background:rgb(16,15,19);border-radius:26px 26px 0 0;display:flex;flex-direction:column}
 .msg{position:absolute;left:50%;bottom:76px;transform:translateX(-50%);background:rgba(20,20,24,.95);border:1px solid var(--line);padding:9px 16px;border-radius:18px;font-size:14px;z-index:9;white-space:nowrap;pointer-events:none}
 `;
@@ -544,6 +576,7 @@ class Ar4cDash extends HTMLElement {
     this.opt = {}; // optimistic values while Home Assistant catches up
     this.P = { room: null, look: null, icons: {}, bg: null };
     this.media = { icons: [], backgrounds: [] };
+    this.up = { icon: [], bg: [] };
     this._ready = true;
     this.shadowRoot.addEventListener("click", (e) => this._click(e));
     // typing: the page isn't redrawn under the keyboard; it catches up when typing stops
@@ -566,7 +599,10 @@ class Ar4cDash extends HTMLElement {
     });
     this.shadowRoot.addEventListener("input", (ev) => {
       const t = ev.target, k = t.getAttribute && t.getAttribute("data-in");
-      if (k === "logofile") { this.logoFile(t.files && t.files[0]); t.value = ""; return; }
+      if (k === "so-preset" && this.draft && this.draft.solar) { this.draft.solar.preset = t.value; this.dirty = true; this._render(true); return; }
+      if (k === "logofile") { this._upFor = { kind: "logo" }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
+      if (k === "iconfile") { this._upFor = { kind: "icon", k: t.getAttribute("data-k") }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
+      if (k === "bgfile") { this.bgFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "lutol" && this.logoUp) { this.logoUp.tol = Number(t.value); clearTimeout(this._luT); this._luT = setTimeout(() => this.logoCut(), 60); return; }
       if (k === "lname") { (this.renDraft = this.renDraft || {})[t.getAttribute("data-e")] = t.value; return; }
       if (k === "name" && this.draft) {
@@ -652,6 +688,9 @@ class Ar4cDash extends HTMLElement {
     const c = this.conf || { rooms: [] };
     this.rc = { lightTypes: c.lightTypes || {}, lightTone: c.lightTone, houseImage: c.houseImage };
     const cr = Array.isArray(c.rooms) ? c.rooms : [];
+    // whole-house scenes: on the Whole House room and in every room
+    const hs = list((cr.filter((x) => x.whole)[0] || {}).scenes);
+    this.houseScenes = hs;
     this.rooms = cr.map((r, i) => {
       if (r.whole) {
         // Whole House: everything from every room (no Watch sources of its own)
@@ -661,11 +700,13 @@ class Ar4cDash extends HTMLElement {
         ROOM_KEYS.forEach((k) => (o[k] = []));
         cr.forEach((x) => { if (!x.whole) ROOM_KEYS.forEach((k) => list(x[k]).forEach((e) => { if (o[k].indexOf(e) < 0) o[k].push(e); })); });
         // lights stay in their rooms on the Lights page
+        o.scenes = hs.slice();
         o.groups = cr.filter((x) => !x.whole && list(x.lights).length).map((x) => ({ name: x.name || "Room", lights: list(x.lights) }));
         return o;
       }
       const o = { name: r.name || "Room " + (i + 1), image: r.image, sources: Array.isArray(r.sources) ? r.sources : [] };
       ROOM_KEYS.forEach((k) => (o[k] = list(r[k])));
+      hs.forEach((e) => { if (o.scenes.indexOf(e) < 0) o.scenes.push(e); });
       return o;
     });
     this.empty = !this.rooms.length;
@@ -711,6 +752,7 @@ class Ar4cDash extends HTMLElement {
     return ORDER.filter((k) => {
       if (k === "music") return r.music.length || li.ma || li.spotify;
       if (k === "watch") return r.watch.length || r.sources.length;
+      if (k === "utilities") return this.house.utilities.length || !!this.solarCfg();
       return (k === "cameras" || k === "security" || k === "utilities" ? this.house[k] : r[k]).length;
     });
   }
@@ -728,6 +770,7 @@ class Ar4cDash extends HTMLElement {
     const v = this.conf && this.conf.icons && this.conf.icons[k];
     if (v === "line") return line(k);
     if (typeof v === "string" && v.indexOf("lib:") === 0 && libSrc(v.slice(4))) return '<img alt="" src="' + esc(libSrc(v.slice(4))) + '">';
+    if (typeof v === "string" && v.indexOf("/ar_4c_dash_icons/") === 0) return '<img alt="" src="' + esc(v) + '">';
     if (typeof v === "string" && v.indexOf("media:") === 0) {
       const m = this.media.icons.filter((x) => x.id === v.slice(6))[0];
       if (m) return '<img alt="" src="' + esc(m.url) + '">';
@@ -753,6 +796,8 @@ class Ar4cDash extends HTMLElement {
     const hs = this.house || {};
     ["cameras", "security", "utilities"].forEach((k) => (hs[k] || []).forEach((e) => w.push(e)));
     ((this.li && this.li.maPlayers) || []).forEach((e) => w.push(e));
+    const so = this.solarCfg(); if (so) Object.keys(so.e).forEach((k) => w.push(so.e[k]));
+    if (this.peopleOn()) this.conf.people.list.forEach((e) => w.push(e));
     if (this.conf && this.conf.weather) w.push(this.conf.weather);
     else { const wx = Object.keys(this._hass.states).filter((e) => e.indexOf("weather.") === 0)[0]; if (wx) w.push(wx); }
     return (this._watch = w);
@@ -791,7 +836,8 @@ class Ar4cDash extends HTMLElement {
     let h = this.page === "home" ? this.home() : this.inner();
     if (this.sheet) h += this.sheetHtml();
     if (this.viewCam) h += this.camView();
-    if (pg.__h === h) return; // nothing on screen changed
+    if (this.efcEl && this.efcEl.isConnected) this.efcEl.hass = this._hass;
+    if (pg.__h === h) { if (this.page === "utilities") this.efcMount(); return; } // nothing on screen changed
     pg.__h = h;
     pg.innerHTML = h;
     if (this._sheetIn) { const sh = pg.querySelector(".sheet"); if (sh) sh.classList.add("in"); this._sheetIn = false; }
@@ -799,6 +845,7 @@ class Ar4cDash extends HTMLElement {
     pg.querySelectorAll("canvas[data-lamp]").forEach((c) => this.lamp(c, c.getAttribute("data-lamp")));
     if (this.page === "climate") this.paintDial();
     if (this.viewCam) this._attachLive();
+    if (this.page === "utilities") this.efcMount();
   }
   roomName() { return esc(this.room().name); }
   home() {
@@ -820,8 +867,9 @@ class Ar4cDash extends HTMLElement {
     const hasLights = this.room().lights.length;
     return (
       '<div class="top"><div class="ib" data-act="menu" title="Home Assistant menu">' + MENU + '</div><div class="room" data-act="rooms">' + this.roomName() + line("down") + '</div><div class="sp"></div>' + (this.gearUntil > Date.now() ? '<div class="ib gear" data-act="settings">' + line("icons") + "</div>" : '<div class="ib hid" data-act="gtap"></div>') + "</div>" +
-      '<div class="clock"><div class="t">' + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + '</div><div class="d">' + now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + (wtxt ? "<i>" + esc(wtxt) + "</i>" : "") + "</div></div>" +
+      '<div class="clock"><div class="t">' + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + '</div><div class="d">' + now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + (wtxt ? "<i>" + esc(wtxt) + "</i>" : "") + "</div></div>" + this.peopleHtml() +
       (this.empty ? '<div class="empty" style="margin-top:auto">' + (this.admin ? 'Nothing set up yet.<br><br><span class="pill" style="display:inline-flex" data-act="setup">' + line("rooms") + "Set up rooms</span>" : "Nothing set up yet. Ask the person who looks after Home Assistant to set up the 4C Dash.") + "</div>" : '<div class="grid">' + (g || '<div class="empty" style="grid-column:1/-1">Nothing set up for this room yet.</div>') + "</div>") +
+      (this.houseScenes && this.houseScenes.length && !this.empty ? '<div class="chips hsc">' + this.houseScenes.map((e) => '<div class="chip dot sc" data-act="scene" data-e="' + esc(e) + '"><i></i>' + esc(this.name(e)) + "</div>").join("") + "</div>" : "") +
       '<div class="bot">' + (hasLights ? '<div class="pill" data-act="roomoff">' + line("power") + "Room Off</div>" : "<span></span>") + "</div>"
     );
   }
@@ -1513,7 +1561,111 @@ class Ar4cDash extends HTMLElement {
       const val = tog ? "" : s.state + (s.attributes.unit_of_measurement ? " " + s.attributes.unit_of_measurement : "");
       h += '<div class="card"><div class="row"><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(tog ? (this.isOn(e) ? "On" : "Off") : "") + "</small></div>" + (tog ? '<div class="sw' + (this.isOn(e) ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div>' : '<div class="pc" style="font-size:20px">' + esc(val) + "</div>") + "</div></div>";
     });
-    return '<div class="scroll">' + (h || '<div class="empty">No utilities set up.</div>') + "</div>";
+    return '<div class="scroll">' + this.solarHtml() + (h || (this.solarCfg() ? "" : '<div class="empty">No utilities set up.</div>')) + "</div>";
+  }
+
+  // ---- solar (Utilities): the dash's own flow, or the Energy Flow Card --------------
+  solarCfg() {
+    const so = this.conf && this.conf.solar;
+    return so && so.mode && so.mode !== "off" && so.e && (so.e.solar_power || so.e.home_power) ? so : null;
+  }
+  kw(e) {
+    const s = e && this.st(e); if (!s) return null;
+    const v = parseFloat(s.state); if (isNaN(v)) return null;
+    const u = String(s.attributes.unit_of_measurement || "W").toLowerCase();
+    return u === "kw" ? v : u === "mw" ? v * 1000 : v / 1000;
+  }
+  kwh(e) {
+    const s = e && this.st(e); if (!s) return null;
+    const v = parseFloat(s.state); if (isNaN(v)) return null;
+    const u = String(s.attributes.unit_of_measurement || "kWh").toLowerCase();
+    return u === "wh" ? v / 1000 : u === "mwh" ? v * 1000 : v;
+  }
+  solarHtml() {
+    const so = this.solarCfg(); if (!so) return "";
+    if (so.mode === "card") {
+      if (this.efc === false) return '<div class="card"><div class="hint" style="padding:6px">The Energy Flow Card isn\'t installed in Home Assistant (HACS \u2192 Dashboard). Showing the dash\'s own solar view meanwhile.</div></div>' + this.solarFlow(so);
+      return '<div class="efc-host"></div>';
+    }
+    return this.solarFlow(so);
+  }
+  solarFlow(so) {
+    const e = so.e, pv = this.kw(e.solar_power), soc = e.battery_soc && this.st(e.battery_soc) ? parseFloat(this.st(e.battery_soc).state) : null;
+    let grid = this.kw(e.grid_power), bat = this.kw(e.battery_power), home = this.kw(e.home_power);
+    if (grid != null && so.invGrid) grid = -grid;
+    if (bat != null && so.invBat) bat = -bat;
+    const f = (v) => (v == null ? "\u2013" : Math.abs(v) < 1 ? Math.round(Math.abs(v) * 1000) + " W" : Math.abs(v).toFixed(1) + " kW");
+    // lines: from each corner to the middle; dots run the way the power goes
+    const flow = (x, y, v, out, col) => {
+      const on = v != null && Math.abs(v) > 0.02, sp = on ? Math.max(0.5, 2.6 - Math.min(2, Math.abs(v) / 3)) : 0;
+      return '<line x1="' + x + '" y1="' + y + '" x2="180" y2="150" class="fl"/>' + (on ? '<line x1="' + x + '" y1="' + y + '" x2="180" y2="150" class="fd' + (out ? " rev" : "") + '" style="stroke:' + col + ";animation-duration:" + sp.toFixed(2) + 's"/>' : "");
+    };
+    const node = (x, y, cls, ic, label, val, sub) => '<div class="sn ' + cls + '" style="left:' + (x / 3.6) + "%;top:" + (y / 3) + '%"><div class="si">' + ic + "</div><b>" + val + "</b><small>" + label + (sub ? " \u00b7 " + sub : "") + "</small></div>";
+    const sun = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7L7 17M17 7l1.7-1.7"/></svg>';
+    const pyl = '<svg viewBox="0 0 24 24"><path d="M8 21l4-18 4 18M6 8h12M5 12h14M9.5 15h5M8 21l6.5-6M16 21l-6.5-6"/></svg>';
+    const hse = '<svg viewBox="0 0 24 24"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg>';
+    const bt = '<svg viewBox="0 0 24 24"><rect x="6.5" y="4.5" width="11" height="17" rx="2"/><path d="M10 2.5h4"/><rect x="8.5" y="' + (19.5 - 13 * Math.max(0, Math.min(100, soc || 0)) / 100).toFixed(1) + '" width="7" height="' + (13 * Math.max(0, Math.min(100, soc || 0)) / 100).toFixed(1) + '" rx="1" class="bf"/></svg>';
+    let svg = '<svg class="sflow" viewBox="0 0 360 300" preserveAspectRatio="none">';
+    if (e.solar_power) svg += flow(180, 52, pv, false, "#f2b84b");
+    if (e.grid_power) svg += flow(58, 150, grid, grid != null && grid < 0, "#5fd3a0");
+    if (e.home_power) svg += flow(302, 150, home, true, "#c9b6ff");
+    if (e.battery_power) svg += flow(180, 250, bat, bat != null && bat > 0, "#6cc7f0");
+    svg += '<circle cx="180" cy="150" r="9" class="hub"/></svg>';
+    let h = '<div class="card solar"><div class="sh"><b>Solar</b>' + (soc != null ? "<small>Battery " + Math.round(soc) + "%</small>" : "") + '</div><div class="sbox">' + svg;
+    if (e.solar_power) h += node(180, 52, "pv", sun, "Solar", f(pv));
+    if (e.grid_power) h += node(58, 150, "gr", pyl, grid != null && grid < -0.02 ? "Selling" : "Grid", f(grid));
+    if (e.home_power) h += node(302, 150, "hm", hse, "Home", f(home));
+    if (e.battery_power || e.battery_soc) h += node(180, 250, "bt", bt, bat != null && bat > 0.02 ? "Charging" : bat != null && bat < -0.02 ? "Using" : "Battery", e.battery_power ? f(bat) : Math.round(soc || 0) + "%", e.battery_power && soc != null ? Math.round(soc) + "%" : "");
+    h += "</div>";
+    const tot = [["solar_daily", "Solar", "pv"], ["grid_import_daily", "Grid in", "gr"], ["grid_export_daily", "Grid out", "gr"], ["home_daily", "Home", "hm"]].filter((x) => e[x[0]]);
+    if (tot.length) h += '<div class="lbl" style="margin:4px 2px 0">Today</div><div class="stot">' + tot.map((x) => { const v = this.kwh(e[x[0]]); return '<div class="' + x[2] + '"><b>' + (v == null ? "\u2013" : v.toFixed(1)) + "<i>kWh</i></b><small>" + x[1] + "</small></div>"; }).join("") + "</div>";
+    return h + "</div>";
+  }
+  // the Energy Flow Card (HACS), kept alive across redraws and fed this dash's entities
+  efcMount() {
+    const so = this.solarCfg(), host = this.shadowRoot.querySelector(".efc-host");
+    if (!so || so.mode !== "card" || !host) return;
+    if (!customElements.get("energy-flow-card")) {
+      if (this.efc === undefined) {
+        this.efc = null;
+        const done = () => { this.efc = customElements.get("energy-flow-card") ? true : false; this._render(true); };
+        this._hass.callWS({ type: "lovelace/resources" }).then((rs) => {
+          const r = (rs || []).filter((x) => /energy-flow-card(\.js)?(\?|$)/.test(x.url || ""))[0];
+          if (!r) return done();
+          // a script tag, as Home Assistant loads dashboard resources (the card finds its icons from it)
+          const sc = document.createElement("script");
+          sc.type = "module"; sc.src = r.url; sc.onerror = done;
+          document.head.appendChild(sc);
+          customElements.whenDefined("energy-flow-card").then(done);
+          setTimeout(() => { if (this.efc === null) done(); }, 15000);
+        }).catch(done);
+      }
+      return;
+    }
+    const cfg = Object.assign({ type: "custom:energy-flow-card", inverter_preset: so.preset || "default", theme_mode: "dark", sun_entity: "sun.sun", show_totals: false, compact: true }, so.e);
+    if (this.conf.weather) cfg.weather_entity = this.conf.weather;
+    if (so.invGrid) cfg.invert_grid_sign = true;
+    if (so.invBat) cfg.invert_battery_sign = true;
+    const key = JSON.stringify(cfg);
+    if (!this.efcEl || this.efcKey !== key) { this.efcEl = document.createElement("energy-flow-card"); this.efcEl.setConfig(cfg); this.efcKey = key; }
+    this.efcEl.hass = this._hass;
+    if (this.efcEl.parentNode !== host) host.appendChild(this.efcEl);
+  }
+
+  // ---- who's home (home screen) ------------------------------------------------------
+  peopleOn() { const p = this.conf && this.conf.people; return !!(p && p.on && Array.isArray(p.list) && p.list.length); }
+  peopleHtml() {
+    if (!this.peopleOn()) return "";
+    let h = '<div class="ppl">';
+    this.conf.people.list.forEach((e) => {
+      const s = this.st(e); if (!s) return;
+      const home = s.state === "home", nm = this.name(e).split(" ")[0];
+      const zone = home ? "Home" : s.state === "not_home" ? "Away" : s.state === "unknown" || s.state === "unavailable" ? "\u2013" : (this.st("zone." + s.state) ? this.name("zone." + s.state) : s.state.replace(/_/g, " "));
+      const pic = s.attributes.entity_picture;
+      const av = pic ? '<img alt="" src="' + esc(this._hass.hassUrl ? this._hass.hassUrl(pic) : pic) + '">' : "<span>" + esc(nm.slice(0, 1).toUpperCase()) + "</span>";
+      h += '<div class="pp' + (home ? " home" : "") + '"><div class="av">' + av + "<i></i></div><b>" + esc(nm) + "</b><small>" + esc(zone) + "</small></div>";
+    });
+    return h + "</div>";
   }
 
   // ---- sheets: rooms + settings ---------------------------------------------------
@@ -1542,6 +1694,8 @@ class Ar4cDash extends HTMLElement {
           const tile = (v, html, l) => (h += '<div class="tile' + ((mine || "") === v ? " on" : "") + '" data-act="icpick" data-k="' + k + '" data-v="' + esc(v) + '"><i>' + html + "</i><span>" + esc(l) + "</span></div>");
           tile("", this.instIcon(k), "As set up");
           tile("line", line(k), "Line");
+          h += '<label class="tile up"><i>' + line("plus") + '</i><span>Upload</span><input type="file" accept="image/*" data-in="iconfile" data-k="' + k + '" hidden></label>';
+          (this.up.icon || []).forEach((u) => (h += '<div class="tile' + ((mine || "") === u ? " on" : "") + '" data-act="icpick" data-k="' + k + '" data-v="' + esc(u) + '"><i><img alt="" src="' + esc(u) + '"></i><span>Yours</span><b class="tdel" data-act="up-del" data-kind="icon" data-v="' + esc(u) + '">' + line("x") + "</b></div>"));
           this.media.icons.forEach((m) => tile("media:" + m.id, '<img alt="" src="' + esc(m.url) + '">', m.name || "Uploaded"));
           (cat === "all" ? IC_CATS : [cat]).forEach((c) => {
             const names = Object.keys(LIB || {}).filter((n) => LIB[n].c === c);
@@ -1558,11 +1712,34 @@ class Ar4cDash extends HTMLElement {
       h += '<div class="lbl" style="padding:6px 4px">Background</div><div class="bgs">';
       const bt = (v, img, l) => (h += '<div class="bgt' + ((this.P.bg || "") === v ? " on" : "") + '" data-act="bg" data-v="' + esc(v) + '"><i style="background-image:url(&quot;' + esc(img) + '&quot;)"></i><small>' + esc(l) + "</small></div>");
       bt("", this.url(this.room().image) || this.url(this.rc.houseImage) || BASE + "/backgrounds/thumbs/villa.jpg", "As set up");
+      h += '<label class="bgt up"><i>' + line("plus") + '</i><small>Upload photo</small><input type="file" accept="image/*" data-in="bgfile" hidden></label>';
+      (this.up.bg || []).forEach((u) => (h += '<div class="bgt' + ((this.P.bg || "") === u ? " on" : "") + '" data-act="bg" data-v="' + esc(u) + '"><i style="background-image:url(&quot;' + esc(u) + '&quot;)"></i><small>Yours</small><b class="tdel" data-act="up-del" data-kind="bg" data-v="' + esc(u) + '">' + line("x") + "</b></div>"));
       this.media.backgrounds.forEach((m) => bt("media:" + m.id, m.url, m.name || "Uploaded"));
       Object.keys(PRESETS).forEach((k) => bt("preset:" + k, BASE + "/backgrounds/thumbs/" + PRESETS[k], BG_NAMES[k] || k));
       h += "</div>";
     }
-    return '<div class="sheet"><div class="shh"><b>Settings</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + "</div></div>";
+    return '<div class="sheet"><div class="shh"><b>Settings</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + "</div>" + (this.logoUp ? '<div class="pick">' + this.upHtml() + "</div>" : "") + "</div>";
+  }
+  upList(kind) {
+    return this._hass.callWS({ type: "ar_4c_dash/logo", op: "list", kind }).then((r) => { this.up[kind] = (r && r.logos) || []; this._render(true); }).catch(() => {});
+  }
+  bgFile(f) {
+    if (!f) return;
+    const img = new Image(), u = URL.createObjectURL(f);
+    img.onload = () => {
+      // a photo for the background: shrunk for phones, sent as JPEG
+      const k = Math.min(1, 1920 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u);
+      this._toast("Uploading\u2026");
+      this._hass.callWS({ type: "ar_4c_dash/logo", op: "upload", kind: "bg", data: c.toDataURL("image/jpeg", 0.86) }).then((r) => {
+        this.P.bg = r.url; this._save(); this.upList("bg"); this._toast("Background set");
+      }).catch((er) => this._toast(er && er.message ? er.message : "Couldn't upload the photo"));
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); this._toast("That picture can't be opened"); };
+    img.src = u;
   }
 
   // ---- Setup (admins): rooms and what is in them, saved for everyone ----------------
@@ -1591,7 +1768,7 @@ class Ar4cDash extends HTMLElement {
       h += '<div class="it' + (this.sOpen === i ? " open" : "") + '"><div class="ih" data-act="s-open" data-v="' + i + '"><span class="now">' + line(rm.whole ? "rooms" : "home") + "</span><b>" + esc(rm.name || "Room " + (i + 1)) + "</b><small>" + (rm.whole ? "All rooms" : n + (n === 1 ? " device" : " devices") + ((rm.sources || []).length ? " \u00b7 " + rm.sources.length + " to watch" : "")) + "</small></div>";
       if (this.sOpen === i) {
         h += '<div class="sbody"><input class="inp" data-in="name" data-v="' + i + '" value="' + esc(rm.name || "") + '" placeholder="Room name" maxlength="40">';
-        if (rm.whole) h += '<div class="hint" style="text-align:left;padding:0">Everything from every room: the lights, comfort, speakers, TVs, shades and scenes. Move it to where you want it in the list.</div>';
+        if (rm.whole) h += '<div class="hint" style="text-align:left;padding:0">Everything from every room: the lights, speakers and TVs. Move it to where you want it in the list.</div><div class="lbl">Whole-house scenes</div><div class="hint" style="text-align:left;padding:0">Shown on the home screen, and on Scenes and Lights in every room.</div>' + this.chipsFor(rm.scenes, i + ":scenes");
         else {
           SETUP_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(rm[c[0]], i + ":" + c[0])));
           h += this.sourcesHtml(rm, i);
@@ -1605,6 +1782,19 @@ class Ar4cDash extends HTMLElement {
     h += '<div class="lbl" style="padding:18px 4px 2px">Whole home</div><div class="card" style="background:transparent;padding:12px">';
     HOUSE_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(d[c[0]], "h:" + c[0])));
     h += '<div class="lbl">Weather</div>' + this.chipsFor(d.weather ? [d.weather] : [], "h:weather");
+    // who's home on the home screen
+    const pe = d.people || {};
+    h += '<div class="lbl">Who\'s home (home screen)</div><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (pe.on ? "" : " on") + '" data-act="s-ppl" data-v="0">Off</div><div class="chip' + (pe.on ? " on" : "") + '" data-act="s-ppl" data-v="1">Show</div></div>';
+    if (pe.on) h += this.chipsFor(pe.list || [], "h:people");
+    // solar (Utilities)
+    const so = d.solar || {}, sm = so.mode || "off";
+    h += '<div class="lbl">Solar (in Utilities)</div><div class="wrapc" style="justify-content:flex-start">' + [["off", "Off"], ["simple", "Dash view"], ["card", "Energy Flow Card"]].map((x) => '<div class="chip' + (sm === x[0] ? " on" : "") + '" data-act="s-solar" data-v="' + x[0] + '">' + x[1] + "</div>").join("") + "</div>";
+    if (sm !== "off") {
+      h += '<div class="hint" style="text-align:left;padding:0">' + (sm === "card" ? "Your Energy Flow Card (HACS), sized for the phone, fed with these sensors." : "The dash's own solar view.") + " Leave out what you don't have.</div>";
+      SOLAR_KEYS.forEach((k) => { const v = (so.e || {})[k[0]]; h += '<div class="srow"><small>' + k[1] + "</small>" + (v ? '<div class="chip" data-act="so-clr" data-v="' + k[0] + '">' + esc(this.name(v)) + line("x") + "</div>" : '<div class="chip" style="border-style:dashed" data-act="s-pick" data-w="h:solar:' + k[0] + '">' + line("plus") + "Choose</div>") + "</div>"; });
+      if (sm === "card") h += '<div class="lbl">Inverter</div><select class="sel" data-in="so-preset">' + INVERTERS.map((x) => '<option value="' + x[0] + '"' + ((so.preset || "default") === x[0] ? " selected" : "") + ">" + x[1] + "</option>").join("") + "</select>";
+      h += '<div class="wrapc" style="justify-content:flex-start"><div class="chip' + (so.invGrid ? " on" : "") + '" data-act="so-inv" data-v="invGrid">Flip grid direction</div><div class="chip' + (so.invBat ? " on" : "") + '" data-act="so-inv" data-v="invBat">Flip battery direction</div></div>';
+    }
     h += '<div class="lbl">RTSP cameras</div><div class="hint" style="text-align:left;padding:0">Cameras that aren\'t in Home Assistant: their address, e.g. rtsp://admin:password@192.168.1.64:554/Streaming/Channels/102. Only admins ever see the address.</div>';
     (d.rtsp || []).forEach((c, i) => (h += '<div class="rtr"><input class="inp" data-in="rname" data-v="' + i + '" value="' + esc(c.name || "") + '" placeholder="Name" maxlength="40"><input class="inp" data-in="rurl" data-v="' + i + '" value="' + esc(c.url || "") + '" placeholder="rtsp://\u2026" autocapitalize="off" autocomplete="off" spellcheck="false"><div class="chip" data-act="r-rm" data-v="' + i + '">' + line("x") + "Remove</div></div>"));
     h += '<div class="chip" style="border-style:dashed;align-self:flex-start" data-act="r-add">' + line("plus") + "Add RTSP camera</div></div>";
@@ -1655,15 +1845,21 @@ class Ar4cDash extends HTMLElement {
   srcAt(key) { const k = key.split(":").map(Number); return this.draft.rooms[k[0]].sources[k[1]]; }
   logoPickHtml() {
     const sc = this.srcAt(this.logoPick), cur = (sc.logo || {}).src || "";
+    if (this.logoUp) return '<div class="pick">' + this.upHtml() + "</div>";
+    return this.logoGrid(cur);
+  }
+  upHtml() {
     const up = this.logoUp;
-    if (up) {
+    {
       // the uploaded picture as it will be saved, on the dash's own background
-      return '<div class="pick"><div class="shh"><b>Upload logo</b><div class="ib" data-act="lu-x">' + line("x") + '</div></div><div class="shb" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:12px"><div class="lup"><img data-lu alt="" src="' + up.url + '"></div>' +
+      return '<div class="shh"><b>' + (up.kind === "icon" ? "Upload icon" : "Upload logo") + '</b><div class="ib" data-act="lu-x">' + line("x") + '</div></div><div class="shb" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:12px"><div class="lup"><img data-lu alt="" src="' + up.url + '"></div>' +
         (up.info.hasAlpha ? '<div class="hint" style="padding:0">This picture already has a see-through background.</div>' :
           '<div class="wrapc" style="justify-content:flex-start"><div class="chip' + (up.rm ? " on" : "") + '" data-act="lu-rm" data-v="1">Remove background</div><div class="chip' + (up.rm ? "" : " on") + '" data-act="lu-rm" data-v="0">Keep background</div></div>' +
           (up.rm ? '<div class="lbl">How much to remove</div><input type="range" class="rng" data-in="lutol" min="15" max="140" value="' + up.tol + '"><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (up.holes ? " on" : "") + '" data-act="lu-holes">Inside gaps too</div></div>' : "")) +
-        '<div class="pill" data-act="lu-ok" style="justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent">' + (up.busy ? "Saving\u2026" : "Use this logo") + "</div></div></div>";
+        '<div class="pill" data-act="lu-ok" style="justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent">' + (up.busy ? "Saving\u2026" : up.kind === "icon" ? "Use this icon" : "Use this logo") + "</div></div>";
     }
+  }
+  logoGrid(cur) {
     let g = '<div class="ig">';
     const tile = (v, html, l, del) => (g += '<div class="tile' + (cur === v ? " on" : "") + '" data-act="logo-set" data-v="' + esc(v) + '"><i>' + html + "</i><span>" + esc(l) + "</span>" + (del ? '<b class="tdel" data-act="logo-del" data-v="' + esc(v) + '">' + line("x") + "</b>" : "") + "</div>");
     g += '<label class="tile up"><i>' + line("plus") + '</i><span>Upload</span><input type="file" accept="image/*" data-in="logofile" hidden></label>';
@@ -1683,7 +1879,7 @@ class Ar4cDash extends HTMLElement {
       c.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(u);
       const info = logoCutout(c, { remove: false, tol: 60, size: 8 }).info;
-      this.logoUp = { c, info, rm: !info.hasAlpha, tol: 60, holes: false };
+      this.logoUp = Object.assign({ c, info, rm: !info.hasAlpha, tol: 60, holes: false }, this._upFor || { kind: "logo" });
       this.logoCut(); this._render(true);
     };
     img.onerror = () => { URL.revokeObjectURL(u); this._toast("That picture can't be opened"); };
@@ -1728,6 +1924,8 @@ class Ar4cDash extends HTMLElement {
     const w = this.pick.split(":"), d = this.draft;
     if (w[0] === "h") {
       if (w[1] === "weather") return d.weather ? [d.weather] : [];
+      if (w[1] === "solar") { const v = ((d.solar || {}).e || {})[w[2]]; return v ? [v] : []; }
+      if (w[1] === "people") { d.people = d.people || { on: true, list: [] }; if (!Array.isArray(d.people.list)) d.people.list = []; return d.people.list; }
       if (create && !Array.isArray(d[w[1]])) d[w[1]] = [];
       return d[w[1]];
     }
@@ -1787,7 +1985,16 @@ class Ar4cDash extends HTMLElement {
         this._gearT = setTimeout(() => { this.gearUntil = 0; this._render(true); }, 20000);
         break;
       }
-      case "settings": clearTimeout(this._gearT); this.gearUntil = 0; this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
+      case "up-del": {
+        ev.stopPropagation();
+        const kind = t.getAttribute("data-kind");
+        this.up[kind] = (this.up[kind] || []).filter((x) => x !== v);
+        if (kind === "bg" && this.P.bg === v) { this.P.bg = null; this._save(); }
+        if (kind === "icon") Object.keys(this.conf.icons || {}).forEach((k) => { if (this.conf.icons[k] === v) { delete this.conf.icons[k]; this._hass.callWS({ type: "ar_4c_dash/set_icon", key: k, value: null }).catch(() => {}); } });
+        this._hass.callWS({ type: "ar_4c_dash/logo", op: "delete", kind, url: v }).catch(() => {});
+        break;
+      }
+      case "settings": this.upList("icon"); this.upList("bg"); clearTimeout(this._gearT); this.gearUntil = 0; this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
       case "close": if (this.dirty) this._toast("Setup not saved"); this.sheet = null; this.draft = null; this.dirty = false; this.pick = null; break;
       case "room": this.ri = Number(v); this.P.room = this.ri; this.sheet = null; this.cl = null; this._save(); this.libOpen = null; if (this.wv) this.wv.view = null; if (this.page !== "home" && this.cats().indexOf(this.page) < 0) this.page = "home"; break;
       case "roomoff": room.lights.forEach((x) => this.setOpt(x, { on: false })); if (room.lights.length) this.call("homeassistant", "turn_off", { entity_id: room.lights }); this._toast(room.name + ": lights off"); break;
@@ -1928,7 +2135,7 @@ class Ar4cDash extends HTMLElement {
         else if (f === "player" || f === "volume") sc[f] = e;
         else sc.steps[Number(f)].e = e;
         this.pick = null; this.dirty = true; break;
-      } else { const w = this.pick.split(":"); if (w[1] === "weather") { this.draft.weather = e; this.pick = null; } else this.pickArr(true).push(e); this.dirty = true; break; }
+      } else { const w = this.pick.split(":"); if (w[1] === "solar") { const so = (this.draft.solar = this.draft.solar || { mode: "simple" }); so.e = so.e || {}; so.e[w[2]] = e; this.pick = null; this.dirty = true; break; } if (w[1] === "weather") { this.draft.weather = e; this.pick = null; } else this.pickArr(true).push(e); this.dirty = true; break; }
       case "p-done": this.pick = null; break;
       case "s-whole": this.draft.rooms.unshift({ whole: true, name: "Whole House" }); this.sOpen = 0; this.dirty = true; break;
       case "s-lstart": this.draft.listenStart = v; this.dirty = true; break;
@@ -1948,6 +2155,15 @@ class Ar4cDash extends HTMLElement {
       case "lu-ok": {
         const up = this.logoUp; if (!up || up.busy) return;
         up.busy = true;
+        if (up.kind === "icon") {
+          // an uploaded icon goes straight on its home button, for every phone
+          this._hass.callWS({ type: "ar_4c_dash/logo", op: "upload", kind: "icon", data: up.url }).then((r) => {
+            this.conf.icons = Object.assign({}, this.conf.icons, { [up.k]: r.url });
+            this.logoUp = null; this.upList("icon");
+            return this._hass.callWS({ type: "ar_4c_dash/set_icon", key: up.k, value: r.url });
+          }).then(() => this._toast("Icon set on every phone")).catch((er) => { up.busy = false; this._toast(er && er.message ? er.message : "Couldn't save the icon"); this._render(true); });
+          break;
+        }
         this._hass.callWS({ type: "ar_4c_dash/logo", op: "upload", data: up.url }).then((r) => {
           const sc = this.srcAt(this.logoPick); sc.logo = { src: r.url }; this.dirty = true;
           this.logoUp = null; this.logoPick = null; this.logoList(); this._toast("Logo added: Save to show it on every phone");
@@ -1964,6 +2180,10 @@ class Ar4cDash extends HTMLElement {
       case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
       case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;
+      case "s-ppl": { const pe = (this.draft.people = this.draft.people || { list: [] }); pe.on = v === "1"; if (!Array.isArray(pe.list)) pe.list = []; if (pe.on && !pe.list.length) pe.list = Object.keys(this._hass.states).filter((x) => x.indexOf("person.") === 0); this.dirty = true; break; }
+      case "s-solar": { const so = (this.draft.solar = this.draft.solar || {}); so.mode = v; so.e = so.e || {}; this.dirty = true; break; }
+      case "so-clr": delete this.draft.solar.e[v]; this.dirty = true; break;
+      case "so-inv": this.draft.solar[v] = !this.draft.solar[v]; if (!this.draft.solar[v]) delete this.draft.solar[v]; this.dirty = true; break;
       case "s-import": if (this.impArm !== v) { this.impArm = v; break; } this.impArm = null; this.importPanel(v); return;
       case "icopen": this.icOpen = this.icOpen === v ? null : v; this.icCat = null; break;
       case "iccat": this.icCat = v; break;
