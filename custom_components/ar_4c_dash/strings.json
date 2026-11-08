@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AR 4C Dash",
+        "description": "Adds a 4C Dash item to the sidebar: the AR Smart Home Residence look for phones. Open it in the Home Assistant app on your phone. Set up the rooms in the dash itself (gear, then Setup)."
+      }
+    },
+    "abort": {
+      "already_configured": "AR 4C Dash is already added."
+    }
+  }
+}
