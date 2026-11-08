@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.0.1";
+const VERSION = "1.1.0";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["utilities", "Utilities"]];
@@ -91,6 +91,18 @@ function kelvinRgb(k) {
   return [clamp(Math.round(r), 0, 255), clamp(Math.round(g), 0, 255), clamp(Math.round(b), 0, 255)];
 }
 
+let hlsLoading = null; // hls.js (comes with the integration), for live video where the browser can't play HLS itself
+function loadHls() {
+  if (window.Hls) return Promise.resolve(window.Hls);
+  if (!hlsLoading) hlsLoading = new Promise((ok) => {
+    const sc = document.createElement("script");
+    sc.src = BASE + "/hls.light.min.js?v=" + VERSION;
+    sc.onload = () => ok(window.Hls || null);
+    sc.onerror = () => ok(null);
+    document.head.appendChild(sc);
+  });
+  return hlsLoading;
+}
 let LIB = null; // built-in icons (AR NSPanel Pro), loaded once
 let libLoading = null;
 function loadLib() {
@@ -120,7 +132,7 @@ svg{flex:none}
 .clock .t{font-size:64px;font-weight:300;line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 .clock .d{font-size:14px;color:rgba(241,237,230,.78);margin-top:8px}
 .clock .d i{font-style:normal;color:var(--acc)}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 6px;padding:22px 14px 0;margin-top:auto;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 6px;padding:30px 14px 0;margin-bottom:16px}
 .btn{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;min-width:0}
 .ring{position:relative;width:72px;height:72px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(20,18,22,.42);display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.18);transition:transform .12s}
 .btn:active .ring{transform:scale(.94)}
@@ -135,7 +147,7 @@ svg{flex:none}
 .bare .ring img{width:86%;height:86%}
 .bare .btn.lit .ring{background:transparent;border-color:transparent;box-shadow:none}
 .bare .btn.lit .ring svg{filter:drop-shadow(0 0 8px rgba(var(--accrgb),.8))}
-.bot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px 18px}
+.bot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px 18px;margin-top:auto}
 .pill{height:42px;padding:0 16px;border-radius:21px;border:1px solid var(--line);background:var(--glass);display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;color:var(--fg)}
 .pill svg{width:18px;height:18px}
 .scroll{flex:1;overflow-y:auto;padding:10px 16px 10px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -165,7 +177,7 @@ svg{flex:none}
 .card{border-radius:22px;border:1px solid rgba(255,255,255,.12);background:rgba(16,14,18,.62);padding:14px;display:flex;flex-direction:column;gap:12px;flex:none}
 .row{display:flex;align-items:center;gap:12px}
 .row>svg{width:22px;height:22px;color:var(--muted)}
-.hint{font-size:12px;color:var(--muted);text-align:center;padding:2px 16px 6px}
+.hint{font-size:12px;color:var(--muted);text-align:center;padding:2px 16px 6px;overflow-wrap:anywhere}
 .empty{color:var(--muted);text-align:center;padding:40px 20px;font-size:15px}
 .tabs{display:flex;gap:8px;padding:12px 16px 0;overflow-x:auto;scrollbar-width:none;flex:none}
 .tabs::-webkit-scrollbar{display:none}
@@ -218,7 +230,8 @@ svg{flex:none}
 .cam img{width:100%;height:100%;object-fit:cover;display:block}
 .cam span{position:absolute;left:10px;bottom:8px;font-size:13px;background:rgba(0,0,0,.55);padding:3px 9px;border-radius:10px}
 .view{position:absolute;inset:0;z-index:6;background:#000;display:flex;flex-direction:column}
-.view img{flex:1;min-height:0;width:100%;object-fit:contain}
+.view video,.view .still{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.vmsg{position:absolute;left:0;right:0;bottom:24px;text-align:center;font-size:13px;color:var(--muted);padding:0 20px}
 .view .top{position:absolute;top:0;left:0;right:0}
 /* sheets */
 .sheet{position:absolute;left:0;right:0;bottom:0;top:64px;z-index:5;background:rgba(16,15,19,.98);border-radius:26px 26px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column}
@@ -258,6 +271,8 @@ svg{flex:none}
 .inp{width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--fg);font:inherit;font-size:16px;padding:0 12px;outline:none}
 .inp:focus{border-color:var(--acc)}
 .sbody{padding:4px 12px 14px;display:flex;flex-direction:column;gap:8px}
+.rtr{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid rgba(255,255,255,.1);border-radius:14px}
+.rtr .chip{align-self:flex-end}
 .chip svg{width:14px;height:14px}
 .pick{position:absolute;inset:0;z-index:7;background:rgb(16,15,19);border-radius:26px 26px 0 0;display:flex;flex-direction:column}
 .msg{position:absolute;left:50%;bottom:76px;transform:translateX(-50%);background:rgba(20,20,24,.95);border:1px solid var(--line);padding:9px 16px;border-radius:18px;font-size:14px;z-index:9;white-space:nowrap;pointer-events:none}
@@ -270,9 +285,15 @@ class Ar4cDash extends HTMLElement {
   getGridOptions() { return { columns: "full", rows: "auto" }; }
   connectedCallback() {
     this._clockT = setInterval(() => this._tick(), 15000);
+    if (this._ready && !this._unsub && this.conf) this._subscribe();
     if (this._ready && this.page === "cameras") this._camLoop();
   }
-  disconnectedCallback() { clearInterval(this._clockT); clearInterval(this._camT); }
+  disconnectedCallback() {
+    clearInterval(this._clockT);
+    clearInterval(this._camT);
+    this._stopLive();
+    if (this._unsub) { this._unsub(); this._unsub = null; }
+  }
   set hass(h) {
     const first = !this._hass;
     this._hass = h;
@@ -298,6 +319,9 @@ class Ar4cDash extends HTMLElement {
       if (k === "name" && this.draft) {
         const rm = this.draft.rooms[Number(t.getAttribute("data-v"))];
         if (rm) { rm.name = t.value; this.dirty = true; const b = t.closest(".it").querySelector(".ih b"); if (b) b.textContent = t.value || "Room"; const sv = this.shadowRoot.querySelector('[data-act="s-save"]'); if (sv) { sv.textContent = "Save for everyone"; sv.style.cssText = "justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent"; } }
+      } else if ((k === "rname" || k === "rurl") && this.draft && this.draft.rtsp) {
+        const c = this.draft.rtsp[Number(t.getAttribute("data-v"))];
+        if (c) { c[k === "rname" ? "name" : "url"] = t.value; this.dirty = true; const sv = this.shadowRoot.querySelector('[data-act="s-save"]'); if (sv) { sv.textContent = "Save for everyone"; sv.style.cssText = "justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent"; } }
       } else if (k === "q" && this.pick) {
         this.pickQ = t.value;
         const res = this.shadowRoot.querySelector(".pres");
@@ -309,13 +333,7 @@ class Ar4cDash extends HTMLElement {
   }
   async _load() {
     const h = this._hass;
-    try {
-      const c = await h.callWS({ type: "ar_4c_dash/config" });
-      this.conf = (c && c.config) || { rooms: [] };
-      this.admin = !!(c && c.admin);
-    } catch (e) {
-      this.err = "AR 4C Dash isn't set up in Home Assistant yet: add it under Settings > Devices & services.";
-    }
+    await this._subscribe();
     try {
       const u = await h.callWS({ type: "frontend/get_user_data", key: PREF_KEY });
       if (u && u.value && typeof u.value === "object") this.P = Object.assign(this.P, u.value);
@@ -328,6 +346,24 @@ class Ar4cDash extends HTMLElement {
     loadLib().then(() => this._render());
     this._render();
   }
+  // the setup, and again whenever anyone changes it (Setup, an icon): every open phone updates
+  _subscribe() {
+    const h = this._hass;
+    return new Promise((ok) => {
+      let first = true;
+      h.connection
+        .subscribeMessage((m) => {
+          this.conf = (m && m.config) || { rooms: [] };
+          this.admin = !!(m && m.admin);
+          this.err = null;
+          if (first) { first = false; ok(); return; }
+          this._setup();
+          this._render(true);
+        }, { type: "ar_4c_dash/subscribe" })
+        .then((u) => (this._unsub = u))
+        .catch(() => { this.err = "AR 4C Dash isn't set up in Home Assistant yet: add it under Settings > Devices & services."; ok(); });
+    });
+  }
   _setup() {
     this._watch = null;
     const c = this.conf || { rooms: [] };
@@ -339,7 +375,7 @@ class Ar4cDash extends HTMLElement {
     });
     this.empty = !this.rooms.length;
     if (this.empty) this.rooms = [{ name: "Home", image: "", lights: [], climate: [], music: [], watch: [], shades: [], scenes: [] }];
-    this.house = { cameras: list(c.cameras), security: list(c.security), utilities: list(c.utilities) };
+    this.house = { cameras: list(c.cameras).concat((Array.isArray(c.rtsp) ? c.rtsp : []).map((x, i) => "rtsp:" + i)), security: list(c.security), utilities: list(c.utilities) };
     this.ri = clamp(typeof this.P.room === "number" ? this.P.room : 0, 0, this.rooms.length - 1);
   }
   _save() {
@@ -389,7 +425,7 @@ class Ar4cDash extends HTMLElement {
     return line(k);
   }
   icon(k) {
-    const v = this.P.icons && this.P.icons[k];
+    const v = this.conf && this.conf.icons && this.conf.icons[k];
     if (v === "line") return line(k);
     if (typeof v === "string" && v.indexOf("lib:") === 0 && libSrc(v.slice(4))) return '<img alt="" src="' + esc(libSrc(v.slice(4))) + '">';
     if (typeof v === "string" && v.indexOf("media:") === 0) {
@@ -460,6 +496,7 @@ class Ar4cDash extends HTMLElement {
     if (soft) { const s2 = pg.querySelector(".scroll,.dialw"); if (s2) s2.scrollTop = y; const s3 = this.app.querySelector(".sheet .shb"); if (s3) s3.scrollTop = shy; }
     pg.querySelectorAll("canvas[data-lamp]").forEach((c) => this.lamp(c, c.getAttribute("data-lamp")));
     if (this.page === "climate") this.paintDial();
+    if (this.viewCam) this._attachLive();
   }
   roomName() { return esc(this.room().name); }
   home() {
@@ -708,33 +745,100 @@ class Ar4cDash extends HTMLElement {
     });
     return '<div class="scroll">' + (h || '<div class="empty">No alarm set up.</div>') + "</div>";
   }
+  // ---- cameras: Home Assistant cameras ("camera.x") and RTSP addresses ("rtsp:0") ------------
+  isRtsp(e) { return e.indexOf("rtsp:") === 0; }
+  camName(e) {
+    if (!this.isRtsp(e)) return this.name(e);
+    const c = ((this.conf && this.conf.rtsp) || [])[Number(e.slice(5))];
+    return (c && c.name) || "Camera";
+  }
   camSrc(e) {
+    if (this.isRtsp(e)) return (this._rsnap && this._rsnap[e]) || "";
     const s = this.st(e);
     const t = s && s.attributes.access_token;
     const at = (this._camAt || (this._camAt = {}))[e] || (this._camAt[e] = Date.now());
     return "/api/camera_proxy/" + e + "?token=" + encodeURIComponent(t || "") + "&t=" + at;
   }
+  // a still of an RTSP camera, made by Home Assistant (the address never reaches the phone)
+  _snap(e) {
+    const h = this._hass;
+    const path = "/api/ar_4c_dash/snap/" + e.slice(5);
+    const get = h.fetchWithAuth ? h.fetchWithAuth(path) : fetch(path, { headers: { Authorization: "Bearer " + ((h.auth && h.auth.data && h.auth.data.access_token) || "") } });
+    return get.then((r) => (r.ok ? r.blob() : null)).then((b) => {
+      if (!b) return;
+      const m = this._rsnap || (this._rsnap = {});
+      if (m[e]) URL.revokeObjectURL(m[e]);
+      m[e] = URL.createObjectURL(b);
+      this.shadowRoot.querySelectorAll('img[data-cam="' + e + '"]').forEach((im) => (im.src = m[e]));
+    }).catch(() => {});
+  }
   pCameras() {
     let h = "";
-    this.house.cameras.forEach((e) => (h += '<div class="cam" data-act="cam" data-e="' + esc(e) + '"><img alt="" data-cam="' + esc(e) + '" src="' + esc(this.camSrc(e)) + '"><span>' + esc(this.name(e)) + "</span></div>"));
-    return '<div class="scroll">' + (h ? '<div class="cams">' + h + "</div>" : '<div class="empty">No cameras set up.</div>') + "</div>";
+    this.house.cameras.forEach((e) => {
+      const src = this.camSrc(e);
+      h += '<div class="cam" data-act="cam" data-e="' + esc(e) + '"><img alt="" data-cam="' + esc(e) + '"' + (src ? ' src="' + esc(src) + '"' : "") + "><span>" + esc(this.camName(e)) + "</span></div>";
+    });
+    return '<div class="scroll">' + (h ? '<div class="cams">' + h + '</div><div class="hint">Tap a camera for live video</div>' : '<div class="empty">No cameras set up.</div>') + "</div>";
   }
   camView() {
-    const e = this.viewCam;
-    return '<div class="view"><img alt="" data-cam="' + esc(e) + '" src="' + esc(this.camSrc(e)) + '"><div class="top"><div class="ib" data-act="camx">' + line("x") + '</div><div class="room">' + esc(this.name(e)) + "</div></div></div>";
+    const e = this.viewCam, src = this.camSrc(e);
+    return '<div class="view"><video playsinline muted autoplay></video><img class="still" alt="" data-cam="' + esc(e) + '"' + (src ? ' src="' + esc(src) + '"' : "") + '><div class="vmsg">Connecting\u2026</div><div class="top"><div class="ib" data-act="camx">' + line("x") + '</div><div class="room">' + esc(this.camName(e)) + "</div></div></div>";
   }
   _camLoop() {
     clearInterval(this._camT);
-    this._camT = setInterval(() => {
+    const tick = () => {
       if (this.page !== "cameras") return clearInterval(this._camT);
-      this.shadowRoot.querySelectorAll("img[data-cam]").forEach((im) => {
-        const e = im.getAttribute("data-cam");
-        const n = new Image();
-        n.onload = () => (im.src = n.src);
+      const live = this.viewCam && !this._liveFail;
+      this.house.cameras.forEach((e) => {
+        if (live && e === this.viewCam) return;
+        if (this.viewCam && e !== this.viewCam) return; // only the open camera while one is open
+        if (this.isRtsp(e)) return this._snap(e);
         (this._camAt || (this._camAt = {}))[e] = Date.now();
+        const n = new Image();
+        n.onload = () => this.shadowRoot.querySelectorAll('img[data-cam="' + e + '"]').forEach((im) => (im.src = n.src));
         n.src = this.camSrc(e);
       });
-    }, this.viewCam ? 1000 : 8000);
+    };
+    this.house.cameras.filter((e) => this.isRtsp(e) && !(this._rsnap && this._rsnap[e])).forEach((e) => this._snap(e));
+    this._camT = setInterval(tick, this.viewCam ? 1500 : 8000);
+  }
+  // live video: Home Assistant makes an HLS stream (camera/stream, or ours for RTSP)
+  _attachLive() {
+    const v = this.shadowRoot.querySelector(".view video");
+    if (!v || v.__live === this.viewCam) return;
+    const e = (v.__live = this.viewCam);
+    const msg = this.shadowRoot.querySelector(".vmsg");
+    const fail = (why) => {
+      if (this.viewCam !== e) return;
+      this._liveFail = true;
+      v.style.display = "none";
+      if (msg) msg.textContent = why || "Live video isn't available for this camera: showing pictures";
+      this._camLoop();
+    };
+    this._liveFail = false;
+    const ask = this.isRtsp(e) ? { type: "ar_4c_dash/stream", index: Number(e.slice(5)) } : { type: "camera/stream", entity_id: e };
+    this._hass.callWS(ask).then((res) => {
+      if (this.viewCam !== e || !res || !res.url) return fail();
+      const url = res.url;
+      const playing = () => { if (msg) msg.style.display = "none"; const st = this.shadowRoot.querySelector(".view .still"); if (st) st.style.display = "none"; };
+      v.addEventListener("playing", playing, { once: true });
+      const useNative = () => { v.src = url; v.play().catch(() => {}); };
+      loadHls().then((Hls) => {
+        if (this.viewCam !== e) return;
+        if (Hls && Hls.isSupported()) {
+          const hls = (this._hls = new Hls({ liveSyncDurationCount: 2, maxBufferLength: 8 }));
+          hls.on(Hls.Events.ERROR, (_, d) => { if (d && d.fatal) { hls.destroy(); this._hls = null; fail(); } });
+          hls.loadSource(url);
+          hls.attachMedia(v);
+          v.play().catch(() => {});
+        } else if (v.canPlayType("application/vnd.apple.mpegurl")) useNative();
+        else fail();
+      });
+    }).catch((er) => fail(er && er.message ? er.message + ": showing pictures" : null));
+  }
+  _stopLive() {
+    if (this._hls) { this._hls.destroy(); this._hls = null; }
+    this._liveFail = false;
   }
   pUtil() {
     let h = "";
@@ -761,9 +865,10 @@ class Ar4cDash extends HTMLElement {
     let h = '<div class="chips" style="padding:0 4px 4px"><div class="chip' + (tab === "icons" ? " on" : "") + '" data-act="stab" data-v="icons">Icons</div><div class="chip' + (tab === "look" ? " on" : "") + '" data-act="stab" data-v="look">Look</div>' + (this.admin ? '<div class="chip' + (tab === "setup" ? " on" : "") + '" data-act="stab" data-v="setup">Setup</div>' : "") + "</div>";
     if (tab === "setup" && this.admin) return '<div class="sheet"><div class="shh"><b>Settings</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + this.setupHtml() + "</div>" + (this.pick ? this.pickHtml() : "") + "</div>";
     if (tab === "icons") {
+      h += '<div class="hint" style="text-align:left;padding:4px 4px 2px">An icon you change here changes on every phone.</div>';
       ORDER.filter((k) => this.cats().indexOf(k) >= 0).forEach((k) => {
-        const mine = this.P.icons && this.P.icons[k];
-        h += '<div class="it' + (this.icOpen === k ? " open" : "") + '"><div class="ih" data-act="icopen" data-v="' + k + '"><span class="now">' + this.icon(k) + "</span><b>" + TITLES[k] + "</b><small>" + (mine ? "Your pick" : "As set up") + "</small></div>";
+        const mine = this.conf && this.conf.icons && this.conf.icons[k];
+        h += '<div class="it' + (this.icOpen === k ? " open" : "") + '"><div class="ih" data-act="icopen" data-v="' + k + '"><span class="now">' + this.icon(k) + "</span><b>" + TITLES[k] + "</b><small>" + (mine ? "Changed" : "As set up") + "</small></div>";
         if (this.icOpen === k) {
           const cat = this.icCat || IC_FOR[k] || "all";
           h += '<div class="cats">';
@@ -829,7 +934,10 @@ class Ar4cDash extends HTMLElement {
     h += '<div class="chip" style="margin:10px 0 0;border-style:dashed;justify-content:center" data-act="s-add">' + line("plus") + "Add room</div>";
     h += '<div class="lbl" style="padding:18px 4px 2px">Whole home</div><div class="card" style="background:transparent;padding:12px">';
     HOUSE_CATS.forEach((c) => (h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(d[c[0]], "h:" + c[0])));
-    h += '<div class="lbl">Weather</div>' + this.chipsFor(d.weather ? [d.weather] : [], "h:weather") + "</div>";
+    h += '<div class="lbl">Weather</div>' + this.chipsFor(d.weather ? [d.weather] : [], "h:weather");
+    h += '<div class="lbl">RTSP cameras</div><div class="hint" style="text-align:left;padding:0">Cameras that aren\'t in Home Assistant: their address, e.g. rtsp://admin:password@192.168.1.64:554/Streaming/Channels/102. Only admins ever see the address.</div>';
+    (d.rtsp || []).forEach((c, i) => (h += '<div class="rtr"><input class="inp" data-in="rname" data-v="' + i + '" value="' + esc(c.name || "") + '" placeholder="Name" maxlength="40"><input class="inp" data-in="rurl" data-v="' + i + '" value="' + esc(c.url || "") + '" placeholder="rtsp://\u2026" autocapitalize="off" autocomplete="off" spellcheck="false"><div class="chip" data-act="r-rm" data-v="' + i + '">' + line("x") + "Remove</div></div>"));
+    h += '<div class="chip" style="border-style:dashed;align-self:flex-start" data-act="r-add">' + line("plus") + "Add RTSP camera</div></div>";
     if (this.nsp && this.nsp.length) {
       h += '<div class="lbl" style="padding:18px 4px 6px">Copy from an AR NSPanel Pro panel</div><div class="wrapc" style="justify-content:flex-start">';
       this.nsp.forEach((pn) => (h += '<div class="chip" data-act="s-import" data-v="' + esc(pn.device_id) + '">' + (this.impArm === pn.device_id ? "Tap again: replaces this setup" : esc(pn.name || pn.device_id)) + "</div>"));
@@ -873,7 +981,8 @@ class Ar4cDash extends HTMLElement {
         if (r.rsImage) o.image = r.rsImage;
         return o;
       });
-      this.draft = { rooms, cameras: L(el.cameras), security: L(el.security), utilities: el.utilitiesOn ? L(el.utilities) : [], lightTypes: rs.lightTypes || {}, lightTone: rs.lightTone, houseImage: rs.houseImage };
+      const rtsp = (Array.isArray(el.rtsp) ? el.rtsp : []).filter((x) => x && typeof x.url === "string" && x.url).map((x, i) => ({ name: x.name || "Camera " + (i + 1), url: x.url }));
+      this.draft = { rooms, cameras: L(el.cameras), rtsp, security: L(el.security), utilities: el.utilitiesOn ? L(el.utilities) : [], lightTypes: rs.lightTypes || {}, lightTone: rs.lightTone, houseImage: rs.houseImage, weather: this.draft && this.draft.weather };
       this.dirty = true;
       this.sOpen = 0;
       this._toast("Copied " + rooms.length + (rooms.length === 1 ? " room" : " rooms") + ": check it, then Save");
@@ -899,7 +1008,7 @@ class Ar4cDash extends HTMLElement {
     const room = this.room();
     switch (act) {
       case "go": this.page = t.getAttribute("data-k"); this.code = null; if (this.page === "cameras") this._camLoop(); break;
-      case "back": this.page = "home"; this.viewCam = null; this.code = null; break;
+      case "back": this.page = "home"; this.viewCam = null; this.code = null; this._stopLive(); break;
       case "rooms": this.sheet = this.sheet === "rooms" ? null : "rooms"; this._sheetIn = !!this.sheet; break;
       case "settings": this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
       case "close": if (this.dirty) this._toast("Setup not saved"); this.sheet = null; this.draft = null; this.dirty = false; this.pick = null; break;
@@ -935,8 +1044,8 @@ class Ar4cDash extends HTMLElement {
         else if (c.v.length < 8) c.v += v;
         break;
       }
-      case "cam": this.viewCam = e; this._camLoop(); break;
-      case "camx": this.viewCam = null; this._camLoop(); break;
+      case "cam": this._stopLive(); this.viewCam = e; this._camLoop(); break;
+      case "camx": this._stopLive(); this.viewCam = null; this._camLoop(); break;
       case "stab": this.setTab = v; if (v === "setup") this.draftStart(); break;
       case "menu": this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true })); return;
       case "setup": this.sheet = "settings"; this._sheetIn = true; this.setTab = "setup"; this.draftStart(); break;
@@ -948,11 +1057,20 @@ class Ar4cDash extends HTMLElement {
       case "s-pick": this.pick = t.getAttribute("data-w"); this.pickQ = ""; break;
       case "p-add": { const w = this.pick.split(":"); if (w[1] === "weather") { this.draft.weather = e; this.pick = null; } else this.pickArr(true).push(e); this.dirty = true; break; }
       case "p-done": this.pick = null; break;
+      case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
+      case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;
       case "s-import": if (this.impArm !== v) { this.impArm = v; break; } this.impArm = null; this.importPanel(v); return;
       case "icopen": this.icOpen = this.icOpen === v ? null : v; this.icCat = null; break;
       case "iccat": this.icCat = v; break;
-      case "icpick": { const k = t.getAttribute("data-k"); this.P.icons = Object.assign({}, this.P.icons); if (v) this.P.icons[k] = v; else delete this.P.icons[k]; this._save(); break; }
+      case "icpick": {
+        // one icon for the whole home: every phone shows it (and updates straight away)
+        const k = t.getAttribute("data-k");
+        this.conf.icons = Object.assign({}, this.conf.icons);
+        if (v) this.conf.icons[k] = v; else delete this.conf.icons[k];
+        this._hass.callWS({ type: "ar_4c_dash/set_icon", key: k, value: v || null }).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save the icon"));
+        break;
+      }
       case "look": this.P.look = v === "bare" ? "bare" : null; this._save(); break;
       case "bg": this.P.bg = v || null; this._save(); break;
       default: return;
