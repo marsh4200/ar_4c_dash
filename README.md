@@ -25,6 +25,8 @@ Open 4C Dash → tap the empty top-right corner **10 times quickly** → the gea
 - **Who's home**: Off / Show, then the people (or phones: device trackers such as the Home Assistant app) to show under the clock (photo in colour with a green dot when home; greyed with Away or the zone name when not).
 - **Solar (in Utilities)**: Off, Dash view (the dash's own solar flow and today's totals) or Energy Flow Card (your HACS Energy Flow Card, sized for the phone). Pick the sensors once for either; leave out what you don't have.
 - **Whole home**: Cameras, Alarm, **Garage doors**, Utilities (pumps, geysers, sensors…) and the Weather shown on the home screen.
+- **Top right** (under the settings corner): temperature (pick a sensor), sunrise & sunset (Off / Show) and motion (Off / Show). Motion shows a room only while its presence / motion sensor sees someone.
+- **Presence / motion sensor** (each room): the room's occupancy, presence or motion sensor(s), for the motion shown top right.
 - **Garage doors**: garage doors and gates (covers), or a relay / button wired to the motor. Shown on the Whole House home screen with Open and Close. Optional per door: an open/closed sensor (e.g. a door contact) so the dash shows whether it's open.
 - **Names**: the dash's own name for any device (lights, aircons, speakers, TVs, shades, scenes, garage doors…). Leave empty for the Home Assistant name. Every phone shows it.
 - **RTSP cameras**: cameras that aren't in Home Assistant, by their RTSP address. Home Assistant turns them into live video for the phones; only admins ever see the address (it has the camera's password in it).
@@ -50,6 +52,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
 
 ## Changes
+
+- **1.4.0**: Top right of the home screen: temperature, sunrise & sunset, and motion (which room has someone moving; gone when nobody is). Each room can have a presence / motion sensor.
 
 - **1.3.9**: Cameras play live as soon as you open them; tap one for full screen, swipe sideways (or the arrows) for the next. Streams keep playing while other things in the house change, and stop when you leave Cameras.
 

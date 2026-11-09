@@ -42,7 +42,7 @@ from . import listen, watch
 from .const import DOMAIN, MAX_ROOMS, STORE_KEY, STORE_VERSION, UPLOADS
 
 _DATA = f"{DOMAIN}_store"
-ROOM_LISTS = ("lights", "climate", "music", "watch", "shades", "scenes")
+ROOM_LISTS = ("lights", "climate", "music", "watch", "shades", "scenes", "presence")
 HOUSE_LISTS = ("cameras", "security", "utilities", "garage")
 ICON_KEYS = ("lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes")
 SOLAR_KEYS = ("solar_power", "grid_power", "battery_power", "battery_soc", "home_power", "solar_daily", "grid_import_daily", "grid_export_daily", "home_daily")
@@ -114,6 +114,12 @@ def clean(cfg: Any) -> dict[str, Any]:
             if solar.get(k):
                 so[k] = True
         out["solar"] = so
+    stat = cfg.get("status")
+    if isinstance(stat, dict):
+        # top right of the home screen: temperature, sunrise / sunset, motion
+        out["status"] = {"sun": bool(stat.get("sun")), "motion": bool(stat.get("motion"))}
+        if _ent(stat.get("temp")):
+            out["status"]["temp"] = stat["temp"]
     if cfg.get("look") in ("rings", "bare"):
         out["look"] = cfg["look"]  # Rings or Icons only, for every phone
     gs = cfg.get("garageSensors")
