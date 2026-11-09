@@ -41,7 +41,7 @@ Open the Home Assistant app → sidebar → **4C Dash** (Settings → Profile ca
 - **Listen**: works like the panels. Music Assistant: now playing, speakers (tap one to join or leave the group), Favourites, Playlists, Artists, Radio and Search; open a playlist to play it or one song. Spotify: your playlists, Liked songs, Search, and which speaker plays.
 - **Watch**: pick a source; the phone shows each step as it happens (turning on, switching input, opening the app), then the remote: arrows and OK, back, home, menu, play/skip, volume and mute, Change source, TV off.
 - **Shades**: up/stop/down and position. **Scenes**, **Security** (arm/disarm; a keypad when the alarm needs a code), **Cameras** (pictures; tap one for live video, from Home Assistant cameras and RTSP cameras), **Utilities**.
-- Gear (10 taps top right) → **Icons**: change the home buttons' icons for the whole home: every phone shows the new icon straight away (by category, or **Upload** your own: a plain background is taken off; icons uploaded in AR Lighting Scenes show too). Gear → **Look**: Rings or Icons only, and the background (or **Upload photo**). Uploaded logos, icons and backgrounds are kept in Home Assistant's config folder (`ar_4c_dash/`), so updates keep them.
+- Gear (10 taps top right) → **Icons**: change the home buttons' icons for the whole home: every phone shows the new icon straight away (by category, or **Upload** your own: a plain background is taken off; icons uploaded in AR Lighting Scenes show too). Gear → **Look**: Rings or Icons only (the same on every phone), and the background (or **Upload photo**; each phone has its own). Uploaded logos, icons and backgrounds are kept in Home Assistant's config folder (`ar_4c_dash/`), so updates keep them.
 
 Icons are the same on every phone. Look, background and the last room are saved with each person's Home Assistant login, so they follow them to every phone.
 
@@ -50,6 +50,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
 
 ## Changes
+
+- **1.3.6**: Whole House curtains/blinds are grouped by room, with open / close for each room. Rings or Icons only now applies to every phone (the background stays each phone's own).
 
 - **1.3.5**: Garage doors on the Whole House home screen (open / close, optional open/closed sensor). Names in Setup for every device. Utilities: all switches in one card, Solar on its own tab; the Energy Flow Card no longer rebuilds (looked like a reload) when something else changes. Watch logos keep to their size (a single source no longer shows huge).
 

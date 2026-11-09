@@ -5,6 +5,7 @@ ar_4c_dash/subscribe  any logged-in user: the setup now and after every change, 
                       every open phone updates straight away
 ar_4c_dash/save       admins: replace the setup (from the dash's Setup page)
 ar_4c_dash/set_icon   any logged-in user: one home button's icon, for every phone
+ar_4c_dash/set_look   any logged-in user: Rings or Icons only, for every phone
 ar_4c_dash/set_names  any logged-in user: the dash's own names for lights, for every phone
 ar_4c_dash/logo       upload, list and delete pictures: Watch logos (admins), icons and backgrounds
 ar_4c_dash/stream     any logged-in user: live video of an RTSP camera (HLS address)
@@ -113,6 +114,8 @@ def clean(cfg: Any) -> dict[str, Any]:
             if solar.get(k):
                 so[k] = True
         out["solar"] = so
+    if cfg.get("look") in ("rings", "bare"):
+        out["look"] = cfg["look"]  # Rings or Icons only, for every phone
     gs = cfg.get("garageSensors")
     if isinstance(gs, dict):
         out["garageSensors"] = {d: e for d, e in gs.items() if d in out.get("garage", []) and _ent(e)}
@@ -260,6 +263,7 @@ def async_setup(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_save)
     websocket_api.async_register_command(hass, ws_set_icon)
     websocket_api.async_register_command(hass, ws_set_names)
+    websocket_api.async_register_command(hass, ws_set_look)
     websocket_api.async_register_command(hass, ws_logo)
     websocket_api.async_register_command(hass, ws_stream)
     websocket_api.async_register_command(hass, ws_watch)
@@ -301,6 +305,7 @@ async def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
     # the Setup page sends the icons it had; keep the newest ones from the store
     cfg["icons"] = st["config"].get("icons", {})
     cfg["names"] = st["config"].get("names", {})
+    cfg["look"] = st["config"].get("look")
     cfg = await _store_and_tell(hass, clean(cfg))
     connection.send_result(msg["id"], {"config": cfg})
 
@@ -319,6 +324,17 @@ async def ws_set_icon(hass: HomeAssistant, connection: websocket_api.ActiveConne
     cfg["icons"] = icons
     await _store_and_tell(hass, clean(cfg))
     connection.send_result(msg["id"], {"icons": icons})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/set_look", vol.Required("look"): vol.In(("rings", "bare"))})
+@websocket_api.async_response
+async def ws_set_look(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Rings or Icons only on the home buttons, for every phone."""
+    st = await async_store(hass)
+    cfg = dict(st["config"])
+    cfg["look"] = msg["look"]
+    await _store_and_tell(hass, clean(cfg))
+    connection.send_result(msg["id"])
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/set_names", vol.Required("names"): dict})

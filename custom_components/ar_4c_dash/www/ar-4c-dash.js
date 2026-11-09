@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.3.5";
+const VERSION = "1.3.6";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -750,6 +750,8 @@ class Ar4cDash extends HTMLElement {
         // lights stay in their rooms on the Lights page
         o.scenes = hs.slice();
         o.groups = cr.filter((x) => !x.whole && list(x.lights).length).map((x) => ({ name: x.name || "Room", lights: list(x.lights) }));
+        // curtains and blinds under their rooms too
+        o.shadeGroups = cr.filter((x) => !x.whole && list(x.shades).length).map((x) => ({ name: x.name || "Room", shades: list(x.shades) }));
         return o;
       }
       const o = { name: r.name || "Room " + (i + 1), image: r.image, sources: Array.isArray(r.sources) ? r.sources : [] };
@@ -881,7 +883,7 @@ class Ar4cDash extends HTMLElement {
     const bgEl = this.app.querySelector(".bg");
     if (bgEl.__u !== bg) { bgEl.__u = bg; bgEl.style.backgroundImage = 'url("' + bg.replace(/"/g, "%22") + '")'; }
     this.app.classList.toggle("inner", this.page !== "home");
-    this.app.classList.toggle("bare", this.P.look === "bare");
+    this.app.classList.toggle("bare", this.look() === "bare");
     const sc = pg.querySelector(".scroll,.dialw,.shb");
     const y = soft && sc ? sc.scrollTop : 0;
     const shy = soft && this.app.querySelector(".sheet .shb") ? this.app.querySelector(".sheet .shb").scrollTop : 0;
@@ -1130,12 +1132,20 @@ class Ar4cDash extends HTMLElement {
     return '<div class="slider" data-e="' + esc(e) + '" data-kind="' + kind + '"><i style="width:' + v + '%"></i><b style="left:' + v + '%"></b></div>';
   }
   pShades() {
-    let h = "";
-    this.room().shades.forEach((e) => {
-      const s = this.st(e); if (!s) return;
+    const card = (e) => {
+      const s = this.st(e); if (!s) return "";
       const pos = this.opt[e + "#pos"] && this.opt[e + "#pos"].until > Date.now() ? this.opt[e + "#pos"].v : s.attributes.current_position;
-      h += '<div class="card"><div class="row"><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(pos != null ? pos + "% open" : s.state) + '</small></div><div class="ctrls" style="gap:10px"><div class="ib" data-act="cov" data-v="open_cover" data-e="' + esc(e) + '">' + line("up") + '</div><div class="ib" data-act="cov" data-v="stop_cover" data-e="' + esc(e) + '">' + line("stop") + '</div><div class="ib" data-act="cov" data-v="close_cover" data-e="' + esc(e) + '">' + line("down") + "</div></div></div>" + (pos != null ? this.slider(e, "cover", pos) : "") + "</div>";
+      return '<div class="card"><div class="row"><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(pos != null ? pos + "% open" : s.state) + '</small></div><div class="ctrls" style="gap:10px"><div class="ib" data-act="cov" data-v="open_cover" data-e="' + esc(e) + '">' + line("up") + '</div><div class="ib" data-act="cov" data-v="stop_cover" data-e="' + esc(e) + '">' + line("stop") + '</div><div class="ib" data-act="cov" data-v="close_cover" data-e="' + esc(e) + '">' + line("down") + "</div></div></div>" + (pos != null ? this.slider(e, "cover", pos) : "") + "</div>";
+    };
+    let h = "";
+    const groups = this.room().shadeGroups;
+    if (groups) groups.forEach((g, gi) => {
+      // Whole House: each room's curtains under the room, with open / close for the room
+      const n = g.shades.filter((e) => { const s = this.st(e); return s && (s.state === "open" || s.state === "opening"); }).length;
+      h += '<div class="lgh"><div><b>' + esc(g.name) + "</b><small>" + n + " of " + g.shades.length + ' open</small></div><div class="ctrls" style="gap:8px;padding:0"><div class="ib sm" data-act="covg" data-v="open_cover" data-g="' + gi + '">' + line("up") + '</div><div class="ib sm" data-act="covg" data-v="close_cover" data-g="' + gi + '">' + line("down") + "</div></div></div>";
+      g.shades.forEach((e) => (h += card(e)));
     });
+    else this.room().shades.forEach((e) => (h += card(e)));
     return '<div class="scroll">' + (h || '<div class="empty">No shades in this room.</div>') + "</div>";
   }
   pMedia() {
@@ -1755,6 +1765,8 @@ class Ar4cDash extends HTMLElement {
   }
 
   // ---- who's home (home screen) ------------------------------------------------------
+  // the home buttons' look, shared by every phone (a phone's own older choice until one is set)
+  look() { return this.conf && this.conf.look ? this.conf.look : this.P.look === "bare" ? "bare" : "rings"; }
   peopleOn() { const p = this.conf && this.conf.people; return !!(p && p.on && Array.isArray(p.list) && p.list.length); }
   peopleHtml() {
     if (!this.peopleOn()) return "";
@@ -1811,7 +1823,7 @@ class Ar4cDash extends HTMLElement {
         h += "</div>";
       });
     } else {
-      h += '<div class="setrow"><span class="lbl">Buttons</span><div class="chip' + (this.P.look !== "bare" ? " on" : "") + '" data-act="look" data-v="rings">Rings</div><div class="chip' + (this.P.look === "bare" ? " on" : "") + '" data-act="look" data-v="bare">Icons only</div></div>';
+      h += '<div class="setrow"><span class="lbl">Buttons</span><div class="chip' + (this.look() !== "bare" ? " on" : "") + '" data-act="look" data-v="rings">Rings</div><div class="chip' + (this.look() === "bare" ? " on" : "") + '" data-act="look" data-v="bare">Icons only</div></div>';
       h += '<div class="lbl" style="padding:6px 4px">Background</div><div class="bgs">';
       const bt = (v, img, l) => (h += '<div class="bgt' + ((this.P.bg || "") === v ? " on" : "") + '" data-act="bg" data-v="' + esc(v) + '"><i style="background-image:url(&quot;' + esc(img) + '&quot;)"></i><small>' + esc(l) + "</small></div>");
       bt("", this.url(this.room().image) || this.url(this.rc.houseImage) || BASE + "/backgrounds/thumbs/villa.jpg", "As set up");
@@ -2322,6 +2334,7 @@ class Ar4cDash extends HTMLElement {
       case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
       case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;
+      case "covg": { const g = (room.shadeGroups || [])[Number(t.getAttribute("data-g"))]; if (g) this.call("cover", v, { entity_id: g.shades }); return; }
       case "gs-clr": delete this.draft.garageSensors[e]; this.dirty = true; break;
       case "s-names": this.namesOpen = !this.namesOpen; break;
       case "gdo": {
@@ -2358,7 +2371,12 @@ class Ar4cDash extends HTMLElement {
         this._hass.callWS({ type: "ar_4c_dash/set_icon", key: k, value: v || null }).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save the icon"));
         break;
       }
-      case "look": this.P.look = v === "bare" ? "bare" : null; this._save(); break;
+      case "look": {
+        // Rings or Icons only: the same on every phone (only the background is each phone's own)
+        this.conf.look = v === "bare" ? "bare" : "rings";
+        this._hass.callWS({ type: "ar_4c_dash/set_look", look: this.conf.look }).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save"));
+        break;
+      }
       case "bg": this.P.bg = v || null; this._save(); break;
       default: return;
     }
