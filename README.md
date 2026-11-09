@@ -53,6 +53,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 
 ## Changes
 
+- **1.4.2**: Same as 1.4.0, new version number.
+
 - **1.4.0**: Top right of the home screen, beside the clock: temperature or humidity, sunrise & sunset, and motion (each room with someone moving, one under the other; nothing when nobody is). Each room can have a presence / motion sensor. Look → Top right size makes them bigger (every phone).
 
 - **1.3.9**: Cameras play live as soon as you open them; tap one for full screen, swipe sideways (or the arrows) for the next. Streams keep playing while other things in the house change, and stop when you leave Cameras.

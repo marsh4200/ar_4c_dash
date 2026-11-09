@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.4.0";
+const VERSION = "1.4.2";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
