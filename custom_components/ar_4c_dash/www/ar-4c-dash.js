@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.3.6";
+const VERSION = "1.3.9";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -249,9 +249,17 @@ svg{flex:none}
 .cams{display:grid;grid-template-columns:1fr;gap:10px}
 .cam{position:relative;border-radius:18px;overflow:hidden;background:#111;aspect-ratio:16/9;cursor:pointer}
 .cam img{width:100%;height:100%;object-fit:cover;display:block}
-.cam span{position:absolute;left:10px;bottom:8px;font-size:13px;background:rgba(0,0,0,.55);padding:3px 9px;border-radius:10px}
-.view{position:absolute;inset:0;z-index:6;background:#000;display:flex;flex-direction:column}
+.cam span{position:absolute;z-index:1;left:10px;bottom:8px;font-size:13px;background:rgba(0,0,0,.55);padding:3px 9px;border-radius:10px}
+.view{position:absolute;inset:0;z-index:6;background:#000;display:flex;flex-direction:column;touch-action:pan-y}
 .view video,.view .still{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.view video{opacity:0;transition:opacity .3s}.view video.on{opacity:1}
+.view.inr video,.view.inr .still{animation:camR .28s ease-out}.view.inl video,.view.inl .still{animation:camL .28s ease-out}
+@keyframes camR{from{transform:translateX(30%);opacity:0}}@keyframes camL{from{transform:translateX(-30%);opacity:0}}
+.vnav{position:absolute;top:50%;width:44px;height:44px;margin-top:-22px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.35);cursor:pointer}.vnav.l{left:8px}.vnav.r{right:8px}.vnav svg{width:22px;height:22px}
+.vdots{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;gap:7px}.vdots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35)}.vdots i.on{background:#fff}
+.vcount{color:var(--muted);font-size:13px;padding-right:14px}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}.cam.on video{opacity:1}
+.clive{position:absolute;right:10px;top:8px;font-style:normal;font-size:10.5px;letter-spacing:.08em;background:rgba(214,48,49,.85);padding:2px 7px;border-radius:8px;opacity:0}.cam.on .clive{opacity:1}
 .vmsg{position:absolute;left:0;right:0;bottom:24px;text-align:center;font-size:13px;color:var(--muted);padding:0 20px}
 .view .top{position:absolute;top:0;left:0;right:0}
 /* sheets */
@@ -419,6 +427,9 @@ svg{flex:none}
 .stot b{display:block;font-size:15px;font-weight:500}.stot b i{font-style:normal;font-size:10px;color:var(--muted);margin-left:2px}.stot small{font-size:11px;color:var(--muted)}
 .efc-host{margin:0 -6px}
 .srow{display:flex;align-items:center;justify-content:space-between;gap:8px}.srow small{color:var(--muted);font-size:12.5px}
+.lblr{display:flex;align-items:center;justify-content:space-between;padding-right:4px}.lnk{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--acc);cursor:pointer}.lnk svg{width:14px;height:14px}
+.spr{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:16px;background:rgba(16,14,18,.55);border:1px solid rgba(255,255,255,.1);margin-bottom:6px}.spr.on{border-color:rgba(var(--accrgb),.7)}.spr>svg{width:20px;height:20px;flex:none;opacity:.8}
+.spr .nm{flex:1;min-width:0}.spr input{width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:inherit;font:inherit;font-size:16px;padding:7px 9px}.spr small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}.spr .chip{flex:none}
 .pick{position:absolute;inset:0;z-index:7;background:rgb(16,15,19);border-radius:26px 26px 0 0;display:flex;flex-direction:column}
 .msg{position:absolute;left:50%;bottom:calc(76px + var(--dash-bot,0px));transform:translateX(-50%);background:rgba(20,20,24,.95);border:1px solid var(--line);padding:9px 16px;border-radius:18px;font-size:14px;z-index:9;white-space:nowrap;pointer-events:none}
 `;
@@ -624,7 +635,7 @@ class Ar4cDash extends HTMLElement {
     this.shadowRoot.addEventListener("click", (e) => this._click(e));
     // typing: the page isn't redrawn under the keyboard; it catches up when typing stops
     this.shadowRoot.addEventListener("focusout", () => setTimeout(() => {
-      if (this._later && !this.typing() && !this._down) { this._later = false; this._render(true); }
+      if (this._later && !this.typing() && !this.fingerDown()) { this._later = false; this._render(true); }
     }, 60));
     // hold to repeat (remote arrows, volume)
     this.shadowRoot.addEventListener("pointerdown", (ev) => {
@@ -647,6 +658,7 @@ class Ar4cDash extends HTMLElement {
       if (k === "iconfile") { this._upFor = { kind: "icon", k: t.getAttribute("data-k") }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "bgfile") { this.bgFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "lutol" && this.logoUp) { this.logoUp.tol = Number(t.value); clearTimeout(this._luT); this._luT = setTimeout(() => this.logoCut(), 60); return; }
+      if (k === "spname") { (this.spDraft = this.spDraft || {})[t.getAttribute("data-k")] = t.value; return; }
       if (k === "nm") {
         (this.nameDraft = this.nameDraft || {})[t.getAttribute("data-e")] = t.value; this.dirty = true;
         const sv = this.shadowRoot.querySelector('[data-act="s-save"]'); if (sv) { sv.textContent = "Save for everyone"; sv.style.cssText = "justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent"; }
@@ -856,9 +868,12 @@ class Ar4cDash extends HTMLElement {
     else { const wx = Object.keys(this._hass.states).filter((e) => e.indexOf("weather.") === 0)[0]; if (wx) w.push(wx); }
     return (this._watch = w);
   }
+  fingerDown() { return !!this._down && Date.now() - (this._downAt || 0) < 1500; }
   typing() { const a = this.shadowRoot && this.shadowRoot.activeElement; return !!a && (a.tagName === "INPUT" || a.tagName === "SELECT"); }
   _changed() {
-    if (!this._ready || this.dragging) return;
+    if (!this._ready) return;
+    if (this.dragging && Date.now() - (this._dragAt || 0) < 2000) { this._later = true; return; }
+    this.dragging = false;
     // Home Assistant hands over new states for every change in the house, many a
     // second; Home Assistant keeps unchanged states as the same objects, so only
     // a change to one of this dash's own entities redraws it
@@ -869,7 +884,7 @@ class Ar4cDash extends HTMLElement {
       if (seen[e] !== o) { seen[e] = o; diff = true; }
     });
     if (!diff) return;
-    if (this._down || this.typing()) { this._later = true; return; } // a finger is on the screen: redraw when it lifts
+    if (this.fingerDown() || this.typing()) { this._later = true; return; } // a finger is on the screen: redraw when it lifts
     if (this.sheet === "settings" && this.setTab === "setup") return; // typing: leave the setup page alone
     if (this._raf) return;
     this._raf = requestAnimationFrame(() => { this._raf = 0; this._render(true); });
@@ -898,7 +913,7 @@ class Ar4cDash extends HTMLElement {
     if (soft) { const s2 = pg.querySelector(".scroll,.dialw"); if (s2) s2.scrollTop = y; const s3 = this.app.querySelector(".sheet .shb"); if (s3) s3.scrollTop = shy; }
     pg.querySelectorAll("canvas[data-lamp]").forEach((c) => this.lamp(c, c.getAttribute("data-lamp")));
     if (this.page === "climate") this.paintDial();
-    if (this.viewCam) this._attachLive();
+    if (this.page === "cameras") this._camFill();
     if (this.page === "utilities") this.efcMount();
     if (this.page === "garage") {
       // the door slides from where it was to where it is now
@@ -974,8 +989,8 @@ class Ar4cDash extends HTMLElement {
     });
     else es.forEach((e) => (rows += row(e)));
     const n = es.filter((e) => this.isOn(e)).length;
-    const hint = ren ? "Type a new name \u00b7 leave it empty to use the Home Assistant name \u00b7 every phone shows it" : "Slide a light to dim it \u00b7 tap it to switch on or off";
-    return chips + '<div class="scroll">' + (rows || '<div class="empty">No lights in this room.</div>') + '</div><div class="hint">' + hint + '</div><div class="bot"><div class="pill" data-act="roomoff">' + line("power") + 'Room Off</div><span class="lbl">' + n + " of " + es.length + " on</span></div>";
+    const hint = ren ? "Type a new name \u00b7 leave it empty to use the Home Assistant name \u00b7 every phone shows it" : "";
+    return chips + '<div class="scroll">' + (rows || '<div class="empty">No lights in this room.</div>') + '</div>' + (hint ? '<div class="hint">' + hint + "</div>" : "") + '<div class="bot"><div class="pill" data-act="roomoff">' + line("power") + 'Room Off</div><span class="lbl">' + n + " of " + es.length + " on</span></div>";
   }
   lampRgb(e) {
     const s = this.st(e);
@@ -1014,13 +1029,27 @@ class Ar4cDash extends HTMLElement {
     const R = this.shadowRoot;
     let cur = null;
     // no redraw while a finger is down (a tap must land on the button it started on)
-    R.addEventListener("pointerdown", () => (this._down = true), true);
+    // A lift the dash doesn't see (finger slid off it, phone locked or the app sent to
+    // the background mid-touch) must never stop it updating: a touch counts as down
+    // for 1.5 s at most, lifts are caught anywhere on the page, and coming back to
+    // the app clears it and redraws.
+    R.addEventListener("pointerdown", () => { this._down = true; this._downAt = Date.now(); clearTimeout(this._downT); this._downT = setTimeout(lift, 1600); }, true);
     const lift = () => {
+      clearTimeout(this._downT);
+      if (!this._down && !this._later) return;
       this._down = false;
-      if (this._later) { this._later = false; setTimeout(() => !this._down && this._render(true), 50); }
+      if (this._later) { this._later = false; setTimeout(() => !this.fingerDown() && this._render(true), 50); }
     };
     R.addEventListener("pointerup", lift, true);
     R.addEventListener("pointercancel", lift, true);
+    if (!this._liftWin) {
+      this._liftWin = () => lift();
+      this._wake = () => { if (document.visibilityState === "visible") { this._down = false; this.dragging = false; this._later = false; this._seen = {}; this._render(true); } };
+    }
+    window.addEventListener("pointerup", this._liftWin, true);
+    window.addEventListener("pointercancel", this._liftWin, true);
+    window.addEventListener("blur", this._liftWin);
+    document.addEventListener("visibilitychange", this._wake);
     R.addEventListener("pointerdown", (ev) => {
       if (ev.target.closest("[data-act]")) return;
       const row = ev.target.closest(".lt");
@@ -1037,7 +1066,7 @@ class Ar4cDash extends HTMLElement {
         if (!this.dimmable(e)) return;
         if (!cur.moved && Math.abs(ev.clientX - cur.x0) < 8) return;
         cur.moved = true;
-        this.dragging = true;
+        this.dragging = true; this._dragAt = Date.now();
         cur.row.classList.add("drag");
         const r = cur.row.getBoundingClientRect();
         const v = clamp(Math.round(((ev.clientX - r.left) / r.width) * 100), 1, 100);
@@ -1066,11 +1095,19 @@ class Ar4cDash extends HTMLElement {
     };
     R.addEventListener("pointerup", end);
     R.addEventListener("pointercancel", end);
+    // full-screen camera: swipe sideways for the next one
+    let sw = null;
+    R.addEventListener("pointerdown", (ev) => { sw = this.viewCam && ev.target.closest("[data-cview]") ? { x: ev.clientX, y: ev.clientY, t: Date.now() } : null; });
+    R.addEventListener("pointerup", (ev) => {
+      if (!sw || !this.viewCam) return;
+      const dx = ev.clientX - sw.x, dy = ev.clientY - sw.y; sw = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) { ev.preventDefault(); this._swiped = Date.now(); this.camGo(dx < 0 ? 1 : -1); }
+    });
   }
   _slide(c, ev, done) {
     const sl = c.sl, r = sl.getBoundingClientRect();
     const v = clamp(Math.round(((ev.clientX - r.left) / r.width) * 100), 0, 100);
-    this.dragging = !done;
+    this.dragging = !done; this._dragAt = Date.now();
     sl.querySelector("i").style.width = v + "%";
     sl.querySelector("b").style.left = v + "%";
     const e = sl.getAttribute("data-e"), kind = sl.getAttribute("data-kind");
@@ -1333,13 +1370,25 @@ class Ar4cDash extends HTMLElement {
     const pl = sp.player || {}, it = pl.item, dev = sp.active();
     const vh = this.opt["SP#vol"];
     const vol = vh && vh.until > Date.now() ? vh.v : dev && dev.volume_percent != null ? dev.volume_percent : null;
-    let h = this.nowCard({ art: it && it.album && it.album.images && it.album.images[0] ? it.album.images[0].url : "", title: it ? it.name : sp.err ? "Spotify isn't connected" : "Pick something to play", sub: it ? (it.artists || []).map((a) => a.name).join(", ") : sp.err || "", where: dev ? "on " + dev.name : "", playing: !!pl.is_playing, act: "sact", vol, volKey: "SP", volKind: "svol" });
+    let h = this.nowCard({ art: it && it.album && it.album.images && it.album.images[0] ? it.album.images[0].url : "", title: it ? it.name : sp.err ? "Spotify isn't connected" : "Pick something to play", sub: it ? (it.artists || []).map((a) => a.name).join(", ") : sp.err || "", where: dev ? "on " + this.spName(dev) : "", playing: !!pl.is_playing, act: "sact", vol, volKey: "SP", volKind: "svol" });
     const tab = this.spTab || "playlists";
     if (tab !== "group" && tab !== "search") {
-      h += '<div class="lbl">Spotify speakers</div><div class="spk">';
-      if (!sp.devices.length) h += '<div class="hint" style="text-align:left;padding:8px 2px">' + (sp.err ? "Spotify: " + esc(sp.err) : "No Spotify speakers awake: open Spotify on one first.") + "</div>";
-      sp.devices.forEach((d) => (h += '<div class="sk' + (d.is_active ? " on" : "") + '" data-act="spick" data-v="' + esc(d.id) + '">' + line("speaker") + "<b>" + esc(d.name) + "</b><small>" + (d.is_active ? "Playing on" : "Tap to switch") + "</small></div>"));
-      h += "</div>";
+      const ren = !!this.spRen;
+      h += '<div class="lblr"><span class="lbl">Spotify speakers</span>' + (sp.devices.length ? (ren ? '<span class="lnk" data-act="spren-done">Done</span>' : '<span class="lnk" data-act="spren">' + line("pencil") + "Rename</span>") : "") + "</div>";
+      if (ren) {
+        // some amps tell Spotify a code instead of their name: name them here (every phone);
+        // Play here sends the music to it, so you can hear which one it is
+        h += '<div class="hint" style="text-align:left;padding:0 2px 6px">Tap Play here to hear which speaker it is, then type its name. Empty goes back to Spotify\'s name.</div>';
+        sp.devices.forEach((d) => {
+          const k = "spotify." + d.id, v = this.spDraft && k in this.spDraft ? this.spDraft[k] : (this.conf.names || {})[k] || "";
+          h += '<div class="spr' + (d.is_active ? " on" : "") + '">' + line("speaker") + '<div class="nm"><input data-in="spname" data-k="' + esc(k) + '" value="' + esc(v) + '" placeholder="' + esc(d.name) + '" maxlength="40"><small>' + (d.is_active ? "Playing now" : esc(d.type || "Speaker")) + '</small></div><div class="chip" data-act="spick" data-v="' + esc(d.id) + '">Play here</div></div>';
+        });
+      } else {
+        h += '<div class="spk">';
+        if (!sp.devices.length) h += '<div class="hint" style="text-align:left;padding:8px 2px">' + (sp.err ? "Spotify: " + esc(sp.err) : "No Spotify speakers awake: open Spotify on one first.") + "</div>";
+        sp.devices.forEach((d) => (h += '<div class="sk' + (d.is_active ? " on" : "") + '" data-act="spick" data-v="' + esc(d.id) + '">' + line("speaker") + "<b>" + esc(this.spName(d)) + "</b><small>" + (d.is_active ? "Playing on" : "Tap to switch") + "</small></div>"));
+        h += "</div>";
+      }
     }
     h += '<div class="chips" style="padding:0">';
     [["playlists", "Playlists"], ["liked", "Liked songs"], ["search", "Search"], ["group", "Group"]].forEach((x) => (h += '<div class="chip' + (x[0] === tab ? " on" : "") + '" data-act="stab2" data-v="' + x[0] + '">' + x[1] + "</div>"));
@@ -1392,9 +1441,11 @@ class Ar4cDash extends HTMLElement {
     const d = this.spot().active();
     if (!d) return null;
     const n = (x) => String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const all = this.musicAll(), dn = n(d.name);
+    const all = this.musicAll(), dn = n(this.spName(d));
     return all.filter((e) => n(this.name(e)) === dn)[0] || all.filter((e) => dn && (n(this.name(e)).indexOf(dn) >= 0 || dn.indexOf(n(this.name(e))) >= 0))[0] || null;
   }
+  // a Spotify speaker's name: the one given on the dash, else Spotify's own
+  spName(d) { return (this.conf && this.conf.names && this.conf.names["spotify." + d.id]) || d.name || "Speaker"; }
   musicAll() { const s = []; this.rooms.forEach((r) => r.music.forEach((e) => { if (s.indexOf(e) < 0) s.push(e); })); return s; }
   canGroup(e) { const s = this.st(e); return !!s && ((s.attributes.supported_features || 0) & 524288) !== 0; }
   plat(e) { const x = this._hass.entities && this._hass.entities[e]; return (x && x.platform) || ""; }
@@ -1402,7 +1453,7 @@ class Ar4cDash extends HTMLElement {
     const d = this.spot().active();
     if (!d) return '<div class="empty" style="padding:16px">Pick a speaker first: Spotify plays there, the others join it.</div>';
     const lead = this.spLead();
-    let h = '<div class="lbl" style="padding:2px 4px 6px">Playing on ' + esc(d.name) + "</div>";
+    let h = '<div class="lbl" style="padding:2px 4px 6px">Playing on ' + esc(this.spName(d)) + "</div>";
     if (!lead || !this.canGroup(lead)) return h + '<div class="empty" style="padding:12px">' + (lead ? esc(this.name(lead)) + " can't group with other speakers." : "This speaker isn't one of the rooms' speakers in Setup, so it can't be grouped here.") + "</div>";
     const mem = this.maMembers(lead);
     this.musicAll().filter((e) => e !== lead).forEach((e) => {
@@ -1554,26 +1605,99 @@ class Ar4cDash extends HTMLElement {
       this.shadowRoot.querySelectorAll('img[data-cam="' + e + '"]').forEach((im) => (im.src = m[e]));
     }).catch(() => {});
   }
+  // ---- cameras: every camera plays live; tap one for full screen, swipe for the next ----
+  // The page's HTML doesn't change with the cameras' states, so it is never redrawn
+  // under the videos; pictures and streams are put in after drawing.
   pCameras() {
     let h = "";
     this.house.cameras.forEach((e) => {
-      const src = this.camSrc(e);
-      h += '<div class="cam" data-act="cam" data-e="' + esc(e) + '"><img alt="" data-cam="' + esc(e) + '"' + (src ? ' src="' + esc(src) + '"' : "") + "><span>" + esc(this.camName(e)) + "</span></div>";
+      h += '<div class="cam" data-act="cam" data-e="' + esc(e) + '"><img alt="" data-cam="' + esc(e) + '"><video playsinline muted autoplay data-cv="' + esc(e) + '"></video><span>' + esc(this.camName(e)) + '</span><i class="clive">LIVE</i></div>';
     });
-    return '<div class="scroll">' + (h ? '<div class="cams">' + h + '</div><div class="hint">Tap a camera for live video</div>' : '<div class="empty">No cameras set up.</div>') + "</div>";
+    return '<div class="scroll">' + (h ? '<div class="cams">' + h + "</div>" : '<div class="empty">No cameras set up.</div>') + "</div>";
   }
   camView() {
-    const e = this.viewCam, src = this.camSrc(e);
-    return '<div class="view"><video playsinline muted autoplay></video><img class="still" alt="" data-cam="' + esc(e) + '"' + (src ? ' src="' + esc(src) + '"' : "") + '><div class="vmsg">Connecting\u2026</div><div class="top"><div class="ib" data-act="camx">' + line("x") + '</div><div class="room">' + esc(this.camName(e)) + "</div></div></div>";
+    const e = this.viewCam, all = this.house.cameras, i = all.indexOf(e);
+    let dots = "";
+    if (all.length > 1) all.forEach((x, j) => (dots += "<i" + (j === i ? ' class="on"' : "") + "></i>"));
+    return '<div class="view" data-cview><img class="still" alt="" data-cam="' + esc(e) + '"><video playsinline muted autoplay data-vv="' + esc(e) + '"></video><div class="vmsg">Connecting\u2026</div>' +
+      '<div class="top"><div class="ib" data-act="camx">' + line("x") + '</div><div class="room">' + esc(this.camName(e)) + '</div><div class="sp"></div>' + (all.length > 1 ? '<small class="vcount">' + (i + 1) + " / " + all.length + "</small>" : "") + "</div>" +
+      (all.length > 1 ? '<div class="vnav l" data-act="camnext" data-v="-1">' + line("chevl") + '</div><div class="vnav r" data-act="camnext" data-v="1">' + line("chevr") + '</div><div class="vdots">' + dots + "</div>" : "") + "</div>";
+  }
+  camGo(step) {
+    const all = this.house.cameras; if (all.length < 2) return;
+    const i = all.indexOf(this.viewCam);
+    this._stopView();
+    this.viewCam = all[(i + step + all.length) % all.length];
+    this._camDir = step;
+    this._render(true);
+  }
+  // one live stream on a video element; calls back when it plays or can't
+  _stream(e, v, on) {
+    const st = { hls: null, dead: false };
+    const fail = (why) => { if (st.dead) return; st.dead = true; if (st.hls) { st.hls.destroy(); st.hls = null; } on && on(false, why); };
+    const ask = this.isRtsp(e) ? { type: "ar_4c_dash/stream", index: Number(e.slice(5)) } : { type: "camera/stream", entity_id: e };
+    v.addEventListener("playing", () => on && on(true), { once: true });
+    this._hass.callWS(ask).then((res) => {
+      if (st.dead) return;
+      if (!res || !res.url) return fail();
+      loadHls().then((Hls) => {
+        if (st.dead) return;
+        if (Hls && Hls.isSupported()) {
+          const hls = (st.hls = new Hls({ liveSyncDurationCount: 2, maxBufferLength: 8, lowLatencyMode: true }));
+          hls.on(Hls.Events.ERROR, (_, d) => { if (d && d.fatal) fail(); });
+          hls.loadSource(res.url);
+          hls.attachMedia(v);
+          v.play().catch(() => {});
+        } else if (v.canPlayType("application/vnd.apple.mpegurl")) { v.src = res.url; v.play().catch(() => {}); }
+        else fail();
+      });
+    }).catch((er) => fail(er && er.message));
+    st.stop = () => { st.dead = true; if (st.hls) { st.hls.destroy(); st.hls = null; } try { v.removeAttribute("src"); v.load(); } catch (x) { /* gone */ } };
+    return st;
+  }
+  // after drawing the cameras page: pictures in, streams on (the open camera only while one is open)
+  _camFill() {
+    const R = this.shadowRoot, tiles = this._tiles || (this._tiles = {});
+    R.querySelectorAll("img[data-cam]").forEach((im) => { const e = im.getAttribute("data-cam"), src = this.camSrc(e); if (src && !im.getAttribute("src")) im.src = src; });
+    const view = !!this.viewCam;
+    R.querySelectorAll("video[data-cv]").forEach((v) => {
+      const e = v.getAttribute("data-cv"), t = tiles[e];
+      if (view) { if (t) { t.stop(); delete tiles[e]; } return; }
+      if (t && t.v === v) return;
+      if (t) t.stop();
+      const cam = v.closest(".cam");
+      const nt = this._stream(e, v, (ok) => { if (cam) cam.classList.toggle("on", ok); if (!ok) { nt.failed = true; } });
+      nt.v = v; tiles[e] = nt;
+    });
+    Object.keys(tiles).forEach((e) => { if (!tiles[e].v.isConnected) { tiles[e].stop(); delete tiles[e]; } });
+    const vv = R.querySelector("video[data-vv]");
+    if (vv && (!this._vs || this._vs.v !== vv)) {
+      this._stopView();
+      const e = this.viewCam, msg = R.querySelector(".vmsg");
+      const vs = (this._vs = this._stream(e, vv, (ok, why) => {
+        if (this._vs !== vs) return;
+        if (ok) { if (msg) msg.style.display = "none"; vv.classList.add("on"); }
+        else { this._liveFail = true; if (msg) msg.textContent = why ? why + ": showing pictures" : "Live video isn't available for this camera: showing pictures"; }
+      }));
+      vs.v = vv;
+      if (this._camDir) { const d = this._camDir; this._camDir = 0; const box = R.querySelector(".view"); if (box) { box.classList.add(d > 0 ? "inr" : "inl"); } }
+    }
+  }
+  _stopView() { if (this._vs) { this._vs.stop(); this._vs = null; } this._liveFail = false; }
+  _stopLive() {
+    this._stopView();
+    Object.keys(this._tiles || {}).forEach((e) => this._tiles[e].stop());
+    this._tiles = {};
   }
   _camLoop() {
+    // still pictures under the videos (shown until a stream plays, or when one can't)
     clearInterval(this._camT);
     const tick = () => {
       if (this.page !== "cameras") return clearInterval(this._camT);
-      const live = this.viewCam && !this._liveFail;
       this.house.cameras.forEach((e) => {
-        if (live && e === this.viewCam) return;
-        if (this.viewCam && e !== this.viewCam) return; // only the open camera while one is open
+        if (this.viewCam && e !== this.viewCam) return;
+        const t = this.viewCam ? this._vs : (this._tiles || {})[e];
+        if (t && !t.dead && t.v && t.v.classList.contains("on") || (t && !t.dead && t.v && t.v.closest(".cam.on"))) return; // playing
         if (this.isRtsp(e)) return this._snap(e);
         (this._camAt || (this._camAt = {}))[e] = Date.now();
         const n = new Image();
@@ -1582,45 +1706,7 @@ class Ar4cDash extends HTMLElement {
       });
     };
     this.house.cameras.filter((e) => this.isRtsp(e) && !(this._rsnap && this._rsnap[e])).forEach((e) => this._snap(e));
-    this._camT = setInterval(tick, this.viewCam ? 1500 : 8000);
-  }
-  // live video: Home Assistant makes an HLS stream (camera/stream, or ours for RTSP)
-  _attachLive() {
-    const v = this.shadowRoot.querySelector(".view video");
-    if (!v || v.__live === this.viewCam) return;
-    const e = (v.__live = this.viewCam);
-    const msg = this.shadowRoot.querySelector(".vmsg");
-    const fail = (why) => {
-      if (this.viewCam !== e) return;
-      this._liveFail = true;
-      v.style.display = "none";
-      if (msg) msg.textContent = why || "Live video isn't available for this camera: showing pictures";
-      this._camLoop();
-    };
-    this._liveFail = false;
-    const ask = this.isRtsp(e) ? { type: "ar_4c_dash/stream", index: Number(e.slice(5)) } : { type: "camera/stream", entity_id: e };
-    this._hass.callWS(ask).then((res) => {
-      if (this.viewCam !== e || !res || !res.url) return fail();
-      const url = res.url;
-      const playing = () => { if (msg) msg.style.display = "none"; const st = this.shadowRoot.querySelector(".view .still"); if (st) st.style.display = "none"; };
-      v.addEventListener("playing", playing, { once: true });
-      const useNative = () => { v.src = url; v.play().catch(() => {}); };
-      loadHls().then((Hls) => {
-        if (this.viewCam !== e) return;
-        if (Hls && Hls.isSupported()) {
-          const hls = (this._hls = new Hls({ liveSyncDurationCount: 2, maxBufferLength: 8 }));
-          hls.on(Hls.Events.ERROR, (_, d) => { if (d && d.fatal) { hls.destroy(); this._hls = null; fail(); } });
-          hls.loadSource(url);
-          hls.attachMedia(v);
-          v.play().catch(() => {});
-        } else if (v.canPlayType("application/vnd.apple.mpegurl")) useNative();
-        else fail();
-      });
-    }).catch((er) => fail(er && er.message ? er.message + ": showing pictures" : null));
-  }
-  _stopLive() {
-    if (this._hls) { this._hls.destroy(); this._hls = null; }
-    this._liveFail = false;
+    this._camT = setInterval(tick, 5000);
   }
   pUtil() {
     // Utilities: all the switches and readings in one card; Solar on its own tab
@@ -2120,6 +2206,7 @@ class Ar4cDash extends HTMLElement {
 
   // ---- taps -------------------------------------------------------------------------
   _click(ev) {
+    if (this._swiped && Date.now() - this._swiped < 400) return;
     const t = ev.target.closest("[data-act]");
     if (!t) return;
     const act = t.getAttribute("data-act"), e = t.getAttribute("data-e"), v = t.getAttribute("data-v");
@@ -2201,8 +2288,9 @@ class Ar4cDash extends HTMLElement {
         else if (c.v.length < 8) c.v += v;
         break;
       }
-      case "cam": this._stopLive(); this.viewCam = e; this._camLoop(); break;
-      case "camx": this._stopLive(); this.viewCam = null; this._camLoop(); break;
+      case "cam": this.viewCam = e; this._camLoop(); break;
+      case "camx": this._stopView(); this.viewCam = null; this._camLoop(); break;
+      case "camnext": this.camGo(Number(v)); return;
       case "lsrc": this.lsrc = v; this.P.lsrc = v; this._save(); this.libOpen = null; if (v !== "spotify" && this.sp) this.sp.stop(); break;
       case "ltab": this.libTab = v; this.libOpen = null; break;
       case "stab2": this.spTab = v; this.libOpen = null; break;
@@ -2334,6 +2422,15 @@ class Ar4cDash extends HTMLElement {
       case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
       case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;
+      case "spren": this.spRen = true; this.spDraft = {}; break;
+      case "spren-done": {
+        const d = this.spDraft || {}; this.spRen = false; this.spDraft = null;
+        if (!Object.keys(d).length) break;
+        this.conf.names = Object.assign({}, this.conf.names);
+        Object.keys(d).forEach((k) => { const x = d[k].trim(); if (x) this.conf.names[k] = x; else delete this.conf.names[k]; });
+        this._hass.callWS({ type: "ar_4c_dash/set_names", names: d }).then(() => this._toast("Speaker names saved: every phone shows them")).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save the names"));
+        break;
+      }
       case "covg": { const g = (room.shadeGroups || [])[Number(t.getAttribute("data-g"))]; if (g) this.call("cover", v, { entity_id: g.shades }); return; }
       case "gs-clr": delete this.draft.garageSensors[e]; this.dirty = true; break;
       case "s-names": this.namesOpen = !this.namesOpen; break;

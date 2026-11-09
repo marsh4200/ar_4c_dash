@@ -40,7 +40,7 @@ Open the Home Assistant app → sidebar → **4C Dash** (Settings → Profile ca
 - **Comfort**: a dial with − and +, modes and fan speeds.
 - **Listen**: works like the panels. Music Assistant: now playing, speakers (tap one to join or leave the group), Favourites, Playlists, Artists, Radio and Search; open a playlist to play it or one song. Spotify: your playlists, Liked songs, Search, and which speaker plays.
 - **Watch**: pick a source; the phone shows each step as it happens (turning on, switching input, opening the app), then the remote: arrows and OK, back, home, menu, play/skip, volume and mute, Change source, TV off.
-- **Shades**: up/stop/down and position. **Scenes**, **Security** (arm/disarm; a keypad when the alarm needs a code), **Cameras** (pictures; tap one for live video, from Home Assistant cameras and RTSP cameras), **Utilities**.
+- **Shades**: up/stop/down and position. **Scenes**, **Security** (arm/disarm; a keypad when the alarm needs a code), **Cameras** (all live as soon as you open them; tap one for full screen, swipe sideways for the next; Home Assistant cameras and RTSP cameras), **Utilities**.
 - Gear (10 taps top right) → **Icons**: change the home buttons' icons for the whole home: every phone shows the new icon straight away (by category, or **Upload** your own: a plain background is taken off; icons uploaded in AR Lighting Scenes show too). Gear → **Look**: Rings or Icons only (the same on every phone), and the background (or **Upload photo**; each phone has its own). Uploaded logos, icons and backgrounds are kept in Home Assistant's config folder (`ar_4c_dash/`), so updates keep them.
 
 Icons are the same on every phone. Look, background and the last room are saved with each person's Home Assistant login, so they follow them to every phone.
@@ -50,6 +50,12 @@ Icons are the same on every phone. Look, background and the last room are saved 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
 
 ## Changes
+
+- **1.3.9**: Cameras play live as soon as you open them; tap one for full screen, swipe sideways (or the arrows) for the next. Streams keep playing while other things in the house change, and stop when you leave Cameras.
+
+- **1.3.8**: Always live: the dash could stop updating (lights, who's home, everything) until the page was reloaded, after a touch whose lift it missed. It now catches up by itself, and redraws when you come back to the app. The "slide a light to dim it" line is gone from the Lights page.
+
+- **1.3.7**: Spotify speakers can be renamed on the dash (Listen → Spotify → Rename): some amps give Spotify a code instead of a name. Play here moves the music to a speaker so you can hear which one it is. Every phone shows the names.
 
 - **1.3.6**: Whole House curtains/blinds are grouped by room, with open / close for each room. Rings or Icons only now applies to every phone (the background stays each phone's own).
 
