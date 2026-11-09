@@ -20,6 +20,7 @@ const INVERTERS = [["default", "Other"], ["sunsynk", "Sunsynk"], ["deye", "Deye"
 const PICK_DOM = { presence: ["binary_sensor", "input_boolean"], ptemp: ["sensor", "weather", "climate"], lights: ["light", "switch"], climate: ["climate"], music: ["media_player"], watch: ["media_player", "remote"], shades: ["cover"], scenes: ["scene", "script"], cameras: ["camera"], security: ["alarm_control_panel"], utilities: ["switch", "input_boolean", "sensor", "binary_sensor", "fan", "light", "valve", "water_heater", "lock"], weather: ["weather"], solar: ["sensor"], gsensor: ["binary_sensor", "sensor", "input_boolean"], garage: ["cover", "switch", "button", "input_button", "lock"], people: ["person", "device_tracker"] };
 const BASE = "/ar_4c_dash_static";
 const PREF_KEY = "ar_4c_dash";
+const DROP = '<svg viewBox="0 0 24 24"><path d="M12 3.5c3 3.6 5.5 6.9 5.5 10a5.5 5.5 0 0 1-11 0c0-3.1 2.5-6.4 5.5-10z"/></svg>';
 const SUNUP = '<svg viewBox="0 0 24 24"><path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 4v4M9.5 6.5L12 4l2.5 2.5M4.5 13l1.6.9M19.5 13l-1.6.9"/></svg>';
 const SUNDN = '<svg viewBox="0 0 24 24"><path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 4v4M9.5 5.5L12 8l2.5-2.5M4.5 13l1.6.9M19.5 13l-1.6.9"/></svg>';
 const LINE = {
@@ -137,7 +138,10 @@ svg{flex:none}
 .room small svg,.room>svg{width:14px;height:14px}
 .sp{flex:1}
 .clock{padding:22px 24px 0}
-.stat{position:absolute;right:16px;top:64px;z-index:2;display:flex;flex-direction:column;align-items:flex-end;gap:7px;pointer-events:none}
+.hero{display:flex;align-items:flex-start;gap:8px;padding-right:16px}.hero .clock{flex:none;max-width:54%}
+.stat{flex:1;min-width:0;margin-top:20px;display:flex;justify-content:flex-end;pointer-events:none}
+.stz{display:flex;flex-direction:column;align-items:flex-end;gap:7px;max-width:100%}
+.sti{max-width:100%;box-sizing:border-box}.sti.sun{flex-wrap:wrap;justify-content:flex-end;row-gap:3px}
 .strow{display:flex;gap:6px}
 .sti{display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(241,237,230,.85);background:rgba(16,14,18,.45);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:5px 10px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .sti svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
@@ -669,6 +673,14 @@ class Ar4cDash extends HTMLElement {
       if (k === "bgfile") { this.bgFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "lutol" && this.logoUp) { this.logoUp.tol = Number(t.value); clearTimeout(this._luT); this._luT = setTimeout(() => this.logoCut(), 60); return; }
       if (k === "spname") { (this.spDraft = this.spDraft || {})[t.getAttribute("data-k")] = t.value; return; }
+      if (k === "ssize") {
+        // bigger temperature / sunrise / motion: shows straight away, saved for every phone
+        const z = Number(t.value) / 100; this.conf.statusScale = z;
+        const lab = this.shadowRoot.querySelector("[data-zv]"); if (lab) lab.textContent = t.value + "%";
+        const el = this.shadowRoot.querySelector(".stz"); if (el) el.style.zoom = z;
+        clearTimeout(this._szT); this._szT = setTimeout(() => this._hass.callWS({ type: "ar_4c_dash/set_look", scale: z }).catch(() => {}), 400);
+        return;
+      }
       if (k === "nm") {
         (this.nameDraft = this.nameDraft || {})[t.getAttribute("data-e")] = t.value; this.dirty = true;
         const sv = this.shadowRoot.querySelector('[data-act="s-save"]'); if (sv) { sv.textContent = "Save for everyone"; sv.style.cssText = "justify-content:center;background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent"; }
@@ -956,7 +968,7 @@ class Ar4cDash extends HTMLElement {
     const hasLights = this.room().lights.length;
     return (
       '<div class="top"><div class="ib" data-act="menu" title="Home Assistant menu">' + MENU + '</div><div class="room" data-act="rooms">' + this.roomName() + line("down") + '</div><div class="sp"></div>' + (this.gearUntil > Date.now() ? '<div class="ib gear" data-act="settings">' + line("icons") + "</div>" : '<div class="ib hid" data-act="gtap"></div>') + "</div>" +
-      this.statusHtml() + '<div class="clock"><div class="t">' + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + '</div><div class="d">' + now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + (wtxt ? "<i>" + esc(wtxt) + "</i>" : "") + "</div></div>" + this.peopleHtml() +
+      '<div class="hero"><div class="clock"><div class="t">' + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + '</div><div class="d">' + now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + (wtxt ? "<i>" + esc(wtxt) + "</i>" : "") + "</div></div>" + this.statusHtml() + "</div>" + this.peopleHtml() +
       (this.empty ? '<div class="empty" style="margin-top:auto">' + (this.admin ? 'Nothing set up yet.<br><br><span class="pill" style="display:inline-flex" data-act="setup">' + line("rooms") + "Set up rooms</span>" : "Nothing set up yet. Ask the person who looks after Home Assistant to set up the 4C Dash.") + "</div>" : '<div class="grid">' + (g || '<div class="empty" style="grid-column:1/-1">Nothing set up for this room yet.</div>') + "</div>") +
       (this.houseScenes && this.houseScenes.length && !this.empty ? '<div class="chips hsc">' + this.houseScenes.map((e) => '<div class="chip dot sc" data-act="scene" data-e="' + esc(e) + '"><i></i>' + esc(this.name(e)) + "</div>").join("") + "</div>" : "") +
       '<div class="bot">' + (hasLights ? '<div class="pill" data-act="roomoff">' + line("power") + "Room Off</div>" : "<span></span>") + "</div>"
@@ -1871,7 +1883,9 @@ class Ar4cDash extends HTMLElement {
     if (c.temp) {
       const s = this.st(c.temp);
       let v = s ? (domain(c.temp) === "weather" ? s.attributes.temperature : domain(c.temp) === "climate" ? s.attributes.current_temperature : s.state) : null;
-      if (v != null && !isNaN(parseFloat(v))) row += '<div class="sti">' + line("climate") + "<b>" + Math.round(parseFloat(v) * 10) / 10 + "\u00b0</b></div>";
+      // a humidity sensor shows as % with a droplet; anything else as degrees
+      const hum = s && domain(c.temp) === "sensor" && (s.attributes.device_class === "humidity" || s.attributes.unit_of_measurement === "%");
+      if (v != null && !isNaN(parseFloat(v))) row += '<div class="sti">' + (hum ? DROP : line("climate")) + "<b>" + Math.round(parseFloat(v) * 10) / 10 + (hum ? "%" : "\u00b0") + "</b></div>";
     }
     if (c.sun) {
       const s = this.st("sun.sun"), t = (x) => (x ? new Date(x).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "\u2013");
@@ -1881,9 +1895,10 @@ class Ar4cDash extends HTMLElement {
     if (c.motion) {
       // only while something moves: which room (by its presence sensor)
       const rooms = (this.rooms || []).filter((r) => !r.whole && (r.presence || []).some((e) => { const x = this.st(e); return x && (x.state === "on" || x.state === "detected" || x.state === "home"); }));
-      if (rooms.length) h += '<div class="sti mot" title="' + esc(rooms.map((r) => r.name).join(", ")) + '"><i></i><span>' + esc(rooms[0].name) + (rooms.length > 1 ? " +" + (rooms.length - 1) : "") + "</span></div>";
+      rooms.forEach((r) => (h += '<div class="sti mot"><i></i><span>' + esc(r.name) + "</span></div>"));
     }
-    return h ? '<div class="stat">' + h + "</div>" : "";
+    const z = Math.max(1, Math.min(1.5, Number((this.conf && this.conf.statusScale) || 1)));
+    return h ? '<div class="stat"><div class="stz" style="zoom:' + z + '">' + h + "</div></div>" : "";
   }
   // the home buttons' look, shared by every phone (a phone's own older choice until one is set)
   look() { return this.conf && this.conf.look ? this.conf.look : this.P.look === "bare" ? "bare" : "rings"; }
@@ -1944,6 +1959,11 @@ class Ar4cDash extends HTMLElement {
       });
     } else {
       h += '<div class="setrow"><span class="lbl">Buttons</span><div class="chip' + (this.look() !== "bare" ? " on" : "") + '" data-act="look" data-v="rings">Rings</div><div class="chip' + (this.look() === "bare" ? " on" : "") + '" data-act="look" data-v="bare">Icons only</div></div>';
+      const st = (this.conf && this.conf.status) || {};
+      if (st.temp || st.sun || st.motion) {
+        const z = Math.round(Math.max(1, Math.min(1.5, Number(this.conf.statusScale || 1))) * 100);
+        h += '<div class="setrow" style="flex-wrap:wrap"><span class="lbl">Top right size</span><span class="lbl" data-zv style="margin-left:auto">' + z + '%</span><input type="range" class="rng" data-in="ssize" min="100" max="150" step="5" value="' + z + '"></div>';
+      }
       h += '<div class="lbl" style="padding:6px 4px">Background</div><div class="bgs">';
       const bt = (v, img, l) => (h += '<div class="bgt' + ((this.P.bg || "") === v ? " on" : "") + '" data-act="bg" data-v="' + esc(v) + '"><i style="background-image:url(&quot;' + esc(img) + '&quot;)"></i><small>' + esc(l) + "</small></div>");
       bt("", this.url(this.room().image) || this.url(this.rc.houseImage) || BASE + "/backgrounds/thumbs/villa.jpg", "As set up");
@@ -2035,7 +2055,7 @@ class Ar4cDash extends HTMLElement {
     h += '<div class="lbl">Weather</div>' + this.chipsFor(d.weather ? [d.weather] : [], "h:weather");
     // top right of the home screen, under the settings corner
     const sc = d.status || {}, onOff = (k, on) => '<div class="wrapc" style="justify-content:flex-start"><div class="chip' + (on ? "" : " on") + '" data-act="s-stat" data-v="' + k + '" data-on="0">Off</div><div class="chip' + (on ? " on" : "") + '" data-act="s-stat" data-v="' + k + '" data-on="1">Show</div></div>';
-    h += '<div class="lbl">Top right: temperature</div>' + this.chipsFor(sc.temp ? [sc.temp] : [], "h:ptemp");
+    h += '<div class="lbl">Top right: temperature or humidity</div><div class="hint" style="text-align:left;padding:0">Your weather (its temperature), a temperature sensor, a humidity sensor (shown as %) or an aircon (its room temperature).</div>' + this.chipsFor(sc.temp ? [sc.temp] : [], "h:ptemp");
     h += '<div class="lbl">Top right: sunrise & sunset</div>' + onOff("sun", sc.sun);
     h += '<div class="lbl">Top right: motion</div>' + onOff("motion", sc.motion) + (sc.motion ? '<div class="hint" style="text-align:left;padding:0">Shows a room while its presence / motion sensor (set in each room) sees someone; nothing when nobody is moving.</div>' : "");
     // who's home on the home screen

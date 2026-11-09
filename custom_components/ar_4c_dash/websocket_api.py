@@ -120,6 +120,11 @@ def clean(cfg: Any) -> dict[str, Any]:
         out["status"] = {"sun": bool(stat.get("sun")), "motion": bool(stat.get("motion"))}
         if _ent(stat.get("temp")):
             out["status"]["temp"] = stat["temp"]
+    try:
+        if 1 <= float(cfg.get("statusScale", 0)) <= 1.5:
+            out["statusScale"] = round(float(cfg["statusScale"]), 2)  # size of the top-right items
+    except (TypeError, ValueError):
+        pass
     if cfg.get("look") in ("rings", "bare"):
         out["look"] = cfg["look"]  # Rings or Icons only, for every phone
     gs = cfg.get("garageSensors")
@@ -312,6 +317,7 @@ async def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
     cfg["icons"] = st["config"].get("icons", {})
     cfg["names"] = st["config"].get("names", {})
     cfg["look"] = st["config"].get("look")
+    cfg["statusScale"] = st["config"].get("statusScale")
     cfg = await _store_and_tell(hass, clean(cfg))
     connection.send_result(msg["id"], {"config": cfg})
 
@@ -332,13 +338,20 @@ async def ws_set_icon(hass: HomeAssistant, connection: websocket_api.ActiveConne
     connection.send_result(msg["id"], {"icons": icons})
 
 
-@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/set_look", vol.Required("look"): vol.In(("rings", "bare"))})
+@websocket_api.websocket_command({
+    vol.Required("type"): "ar_4c_dash/set_look",
+    vol.Optional("look"): vol.In(("rings", "bare")),
+    vol.Optional("scale"): vol.All(vol.Coerce(float), vol.Range(min=1, max=1.5)),
+})
 @websocket_api.async_response
 async def ws_set_look(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
-    """Rings or Icons only on the home buttons, for every phone."""
+    """Rings or Icons only on the home buttons, and the size of the top-right items, for every phone."""
     st = await async_store(hass)
     cfg = dict(st["config"])
-    cfg["look"] = msg["look"]
+    if "look" in msg:
+        cfg["look"] = msg["look"]
+    if "scale" in msg:
+        cfg["statusScale"] = msg["scale"]
     await _store_and_tell(hass, clean(cfg))
     connection.send_result(msg["id"])
 
