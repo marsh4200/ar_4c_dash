@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.4.2";
+const VERSION = "1.5.1";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -73,6 +73,8 @@ const PRESETS = {"villa": "villa.jpg", "cape": "cape.jpg", "sunset-sea": "sunset
 const BG_NAMES = { villa: "Villa at dusk", cape: "Cape dusk", "sunset-sea": "Sunset sea", mountains: "Misty mountains", "forest-mist": "Forest mist", dunes: "Desert dunes", stars: "Night sky", aurora: "Aurora", "city-night": "City lights", lounge: "Evening lounge", "marble-white": "White marble", "marble-black": "Black marble", slate: "Slate", concrete: "Concrete", steel: "Brushed steel", walnut: "Walnut", oak: "Oak", leather: "Leather", linen: "Linen", "colour-midnight": "Midnight blue", "colour-emerald": "Emerald", "colour-bordeaux": "Bordeaux", "colour-champagne": "Champagne silk", "colour-graphite": "Graphite silk", "colour-twilight": "Twilight", "colour-lagoon": "Lagoon", "colour-amber": "Amber glow", "sky-blue": "Blue sky", "sky-high": "High clouds", "sky-golden": "Golden hour", "sky-dawn": "Pastel dawn", "sky-moon": "Moonlit clouds" };
 const TITLES = { garage: "Garage", lights: "Lights", climate: "Comfort", music: "Listen", watch: "Watch", shades: "Shades", cameras: "Cameras", utilities: "Utilities", security: "Security", scenes: "Scenes" };
 const ORDER = ["lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes"];
+// Utilities sections (3D slider): key, title, built-in icon, glow colour
+const U_SECT = [["pool", "Pool", "r2_pool", "70,190,255"], ["irrigation", "Irrigation", "r2_irrigation", "96,214,120"], ["geyser", "Geysers", "r2_geyser", "255,138,64"], ["more", "Other", "r2_utilities", "250,204,80"]];
 const ROOM_KEYS = ["lights", "climate", "music", "watch", "shades", "scenes", "presence"];
 const IC_CATS = ["Lighting", "Climate", "Security", "Media", "Doors & shades", "Utilities", "Scenes & rooms"];
 const IC_FOR = { garage: "Doors & shades", lights: "Lighting", climate: "Climate", security: "Security", cameras: "Security", music: "Media", watch: "Media", shades: "Doors & shades", utilities: "Utilities", scenes: "Scenes & rooms" };
@@ -210,6 +212,26 @@ svg{flex:none}
 .gd.relay .gpan{transform:none}
 .gbt{display:flex;gap:8px;justify-content:center}.gbt .pill{flex:1;justify-content:center;height:46px;font-size:15px}
 .gmain{background:rgba(var(--accrgb),.92) !important;color:#2a2116;border-color:transparent !important}
+.u3d{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.u3w{position:absolute;top:0;bottom:0;left:50%;width:min(100%,520px,calc((100dvh - 250px)*1.05));transform:translateX(-50%);perspective:900px}
+.u3h{position:absolute;left:4%;top:42%;width:92%;aspect-ratio:1;margin-top:-46%;border-radius:50%;pointer-events:none;opacity:.004;transition:opacity .35s ease;will-change:opacity}
+.u3i{position:absolute;left:27%;top:42%;width:46%;aspect-ratio:1;margin-top:-23%;cursor:pointer;will-change:transform,opacity;-webkit-tap-highlight-color:transparent}
+.u3i img,.u3i svg{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 14px 18px rgba(0,0,0,.45))}
+.u3i svg{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.u3l{position:absolute;left:0;right:0;top:42%;margin-top:27%;display:flex;flex-direction:column;align-items:center;text-align:center;pointer-events:none;opacity:.004;transition:opacity .35s ease}
+.u3l b{font-size:30px;font-weight:500;letter-spacing:.01em;line-height:1.15}
+.u3l span{margin-top:4px;font-size:15px;color:var(--muted)}
+.u3d.drag .u3l,.u3d.drag .u3h{opacity:.004!important;transition:opacity .15s ease}
+.u3dots{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;align-items:center;gap:10px}
+.u3dots i{width:7px;height:7px;border-radius:4px;background:rgba(255,255,255,.3)}
+.u3dots i.cur{width:22px;background:rgba(var(--accrgb),.95)}
+.u3hd{display:flex;align-items:center;gap:12px;margin:12px 16px 0;padding:8px 16px 8px 8px;border-radius:22px;border:1px solid rgba(255,255,255,.12);background:rgba(16,14,18,.62);cursor:pointer;flex:none}
+.u3hd .bk{width:40px;height:40px;border-radius:20px;border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex:none}
+.u3hd .bk svg{width:20px;height:20px}
+.u3hd .ic{width:48px;height:48px;flex:none}
+.u3hd .ic img,.u3hd .ic svg{width:100%;height:100%;object-fit:contain}
+.u3hd b{display:block;font-size:19px;font-weight:500}
+.u3hd small{display:block;font-size:13px;color:var(--muted)}
 .ulist{gap:0;padding:4px 14px}.urow{min-height:58px;border-top:1px solid rgba(255,255,255,.08)}.urow:first-child{border-top:0}
 .row>svg{width:22px;height:22px;color:var(--muted)}
 .hint{font-size:12px;color:var(--muted);text-align:center;padding:2px 16px 6px;overflow-wrap:anywhere}
@@ -931,7 +953,7 @@ class Ar4cDash extends HTMLElement {
     if (this.sheet) h += this.sheetHtml();
     if (this.viewCam) h += this.camView();
     if (this.efcEl && this.efcEl.isConnected) this.efcEl.hass = this._hass;
-    if (pg.__h === h) { if (this.page === "utilities") this.efcMount(); return; } // nothing on screen changed
+    if (pg.__h === h) { if (this.page === "utilities") { this.efcMount(); this.uMount(); } return; } // nothing on screen changed
     pg.__h = h;
     pg.innerHTML = h;
     if (this._sheetIn) { const sh = pg.querySelector(".sheet"); if (sh) sh.classList.add("in"); this._sheetIn = false; }
@@ -939,7 +961,7 @@ class Ar4cDash extends HTMLElement {
     pg.querySelectorAll("canvas[data-lamp]").forEach((c) => this.lamp(c, c.getAttribute("data-lamp")));
     if (this.page === "climate") this.paintDial();
     if (this.page === "cameras") this._camFill();
-    if (this.page === "utilities") this.efcMount();
+    if (this.page === "utilities") { this.efcMount(); this.uMount(); }
     if (this.page === "garage") {
       // the door slides from where it was to where it is now
       const gp = this._gp || (this._gp = {});
@@ -976,7 +998,7 @@ class Ar4cDash extends HTMLElement {
   }
   head(title) {
     const house = HOUSE_KEYS.indexOf(this.page) >= 0;
-    return '<div class="top"><div class="ib" data-act="back">' + line("chevl") + '</div><div class="room"' + (house ? "" : ' data-act="rooms"') + ">" + title + (house ? "" : "<small>" + this.roomName() + line("down") + "</small>") + '</div><div class="sp"></div><div class="ib" data-act="back">' + line("home") + "</div></div>";
+    return '<div class="top"><div class="ib" data-act="back">' + line("chevl") + '</div><div class="room"' + (house ? "" : ' data-act="rooms"') + ">" + title + (house ? "" : "<small>" + this.roomName() + line("down") + "</small>") + '</div><div class="sp"></div><div class="ib" data-act="back" data-v="home">' + line("home") + "</div></div>";
   }
   inner() {
     const k = this.page;
@@ -1733,6 +1755,129 @@ class Ar4cDash extends HTMLElement {
     this.house.cameras.filter((e) => this.isRtsp(e) && !(this._rsnap && this._rsnap[e])).forEach((e) => this._snap(e));
     this._camT = setInterval(tick, 5000);
   }
+  // ---- Utilities as a 3D slider: one big icon per section, round and round -----------
+  uSecs() {
+    const gm = (this.conf && this.conf.utilGroups) || {};
+    const items = this.house.utilities.filter((e) => this.st(e));
+    return U_SECT.map((x) => {
+      const list = items.filter((e) => (gm[e] === "pool" || gm[e] === "irrigation" || gm[e] === "geyser" ? gm[e] : "more") === x[0]);
+      const tog = list.filter((e) => ["switch", "light", "fan", "input_boolean"].indexOf(domain(e)) >= 0);
+      const on = tog.filter((e) => this.isOn(e)).length;
+      return { k: x[0], title: x[1], def: x[2], col: x[3], list, on, txt: on ? on + " running" : tog.length ? "Off" : list.length + (list.length === 1 ? " reading" : " readings") };
+    }).filter((g) => g.list.length);
+  }
+  uIcon(g) {
+    const v = this.conf && this.conf.icons && this.conf.icons["u_" + g.k];
+    if (v && v !== "line") { const h = this.icon("u_" + g.k); if (h.indexOf("<img") === 0) return h; }
+    return '<img alt="" src="' + esc(libSrc(g.def)) + '">';
+  }
+  // where icon i sits when the slider is at pos (both as whole icons; pos may be between two)
+  uLay(i, pos, N) {
+    let d = i - pos; d -= Math.round(d / N) * N;
+    const ad = Math.abs(d), sg = d < 0 ? -1 : 1;
+    const tx = sg * (Math.min(ad, 1) * 115 + Math.max(ad - 1, 0) * 56);
+    return ["translateX(" + tx.toFixed(1) + "%) rotateY(" + (-sg * Math.min(ad, 1) * 46).toFixed(1) + "deg) scale(" + (1 - Math.min(ad, 1) * 0.4).toFixed(3) + ")", ad > 2.3 ? "0" : String(Math.round((1 - Math.max(ad - 0.9, 0) * 0.75) * 100) / 100)];
+  }
+  uHub(gs) {
+    const n = gs.length, N = n * Math.max(1, Math.ceil(5 / n));
+    if (!(this.uix >= 0 && this.uix < n)) this.uix = 0;
+    const P = this.uix;
+    let h = '<div class="u3d" data-n="' + n + '" data-nn="' + N + '"><div class="u3w">';
+    gs.forEach((g, j) => (h += '<div class="u3h" style="background:radial-gradient(circle,rgba(' + g.col + ",.5),rgba(" + g.col + ",.2) 36%,rgba(" + g.col + ',0) 70%);opacity:' + (j === P ? (g.on ? 1 : 0.45) : 0.004) + '"></div>'));
+    for (let i = 0; i < N; i++) { const l = this.uLay(i, P, N); h += '<div class="u3i" data-i="' + i + '" data-k="' + gs[i % n].k + '" style="transform:' + l[0] + ";opacity:" + l[1] + '">' + this.uIcon(gs[i % n]) + "</div>"; }
+    gs.forEach((g, j) => (h += '<div class="u3l" style="opacity:' + (j === P ? 1 : 0.004) + '"><b>' + esc(g.title) + "</b><span>" + esc(g.txt) + "</span></div>"));
+    h += '</div><div class="u3dots">' + gs.map((g, j) => '<i class="' + (j === P ? "cur" : "") + '"></i>').join("") + "</div></div>";
+    return h;
+  }
+  // the slider's touch: drag follows the finger, a flick goes one along, a tap on the
+  // front icon opens its section; it glides frame by frame from wherever it is
+  uMount() {
+    const box = this.app && this.app.querySelector(".pg .u3d");
+    if (!box || box.__m) return;
+    box.__m = true;
+    const n = Number(box.getAttribute("data-n")), N = Number(box.getAttribute("data-nn"));
+    const its = [...box.querySelectorAll(".u3i")], halos = [...box.querySelectorAll(".u3h")], lbs = [...box.querySelectorAll(".u3l")], dots = [...box.querySelectorAll(".u3dots i")];
+    const gs = this.uSecs();
+    let cur = this.uix || 0, raf = 0, x0 = null, y0 = 0, t0 = 0, dx = 0, moved = false, pos0 = 0, SP = 200, downIt = null;
+    const lay = (pos) => { cur = pos; its.forEach((it, i) => { const l = this.uLay(i, pos, N); it.style.transform = l[0]; it.style.opacity = l[1]; }); };
+    const rest = () => {
+      const P = ((Math.round(cur) % n) + n) % n;
+      this.uix = P;
+      lay(Math.round(cur));
+      halos.forEach((el, j) => (el.style.opacity = j === P ? (gs[j] && gs[j].on ? 1 : 0.45) : 0.004));
+      lbs.forEach((el, j) => (el.style.opacity = j === P ? 1 : 0.004));
+      dots.forEach((el, j) => el.classList.toggle("cur", j === P));
+      box.classList.remove("drag");
+      this.dragging = false;
+      if (this._later) { this._later = false; this._seen = {}; this._render(true); }
+    };
+    const animTo = (t) => {
+      cancelAnimationFrame(raf);
+      const from = cur, dist = Math.abs(t - from);
+      box.classList.add("drag");
+      if (dist < 0.004) return rest();
+      const D = Math.max(220, Math.min(460, 220 + dist * 170));
+      let ts0 = 0;
+      const step = (ts) => {
+        if (!ts0) ts0 = ts;
+        const k = Math.min(1, (ts - ts0) / D);
+        lay(from + (t - from) * (1 - Math.pow(1 - k, 3)));
+        if (k < 1) raf = requestAnimationFrame(step); else { raf = 0; rest(); }
+      };
+      raf = requestAnimationFrame(step);
+    };
+    box.addEventListener("pointerdown", (ev) => {
+      downIt = ev.target.closest(".u3i");
+      cancelAnimationFrame(raf); raf = 0;
+      pos0 = cur; x0 = ev.clientX; y0 = ev.clientY; t0 = Date.now(); dx = 0; moved = false;
+      SP = (box.querySelector(".u3w").getBoundingClientRect().width || 360) * 0.57;
+      try { box.setPointerCapture(ev.pointerId); } catch (e) {}
+    });
+    box.addEventListener("pointermove", (ev) => {
+      if (x0 === null) return;
+      dx = ev.clientX - x0;
+      if (!moved) {
+        if (Math.abs(dx) < 8 || Math.abs(ev.clientY - y0) > Math.abs(dx)) return;
+        moved = true; box.classList.add("drag");
+      }
+      this.dragging = true; this._dragAt = Date.now();
+      lay(pos0 - dx / SP);
+    });
+    const end = (ev) => {
+      if (x0 === null) return;
+      x0 = null;
+      if (!moved) {
+        const i = downIt ? its.indexOf(downIt) : -1;
+        if (ev.type !== "pointerup" || i < 0) return animTo(Math.round(cur));
+        let d = i - Math.round(cur); d -= Math.round(d / N) * N;
+        if (d !== 0) return animTo(Math.round(cur) + d);
+        this.uix = ((Math.round(cur) % n) + n) % n;
+        this.usec = downIt.getAttribute("data-k");
+        this._swiped = Date.now(); // the click that follows lands on the section: drop it
+        this.dragging = false;
+        this._render();
+        return;
+      }
+      this._swiped = Date.now();
+      const v = dx / Math.max(1, Date.now() - t0), base = Math.round(pos0);
+      let t = Math.round(cur);
+      if (dx < -SP * 0.22 || v < -0.5) t = Math.max(t, base + 1);
+      else if (dx > SP * 0.22 || v > 0.5) t = Math.min(t, base - 1);
+      else t = base;
+      animTo(t);
+    };
+    box.addEventListener("pointerup", end);
+    box.addEventListener("pointercancel", end);
+  }
+  uRows(items) {
+    let rows = "";
+    items.forEach((e) => {
+      const s = this.st(e), d = domain(e), tog = ["switch", "light", "fan", "input_boolean"].indexOf(d) >= 0;
+      const val = tog ? "" : s.state + (s.attributes.unit_of_measurement ? " " + s.attributes.unit_of_measurement : "");
+      rows += '<div class="row urow"><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(tog ? (this.isOn(e) ? "On" : "Off") : "") + "</small></div>" + (tog ? '<div class="sw' + (this.isOn(e) ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div>' : '<div class="pc" style="font-size:20px">' + esc(val) + "</div>") + "</div>";
+    });
+    return rows;
+  }
   pUtil() {
     // Utilities: all the switches and readings in one card; Solar on its own tab
     const so = this.solarCfg(), items = this.house.utilities.filter((e) => this.st(e));
@@ -1740,12 +1885,14 @@ class Ar4cDash extends HTMLElement {
     let h = "";
     if (so && items.length) h += '<div class="seg" style="margin-top:12px"><div data-act="utab" data-v="items" class="' + (tab === "items" ? "on" : "") + '">Utilities</div><div data-act="utab" data-v="solar" class="' + (tab === "solar" ? "on" : "") + '">Solar</div></div>';
     if (tab === "solar") return h + '<div class="scroll">' + this.solarHtml() + "</div>";
-    let rows = "";
-    items.forEach((e) => {
-      const s = this.st(e), d = domain(e), tog = ["switch", "light", "fan", "input_boolean"].indexOf(d) >= 0;
-      const val = tog ? "" : s.state + (s.attributes.unit_of_measurement ? " " + s.attributes.unit_of_measurement : "");
-      rows += '<div class="row urow"><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(tog ? (this.isOn(e) ? "On" : "Off") : "") + "</small></div>" + (tog ? '<div class="sw' + (this.isOn(e) ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div>' : '<div class="pc" style="font-size:20px">' + esc(val) + "</div>") + "</div>";
-    });
+    // 3D slider (Setup > Utilities page): the sections as big icons; tap one for its switches
+    const gs = this.conf && this.conf.utilPage === "slider" ? this.uSecs() : [];
+    if (gs.length > 1) {
+      const g = gs.filter((x) => x.k === this.usec)[0];
+      if (!g) { this.usec = null; return h + this.uHub(gs); }
+      return h + '<div class="u3hd" data-act="uback"><span class="bk">' + line("chevl") + '</span><span class="ic">' + this.uIcon(g) + "</span><div><b>" + esc(g.title) + "</b><small>" + esc(g.txt) + '</small></div></div><div class="scroll"><div class="card ulist">' + this.uRows(g.list) + "</div></div>";
+    }
+    const rows = this.uRows(items);
     return h + '<div class="scroll">' + (rows ? '<div class="card ulist">' + rows + "</div>" : '<div class="empty">No utilities set up.</div>') + "</div>";
   }
 
@@ -1933,17 +2080,21 @@ class Ar4cDash extends HTMLElement {
     if (tab === "setup" && this.admin) return '<div class="sheet"><div class="shh"><b>Settings</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + this.setupHtml() + "</div>" + (this.pick ? this.pickHtml() : "") + (this.logoPick ? this.logoPickHtml() : "") + "</div>";
     if (tab === "icons") {
       h += '<div class="hint" style="text-align:left;padding:4px 4px 2px">An icon you change here changes on every phone.</div>';
-      ORDER.filter((k) => this.cats().indexOf(k) >= 0).forEach((k) => {
+      // the Utilities 3D slider's sections come after the home buttons
+      const usl = this.conf && this.conf.utilPage === "slider" ? this.uSecs() : [];
+      const ug = {}; (usl.length > 1 ? usl : []).forEach((g) => (ug["u_" + g.k] = g));
+      ORDER.filter((k) => this.cats().indexOf(k) >= 0).concat(Object.keys(ug)).forEach((k) => {
         const mine = this.conf && this.conf.icons && this.conf.icons[k];
-        h += '<div class="it' + (this.icOpen === k ? " open" : "") + '"><div class="ih" data-act="icopen" data-v="' + k + '"><span class="now">' + this.icon(k) + "</span><b>" + TITLES[k] + "</b><small>" + (mine ? "Changed" : "As set up") + "</small></div>";
+        const sec = ug[k];
+        h += '<div class="it' + (this.icOpen === k ? " open" : "") + '"><div class="ih" data-act="icopen" data-v="' + k + '"><span class="now">' + (sec ? this.uIcon(sec) : this.icon(k)) + "</span><b>" + (sec ? "Utilities: " + sec.title : TITLES[k]) + "</b><small>" + (mine ? "Changed" : "As set up") + "</small></div>";
         if (this.icOpen === k) {
-          const cat = this.icCat || IC_FOR[k] || "all";
+          const cat = this.icCat || (sec ? "Utilities" : IC_FOR[k]) || "all";
           h += '<div class="cats">';
           [["all", "All"]].concat(IC_CATS.map((c) => [c, c])).forEach((c) => (h += '<div class="chip' + (c[0] === cat ? " on" : "") + '" data-act="iccat" data-v="' + esc(c[0]) + '">' + esc(c[1]) + "</div>"));
           h += '</div><div class="ig">';
           const tile = (v, html, l) => (h += '<div class="tile' + ((mine || "") === v ? " on" : "") + '" data-act="icpick" data-k="' + k + '" data-v="' + esc(v) + '"><i>' + html + "</i><span>" + esc(l) + "</span></div>");
-          tile("", this.instIcon(k), "As set up");
-          tile("line", line(k), "Line");
+          if (sec) tile("", '<img alt="" src="' + esc(libSrc(sec.def)) + '">', "As set up");
+          else { tile("", this.instIcon(k), "As set up"); tile("line", line(k), "Line"); }
           h += '<label class="tile up"><i>' + line("plus") + '</i><span>Upload</span><input type="file" accept="image/*" data-in="iconfile" data-k="' + k + '" hidden></label>';
           (this.up.icon || []).forEach((u) => (h += '<div class="tile' + ((mine || "") === u ? " on" : "") + '" data-act="icpick" data-k="' + k + '" data-v="' + esc(u) + '"><i><img alt="" src="' + esc(u) + '"></i><span>Yours</span><b class="tdel" data-act="up-del" data-kind="icon" data-v="' + esc(u) + '">' + line("x") + "</b></div>"));
           this.media.icons.forEach((m) => tile("media:" + m.id, '<img alt="" src="' + esc(m.url) + '">', m.name || "Uploaded"));
@@ -2046,6 +2197,14 @@ class Ar4cDash extends HTMLElement {
     h += '<div class="lbl" style="padding:18px 4px 2px">Whole home</div><div class="card" style="background:transparent;padding:12px">';
     HOUSE_CATS.forEach((c) => {
       h += '<div class="lbl">' + c[1] + "</div>" + this.chipsFor(d[c[0]], "h:" + c[0]);
+      if (c[0] === "utilities" && (d.utilities || []).length) {
+        const sl = d.utilPage === "slider", ug = d.utilGroups || {};
+        h += '<div class="srow"><div><b style="font-weight:500">3D view</b><div class="hint" style="text-align:left;padding:0">' + (sl ? "On: Utilities opens on the 3D icons" : "Off: the plain list of switches") + '</div></div><div class="sw' + (sl ? " on" : "") + '" data-act="u-page" data-v="' + (sl ? "list" : "slider") + '"></div></div>';
+        if (sl) {
+          h += '<div class="hint" style="text-align:left;padding:0">Each section is one big icon to swipe through (round and round); tap it for its switches. Put each one in its section. The icons: Settings &gt; Icons (pick one or upload your own).</div>';
+          d.utilities.forEach((e) => { const g = ug[e] || "more"; h += '<div class="srow" style="flex-wrap:wrap"><small style="flex:1 1 100%">' + esc(this.name(e)) + "</small>" + U_SECT.map((x) => '<div class="chip' + (g === x[0] ? " on" : "") + '" data-act="u-sec" data-e="' + esc(e) + '" data-v="' + x[0] + '">' + x[1] + "</div>").join("") + "</div>"; });
+        }
+      }
       if (c[0] === "garage" && (d.garage || []).length) {
         // each door: an optional sensor that says open or closed
         h += '<div class="hint" style="text-align:left;padding:0">Shown on the Whole House home screen. Optional: a sensor that says whether each door is open or closed.</div>';
@@ -2225,7 +2384,7 @@ class Ar4cDash extends HTMLElement {
       });
       if (el.wholeHouse) rooms.unshift({ whole: true, name: "Whole House" });
       const rtsp = (Array.isArray(el.rtsp) ? el.rtsp : []).filter((x) => x && typeof x.url === "string" && x.url).map((x, i) => ({ name: x.name || "Camera " + (i + 1), url: x.url }));
-      this.draft = { rooms, cameras: L(el.cameras), rtsp, security: L(el.security), utilities: el.utilitiesOn ? L(el.utilities) : [], lightTypes: rs.lightTypes || {}, lightTone: rs.lightTone, houseImage: rs.houseImage, weather: this.draft && this.draft.weather };
+      this.draft = { rooms, cameras: L(el.cameras), rtsp, security: L(el.security), utilities: el.utilitiesOn ? L(el.utilities) : [], utilGroups: el.utilitiesOn && el.utilGroups && typeof el.utilGroups === "object" ? el.utilGroups : undefined, utilPage: rs.utilPage === "slider" ? "slider" : undefined, lightTypes: rs.lightTypes || {}, lightTone: rs.lightTone, houseImage: rs.houseImage, weather: this.draft && this.draft.weather };
       this.dirty = true;
       this.sOpen = 0;
       this._toast("Copied " + rooms.length + (rooms.length === 1 ? " room" : " rooms") + ": check it, then Save");
@@ -2272,8 +2431,11 @@ class Ar4cDash extends HTMLElement {
     const act = t.getAttribute("data-act"), e = t.getAttribute("data-e"), v = t.getAttribute("data-v");
     const room = this.room();
     switch (act) {
-      case "go": this.page = t.getAttribute("data-k"); this.code = null; if (this.page === "cameras") this._camLoop(); break;
-      case "back": if (this.sp) this.sp.stop(); this.libOpen = null; this.page = "home"; this.viewCam = null; this.code = null; this._stopLive(); break;
+      case "uback": this.usec = null; break;
+      case "u-page": if (v === "slider") this.draft.utilPage = "slider"; else delete this.draft.utilPage; this.dirty = true; break;
+      case "u-sec": { const g = (this.draft.utilGroups = this.draft.utilGroups || {}); if (v === "more") delete g[e]; else g[e] = v; this.dirty = true; break; }
+      case "go": this.page = t.getAttribute("data-k"); this.code = null; this.usec = null; if (this.page === "cameras") this._camLoop(); break;
+      case "back": if (this.page === "utilities" && this.usec && v !== "home") { this.usec = null; break; } this.usec = null; if (this.sp) this.sp.stop(); this.libOpen = null; this.page = "home"; this.viewCam = null; this.code = null; this._stopLive(); break;
       case "rooms": this.sheet = this.sheet === "rooms" ? null : "rooms"; this._sheetIn = !!this.sheet; break;
       case "gtap": {
         // the settings button stays hidden from guests: 10 quick taps where it sits show it for 20 seconds

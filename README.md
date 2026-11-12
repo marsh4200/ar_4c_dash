@@ -53,6 +53,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 
 ## Changes
 
+- **1.5.1**: The Utilities choice in Setup is now one switch, "3D view". On gives the 3D icons, off gives the plain list as before.
+- **1.5.0**: Utilities can be a 3D slider. In Setup, under Utilities, switch on "3D view" and put each switch into Pool, Irrigation, Geysers or Other. The page then opens on the section icons, which swipe round without an end; tap one for its switches. Each section icon can be changed or replaced with your own picture (background removed, icon only) in Settings, Icons. "List" stays the default, so nothing changes until you choose the slider. Restart Home Assistant after updating.
 - **1.4.2**: Same as 1.4.0, new version number.
 
 - **1.4.0**: Top right of the home screen, beside the clock: temperature or humidity, sunrise & sunset, and motion (each room with someone moving, one under the other; nothing when nobody is). Each room can have a presence / motion sensor. Look → Top right size makes them bigger (every phone).

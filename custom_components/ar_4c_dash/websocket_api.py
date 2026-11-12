@@ -44,7 +44,8 @@ from .const import DOMAIN, MAX_ROOMS, STORE_KEY, STORE_VERSION, UPLOADS
 _DATA = f"{DOMAIN}_store"
 ROOM_LISTS = ("lights", "climate", "music", "watch", "shades", "scenes", "presence")
 HOUSE_LISTS = ("cameras", "security", "utilities", "garage")
-ICON_KEYS = ("lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes")
+ICON_KEYS = ("lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes", "u_pool", "u_irrigation", "u_geyser", "u_more")
+UTIL_SECTIONS = ("pool", "irrigation", "geyser")  # Utilities sections; anything else is "Other"
 SOLAR_KEYS = ("solar_power", "grid_power", "battery_power", "battery_soc", "home_power", "solar_daily", "grid_import_daily", "grid_export_daily", "home_daily")
 INVERTERS = ("default", "sunsynk", "deye", "inverex", "solis_hybrid", "goodwe_hybrid", "growatt", "victron", "solaredge", "fronius_gen24", "huawei_luna")
 SIGNAL = f"{DOMAIN}_changed"
@@ -127,6 +128,14 @@ def clean(cfg: Any) -> dict[str, Any]:
         pass
     if cfg.get("look") in ("rings", "bare"):
         out["look"] = cfg["look"]  # Rings or Icons only, for every phone
+    # Utilities: the section each one is in, and the page design (list, or the 3D slider)
+    ug = cfg.get("utilGroups")
+    if isinstance(ug, dict):
+        groups = {e: g for e, g in ug.items() if e in out.get("utilities", []) and g in UTIL_SECTIONS}
+        if groups:
+            out["utilGroups"] = groups
+    if cfg.get("utilPage") == "slider":
+        out["utilPage"] = "slider"
     gs = cfg.get("garageSensors")
     if isinstance(gs, dict):
         out["garageSensors"] = {d: e for d, e in gs.items() if d in out.get("garage", []) and _ent(e)}
