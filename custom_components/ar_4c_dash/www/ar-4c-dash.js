@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.6.1";
+const VERSION = "1.6.2";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -595,6 +595,13 @@ svg{flex:none}
 .sic div.on{border-color:var(--acc);color:var(--acc);background:rgba(var(--accrgb),.1)}
 .rrow{display:grid;grid-template-columns:auto 1fr 46px;align-items:center;gap:12px;font-size:13px;color:var(--muted)}.rrow b{font-weight:400;color:var(--fg);text-align:right}
 .rrow .rng{width:100%;accent-color:var(--acc)}
+
+/* the installer's logo */
+.brand{display:block;width:auto;max-width:46%;object-fit:contain;object-position:right bottom;opacity:.92;filter:drop-shadow(0 2px 6px rgba(0,0,0,.45));pointer-events:none}
+.brand.s{height:34px}.brand.m{height:46px}.brand.l{height:60px}
+.brand.wh{filter:brightness(0) invert(1) drop-shadow(0 2px 6px rgba(0,0,0,.45));opacity:.88}
+.bprev{display:flex;justify-content:flex-end;align-items:flex-end;min-height:66px;padding:10px 14px;border-radius:16px;background:linear-gradient(180deg,rgba(8,8,12,.2),rgba(8,8,12,.85)),#2a2622}
+.bprev .brand{max-width:70%}
 `;
 
 // ---- logo cut-out (as in AR Lighting Scenes): takes a plain background off an
@@ -818,6 +825,7 @@ class Ar4cDash extends HTMLElement {
       const t = ev.target, k = t.getAttribute && t.getAttribute("data-in");
       if (k && k.indexOf("r-") === 0) { this.rtInput(k, t); return; }
       if (k === "so-preset" && this.draft && this.draft.solar) { this.draft.solar.preset = t.value; this.dirty = true; this._render(true); return; }
+      if (k === "brandfile") { this._upFor = { kind: "brand" }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "logofile") { this._upFor = { kind: "logo" }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "iconfile") { this._upFor = { kind: "icon", k: t.getAttribute("data-k") }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "bgfile") { this.bgFile(t.files && t.files[0]); t.value = ""; return; }
@@ -1132,7 +1140,7 @@ class Ar4cDash extends HTMLElement {
       '<div class="hero"><div class="clock"><div class="t">' + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + '</div><div class="d">' + now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + (wtxt ? "<i>" + esc(wtxt) + "</i>" : "") + "</div></div>" + this.statusHtml() + "</div>" + this.peopleHtml() +
       (this.empty ? '<div class="empty" style="margin-top:auto">' + (this.admin ? 'Nothing set up yet.<br><br><span class="pill" style="display:inline-flex" data-act="setup">' + line("rooms") + "Set up rooms</span>" : "Nothing set up yet. Ask the person who looks after Home Assistant to set up the 4C Dash.") + "</div>" : '<div class="grid">' + (g || '<div class="empty" style="grid-column:1/-1">Nothing set up for this room yet.</div>') + "</div>") +
       (this.houseScenes && this.houseScenes.length && !this.empty ? '<div class="chips hsc">' + this.houseScenes.map((e) => '<div class="chip dot sc" data-act="scene" data-e="' + esc(e) + '"><i></i>' + esc(this.name(e)) + "</div>").join("") + "</div>" : "") +
-      '<div class="bot">' + (hasLights ? '<div class="pill" data-act="roomoff">' + line("power") + "Room Off</div>" : "<span></span>") + "</div>"
+      '<div class="bot">' + (hasLights ? '<div class="pill" data-act="roomoff">' + line("power") + "Room Off</div>" : "<span></span>") + this.brandHtml() + "</div>"
     );
   }
   head(title) {
@@ -2253,6 +2261,7 @@ class Ar4cDash extends HTMLElement {
         const z = Math.round(Math.max(1, Math.min(1.5, Number(this.conf.statusScale || 1))) * 100);
         h += '<div class="setrow" style="flex-wrap:wrap"><span class="lbl">Top right size</span><span class="lbl" data-zv style="margin-left:auto">' + z + '%</span><input type="range" class="rng" data-in="ssize" min="100" max="150" step="5" value="' + z + '"></div>';
       }
+      if (this.admin) h += this.brandSetupHtml();
       h += '<div class="lbl" style="padding:6px 4px">Background</div><div class="bgs">';
       const bt = (v, img, l) => (h += '<div class="bgt' + ((this.P.bg || "") === v ? " on" : "") + '" data-act="bg" data-v="' + esc(v) + '"><i style="background-image:url(&quot;' + esc(img) + '&quot;)"></i><small>' + esc(l) + "</small></div>");
       bt("", this.url(this.room().image) || this.url(this.rc.houseImage) || BASE + "/backgrounds/thumbs/villa.jpg", "As set up");
@@ -2426,7 +2435,7 @@ class Ar4cDash extends HTMLElement {
     const up = this.logoUp;
     {
       // the uploaded picture as it will be saved, on the dash's own background
-      return '<div class="shh"><b>' + (up.kind === "icon" ? "Upload icon" : "Upload logo") + '</b><div class="ib" data-act="lu-x">' + line("x") + '</div></div><div class="shb" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:12px"><div class="lup"><img data-lu alt="" src="' + up.url + '"></div>' +
+      return '<div class="shh"><b>' + (up.kind === "icon" ? "Upload icon" : up.kind === "brand" ? "Your logo" : "Upload logo") + '</b><div class="ib" data-act="lu-x">' + line("x") + '</div></div><div class="shb" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:12px"><div class="lup"><img data-lu alt="" src="' + up.url + '"></div>' +
         (up.info.hasAlpha ? '<div class="hint" style="padding:0">This picture already has a see-through background.</div>' :
           '<div class="wrapc" style="justify-content:flex-start"><div class="chip' + (up.rm ? " on" : "") + '" data-act="lu-rm" data-v="1">Remove background</div><div class="chip' + (up.rm ? "" : " on") + '" data-act="lu-rm" data-v="0">Keep background</div></div>' +
           (up.rm ? '<div class="lbl">How much to remove</div><input type="range" class="rng" data-in="lutol" min="15" max="140" value="' + up.tol + '"><div class="wrapc" style="justify-content:flex-start"><div class="chip' + (up.holes ? " on" : "") + '" data-act="lu-holes">Inside gaps too</div></div>' : "")) +
@@ -2559,6 +2568,36 @@ class Ar4cDash extends HTMLElement {
       this._toast("Saved: every phone shows it now");
       this._render(true);
     }).catch((e) => this._toast(e && e.message ? e.message : "Couldn't save"));
+  }
+
+  // ---- the installer's logo (admins set it in Look; every phone shows it) -----------
+  brand() { const b = (this.conf && this.conf.brand) || {}; return b; }
+  brandHtml() {
+    const b = this.brand();
+    return b.on && b.src ? '<img class="brand ' + (b.size || "s") + (b.tone === "white" ? " wh" : "") + '" alt="" src="' + esc(b.src) + '">' : "";
+  }
+  setBrand(b) {
+    if (!b) return;
+    this.conf.brand = b;
+    if (this.all) (this.all.homes || []).forEach((h) => { if (h.conf) h.conf.brand = b; });
+  }
+  brandSetupHtml() {
+    const b = this.brand(), on = !!(b.on && b.src);
+    let h = '<div class="lbl" style="padding:6px 4px">Your logo</div><div class="card" style="gap:12px;margin-bottom:14px">' +
+      '<div class="row"><div style="flex:1"><div style="font-size:15px">Show your logo</div><div class="hint" style="text-align:left;padding:2px 0 0">Bottom right of the home screen, on every phone and in every home.</div></div><div class="sw' + (on ? " on" : "") + '" data-act="r-brand-on"></div></div>' +
+      '<input type="file" accept="image/*" data-in="brandfile" hidden>';
+    if (b.src) {
+      h += '<div class="bprev"><img alt="" src="' + esc(b.src) + '" class="brand ' + (b.size || "s") + (b.tone === "white" ? " wh" : "") + '"></div>' +
+        '<div class="segf">' + [["as", "As uploaded"], ["white", "White"]].map((x) => '<div class="' + ((b.tone || "as") === x[0] ? "on" : "") + '" data-act="r-brand-tone" data-v="' + x[0] + '">' + x[1] + "</div>").join("") + "</div>" +
+        '<div class="segf">' + [["s", "Small"], ["m", "Medium"], ["l", "Large"]].map((x) => '<div class="' + ((b.size || "s") === x[0] ? "on" : "") + '" data-act="r-brand-size" data-v="' + x[0] + '">' + x[1] + "</div>").join("") + "</div>" +
+        '<div class="wrapc" style="justify-content:flex-start"><div class="chip" data-act="r-brand-up">' + line("plus") + 'Change logo</div><div class="chip" data-act="r-brand-del" style="color:#ff9a8a">' + line("x") + "Remove</div></div>";
+    } else if (this._brandAsk) {
+      h += '<div class="addb" data-act="r-brand-up" style="margin-top:0">' + line("plus") + "Upload your logo</div>";
+    }
+    return h + "</div>";
+  }
+  brandOp(msg, txt) {
+    this._hass.callWS(Object.assign({ type: "ar_4c_dash/set_brand" }, msg)).then((r) => { this.setBrand(r && r.brand); if (txt) this._toast(txt); this._render(true); }).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save"));
   }
 
   // ---- homes: several homes on one Home Assistant ----------------------------------
@@ -2823,6 +2862,21 @@ class Ar4cDash extends HTMLElement {
     if (act !== "r-tdelete" && act !== "r-sdelete") this.delAsk = false;
     if (act !== "r-hdel") this.hDel = null;
     switch (act) {
+      // the installer's logo
+      case "r-brand-on": {
+        const b = this.brand();
+        if (b.on && b.src) { this.brandOp({ on: false }, "Logo hidden"); return; }
+        if (b.src) { this.brandOp({ on: true }, "Your logo shows on every phone"); return; }
+        // no logo yet: ask for one straight away
+        // (no redraw here: it would swap the file box before the picture arrives)
+        this._brandAsk = true;
+        const f = this.shadowRoot.querySelector('input[data-in="brandfile"]'); if (f) f.click();
+        return;
+      }
+      case "r-brand-up": { const f = this.shadowRoot.querySelector('input[data-in="brandfile"]'); if (f) f.click(); return; }
+      case "r-brand-size": this.setBrand(Object.assign({}, this.brand(), { size: v })); this.brandOp({ size: v }); break;
+      case "r-brand-tone": this.setBrand(Object.assign({}, this.brand(), { tone: v === "white" ? "white" : undefined })); this.brandOp({ tone: v }); break;
+      case "r-brand-del": this._brandAsk = false; this.brandOp({ src: null }, "Logo removed"); return;
       // homes
       case "r-home": this.setHome(v); break;
       case "r-hopen": this.hOpen = this.hOpen === v ? null : v; break;
@@ -3109,6 +3163,14 @@ class Ar4cDash extends HTMLElement {
       case "lu-ok": {
         const up = this.logoUp; if (!up || up.busy) return;
         up.busy = true;
+        if (up.kind === "brand") {
+          // the installer's logo: shown bottom right on every phone straight away
+          this._hass.callWS({ type: "ar_4c_dash/logo", op: "upload", kind: "logo", data: up.url })
+            .then((r) => this._hass.callWS({ type: "ar_4c_dash/set_brand", on: true, src: r.url }))
+            .then((r) => { this.setBrand(r && r.brand); this.logoUp = null; this._toast("Your logo shows on every phone"); this._render(true); })
+            .catch((er) => { up.busy = false; this._toast(er && er.message ? er.message : "Couldn't save the logo"); this._render(true); });
+          break;
+        }
         if (up.kind === "icon") {
           // an uploaded icon goes straight on its home button, for every phone
           this._hass.callWS({ type: "ar_4c_dash/logo", op: "upload", kind: "icon", data: up.url }).then((r) => {

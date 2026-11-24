@@ -13,6 +13,7 @@ ar_4c_dash/watch      any logged-in user: start a Watch source, remote keys, vol
 ar_4c_dash/watch_subscribe  which source is on in each room and the steps of the last start
 ar_4c_dash/listen     any logged-in user: what Listen can use; Music Assistant library and
                       search; a Spotify token
+ar_4c_dash/set_brand  admins: the installer's logo bottom right of the home screen (on / off, picture, size, white)
 ar_4c_dash/homes      admins: add, rename, remove homes and choose who may use each one
 ar_4c_dash/users      admins: Home Assistant's people who can log in (for choosing a home's users)
 ar_4c_dash/routines   any logged-in user with that home: timers and their own scenes
@@ -61,7 +62,7 @@ SIGNAL = f"{DOMAIN}_changed"
 FIRST_HOME = "h1"
 MAX_HOMES = 10
 # shared by every home; everything else in a config belongs to one home
-GLOBAL_KEYS = ("icons", "look", "statusScale", "names", "lightTypes", "lightTone", "listenStart")
+GLOBAL_KEYS = ("icons", "look", "statusScale", "names", "lightTypes", "lightTone", "listenStart", "brand")
 _HOME_ID = re.compile(r"h\d{1,3}")
 SNAP_URL = "/api/ar_4c_dash/snap/{index}"
 
@@ -142,6 +143,18 @@ def clean(cfg: Any) -> dict[str, Any]:
         pass
     if cfg.get("look") in ("rings", "bare"):
         out["look"] = cfg["look"]  # Rings or Icons only, for every phone
+    brand = cfg.get("brand")
+    if isinstance(brand, dict):
+        # the installer's own logo, bottom right of the home screen (every phone, every home)
+        src = _text(brand.get("src"), 300)
+        b: dict[str, Any] = {"on": bool(brand.get("on")) and bool(src), "size": brand.get("size") if brand.get("size") in ("s", "m", "l") else "s"}
+        if brand.get("tone") == "white":
+            b["tone"] = "white"  # a dark logo shown white, so it reads on the dark dash
+        if src.startswith(UPLOADS["logo"][0] + "/"):
+            b["src"] = src
+        else:
+            b["on"] = False
+        out["brand"] = b
     # Utilities: the section each one is in, and the page design (list, or the 3D slider)
     ug = cfg.get("utilGroups")
     if isinstance(ug, dict):
@@ -387,6 +400,7 @@ def async_setup(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_set_icon)
     websocket_api.async_register_command(hass, ws_set_names)
     websocket_api.async_register_command(hass, ws_set_look)
+    websocket_api.async_register_command(hass, ws_set_brand)
     websocket_api.async_register_command(hass, ws_logo)
     websocket_api.async_register_command(hass, ws_stream)
     websocket_api.async_register_command(hass, ws_watch)
@@ -553,6 +567,34 @@ async def ws_set_look(hass: HomeAssistant, connection: websocket_api.ActiveConne
         cfg["statusScale"] = msg["scale"]
     await _store_and_tell(hass, clean_all(cfg))
     connection.send_result(msg["id"])
+
+
+@websocket_api.require_admin
+@websocket_api.websocket_command({
+    vol.Required("type"): "ar_4c_dash/set_brand",
+    vol.Optional("on"): bool,
+    vol.Optional("src"): vol.Any(str, None),
+    vol.Optional("size"): vol.In(("s", "m", "l")),
+    vol.Optional("tone"): vol.In(("as", "white")),
+})
+@websocket_api.async_response
+async def ws_set_brand(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Show or hide the installer's logo on every phone, change it, or its size."""
+    st = await async_store(hass)
+    cfg = dict(st["config"])
+    b = dict(cfg.get("brand") or {})
+    for k in ("on", "size", "tone"):
+        if k in msg:
+            b[k] = msg[k]
+    if "src" in msg:
+        if msg["src"]:
+            b["src"] = msg["src"]
+        else:
+            b.pop("src", None)
+            b["on"] = False
+    cfg["brand"] = b
+    cfg = await _store_and_tell(hass, clean_all(cfg))
+    connection.send_result(msg["id"], {"brand": cfg.get("brand", {})})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/set_names", vol.Required("names"): dict})

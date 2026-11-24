@@ -63,7 +63,7 @@ Open the Home Assistant app → sidebar → **4C Dash** (Settings → Profile ca
 - **Listen**: works like the panels. Music Assistant: now playing, speakers (tap one to join or leave the group), Favourites, Playlists, Artists, Radio and Search; open a playlist to play it or one song. Spotify: your playlists, Liked songs, Search, and which speaker plays.
 - **Watch**: pick a source; the phone shows each step as it happens (turning on, switching input, opening the app), then the remote: arrows and OK, back, home, menu, play/skip, volume and mute, Change source, TV off.
 - **Shades**: up/stop/down and position. **Scenes**, **Security** (arm/disarm; a keypad when the alarm needs a code), **Cameras** (all live as soon as you open them; tap one for full screen, swipe sideways for the next; Home Assistant cameras and RTSP cameras), **Utilities**.
-- Gear (10 taps top right) → **Icons**: change the home buttons' icons for the whole home: every phone shows the new icon straight away (by category, or **Upload** your own: a plain background is taken off; icons uploaded in AR Lighting Scenes show too). Gear → **Look**: Rings or Icons only (the same on every phone), and the background (or **Upload photo**; each phone has its own). Uploaded logos, icons and backgrounds are kept in Home Assistant's config folder (`ar_4c_dash/`), so updates keep them.
+- Gear (10 taps top right) → **Icons**: change the home buttons' icons for the whole home: every phone shows the new icon straight away (by category, or **Upload** your own: a plain background is taken off; icons uploaded in AR Lighting Scenes show too). Gear → **Look**: Rings or Icons only (the same on every phone), and the background (or **Upload photo**; each phone has its own). Gear → **Look** → **Your logo** (admins): switch on **Show your logo**, pick your company logo (a plain background is taken off), and it shows small at the bottom right of the home screen on every phone. Small, Medium or Large; **White** makes a dark logo readable on the dark dash. Uploaded logos, icons and backgrounds are kept in Home Assistant's config folder (`ar_4c_dash/`), so updates keep them.
 
 Icons are the same on every phone. Look, background and the last room are saved with each person's Home Assistant login, so they follow them to every phone.
 
@@ -73,6 +73,7 @@ Icons are the same on every phone. Look, background and the last room are saved 
 
 ## Changes
 
+- **1.6.2**: **Your logo** (admins): Gear › Look › Your logo › Show your logo asks for a picture, takes its plain background off and shows it small, bottom right of the home screen (next to Room Off), on every phone and in every home. Small / Medium / Large, and White for a dark logo. Off by default.
 - **1.6.1**: A Timers set of icons in Gear › Icons: stopwatch, alarm clock, hourglass, clock, sunrise and night timers, schedule, plug timer and a 3D Timers badge.
 - **1.6.0**: **Timers** and **your own scenes** on the dash (from Auto & Scenes, now built in: no sidebar item). **More than one home** on one Home Assistant, each with its own rooms, devices, cameras, timers and scenes, and its own people. Restart Home Assistant after updating.
 
