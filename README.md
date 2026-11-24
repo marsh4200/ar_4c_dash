@@ -73,6 +73,7 @@ Icons are the same on every phone. Look, background and the last room are saved 
 
 ## Changes
 
+- **1.6.1**: A Timers set of icons in Gear › Icons: stopwatch, alarm clock, hourglass, clock, sunrise and night timers, schedule, plug timer and a 3D Timers badge.
 - **1.6.0**: **Timers** and **your own scenes** on the dash (from Auto & Scenes, now built in: no sidebar item). **More than one home** on one Home Assistant, each with its own rooms, devices, cameras, timers and scenes, and its own people. Restart Home Assistant after updating.
 
 - **1.5.1**: The Utilities choice in Setup is now one switch, "3D view". On gives the 3D icons, off gives the plain list as before.

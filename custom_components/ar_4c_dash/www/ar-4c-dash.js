@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.6.0";
+const VERSION = "1.6.1";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -80,8 +80,8 @@ const ORDER = ["lights", "climate", "music", "watch", "shades", "garage", "camer
 // Utilities sections (3D slider): key, title, built-in icon, glow colour
 const U_SECT = [["pool", "Pool", "r2_pool", "70,190,255"], ["irrigation", "Irrigation", "r2_irrigation", "96,214,120"], ["geyser", "Geysers", "r2_geyser", "255,138,64"], ["more", "Other", "r2_utilities", "250,204,80"]];
 const ROOM_KEYS = ["lights", "climate", "music", "watch", "shades", "scenes", "presence"];
-const IC_CATS = ["Lighting", "Climate", "Security", "Media", "Doors & shades", "Utilities", "Scenes & rooms"];
-const IC_FOR = { garage: "Doors & shades", lights: "Lighting", climate: "Climate", security: "Security", cameras: "Security", music: "Media", watch: "Media", shades: "Doors & shades", utilities: "Utilities", scenes: "Scenes & rooms", timers: "Scenes & rooms" };
+const IC_CATS = ["Lighting", "Climate", "Security", "Media", "Doors & shades", "Utilities", "Scenes & rooms", "Timers"];
+const IC_FOR = { garage: "Doors & shades", lights: "Lighting", climate: "Climate", security: "Security", cameras: "Security", music: "Media", watch: "Media", shades: "Doors & shades", utilities: "Utilities", scenes: "Scenes & rooms", timers: "Timers" };
 const LAMP_K = { warm: 2700, soft: 3000, neutral: 4000, cool: 5000, daylight: 6500, dim: 2200 };
 const LAMP_NAME = { lamp: "Pendant", edison: "Filament", downlight: "Downlight", bulb: "Bulb" };
 const MODE = { off: "Off", heat: "Heat", cool: "Cool", heat_cool: "Heat / cool", auto: "Auto", dry: "Dry", fan_only: "Fan" };
