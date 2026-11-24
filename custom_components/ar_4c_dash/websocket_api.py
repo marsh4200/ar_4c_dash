@@ -13,6 +13,15 @@ ar_4c_dash/watch      any logged-in user: start a Watch source, remote keys, vol
 ar_4c_dash/watch_subscribe  which source is on in each room and the steps of the last start
 ar_4c_dash/listen     any logged-in user: what Listen can use; Music Assistant library and
                       search; a Spotify token
+ar_4c_dash/homes      admins: add, rename, remove homes and choose who may use each one
+ar_4c_dash/users      admins: Home Assistant's people who can log in (for choosing a home's users)
+ar_4c_dash/routines   any logged-in user with that home: timers and their own scenes
+
+Homes: one Home Assistant can run several homes (e.g. a main house and a cottage).
+The first home is the setup as it always was (its keys at the top level of the
+stored config); further homes are in ``homes``, each with its own rooms, cameras,
+alarm, garage, utilities and so on. Icons, look, names and light types are shared.
+A home with users only shows to those users (and admins); without, to everyone.
 
 RTSP addresses carry the camera's password, so only admins are sent them; phones
 get the names and ask Home Assistant for the stream or a snapshot by number.
@@ -38,17 +47,22 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
-from . import listen, watch
+from . import listen, routines, watch
 from .const import DOMAIN, MAX_ROOMS, STORE_KEY, STORE_VERSION, UPLOADS
 
 _DATA = f"{DOMAIN}_store"
 ROOM_LISTS = ("lights", "climate", "music", "watch", "shades", "scenes", "presence")
 HOUSE_LISTS = ("cameras", "security", "utilities", "garage")
-ICON_KEYS = ("lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes", "u_pool", "u_irrigation", "u_geyser", "u_more")
+ICON_KEYS = ("lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes", "timers", "u_pool", "u_irrigation", "u_geyser", "u_more")
 UTIL_SECTIONS = ("pool", "irrigation", "geyser")  # Utilities sections; anything else is "Other"
 SOLAR_KEYS = ("solar_power", "grid_power", "battery_power", "battery_soc", "home_power", "solar_daily", "grid_import_daily", "grid_export_daily", "home_daily")
 INVERTERS = ("default", "sunsynk", "deye", "inverex", "solis_hybrid", "goodwe_hybrid", "growatt", "victron", "solaredge", "fronius_gen24", "huawei_luna")
 SIGNAL = f"{DOMAIN}_changed"
+FIRST_HOME = "h1"
+MAX_HOMES = 10
+# shared by every home; everything else in a config belongs to one home
+GLOBAL_KEYS = ("icons", "look", "statusScale", "names", "lightTypes", "lightTone", "listenStart")
+_HOME_ID = re.compile(r"h\d{1,3}")
 SNAP_URL = "/api/ar_4c_dash/snap/{index}"
 
 
@@ -154,6 +168,71 @@ def clean(cfg: Any) -> dict[str, Any]:
     return out
 
 
+def _users(v: Any) -> list[str]:
+    if not isinstance(v, list):
+        return []
+    return [u for u in v if isinstance(u, str) and 0 < len(u) < 80][:50]
+
+
+def home_part(cfg: dict[str, Any]) -> dict[str, Any]:
+    """The keys of a cleaned config that belong to one home."""
+    return {k: v for k, v in cfg.items() if k not in GLOBAL_KEYS and k not in ("homes", "homeName", "homeUsers")}
+
+
+def clean_all(cfg: Any) -> dict[str, Any]:
+    """The whole stored config: the first home and the shared keys at the top, more homes in ``homes``."""
+    cfg = cfg if isinstance(cfg, dict) else {}
+    out = clean(cfg)
+    if _text(cfg.get("homeName"), 40):
+        out["homeName"] = _text(cfg.get("homeName"), 40)
+    if _users(cfg.get("homeUsers")):
+        out["homeUsers"] = _users(cfg.get("homeUsers"))
+    homes: list[dict[str, Any]] = []
+    seen = {FIRST_HOME}
+    for h in (cfg.get("homes") or [])[: MAX_HOMES - 1]:
+        if not isinstance(h, dict):
+            continue
+        hid = h.get("id") if isinstance(h.get("id"), str) and _HOME_ID.fullmatch(h["id"]) else None
+        if hid is None or hid in seen:
+            n = 2
+            while f"h{n}" in seen:
+                n += 1
+            hid = f"h{n}"
+        seen.add(hid)
+        home = {"id": hid, "name": _text(h.get("name"), 40) or f"Home {len(homes) + 2}", **home_part(clean(h))}
+        if _users(h.get("users")):
+            home["users"] = _users(h.get("users"))
+        homes.append(home)
+    if homes:
+        out["homes"] = homes
+    return out
+
+
+def all_homes(cfg: dict[str, Any]) -> list[dict[str, Any]]:
+    """Every home as {id, name, users, conf}; conf is what a single-home dash used to get."""
+    shared = {k: cfg[k] for k in GLOBAL_KEYS if k in cfg}
+    first = {"id": FIRST_HOME, "name": cfg.get("homeName") or "Home", "users": cfg.get("homeUsers", []), "conf": {**home_part(cfg), **shared}}
+    out = [first]
+    for h in cfg.get("homes", []):
+        out.append({"id": h["id"], "name": h["name"], "users": h.get("users", []), "conf": {**home_part({k: v for k, v in h.items() if k not in ("id", "name", "users")}), **shared}})
+    return out
+
+
+def may_use(home: dict[str, Any], user: Any) -> bool:
+    """Admins see every home; others the homes with no users chosen, or that list them."""
+    if user is None:
+        return False
+    return bool(user.is_admin or not home["users"] or user.id in home["users"])
+
+
+def home_conf(cfg: dict[str, Any], hid: str, user: Any) -> dict[str, Any] | None:
+    """One home's config, if this user may use it."""
+    for h in all_homes(cfg):
+        if h["id"] == hid:
+            return h["conf"] if may_use(h, user) else None
+    return None
+
+
 def _ent(v: Any) -> str | None:
     return v if isinstance(v, str) and "." in v and len(v) < 255 else None
 
@@ -205,19 +284,39 @@ def _icon(v: Any) -> bool:
     return isinstance(v, str) and len(v) < 300 and (v == "line" or v.startswith(("lib:", "media:", UPLOADS["icon"][0] + "/")))
 
 
-def for_user(cfg: dict[str, Any], admin: bool) -> dict[str, Any]:
-    """What a phone is sent: no RTSP addresses (passwords) unless admin."""
-    if admin or not cfg.get("rtsp"):
-        return cfg
-    return {**cfg, "rtsp": [{"name": c["name"]} for c in cfg["rtsp"]]}
+def _hide_rtsp(conf: dict[str, Any], admin: bool) -> dict[str, Any]:
+    """No RTSP addresses (passwords) unless admin."""
+    if admin or not conf.get("rtsp"):
+        return conf
+    return {**conf, "rtsp": [{"name": c["name"]} for c in conf["rtsp"]]}
+
+
+def for_user(cfg: dict[str, Any], user: Any) -> dict[str, Any]:
+    """What a phone is sent: the shared keys, and the homes this user may use."""
+    admin = bool(user and user.is_admin)
+    out: dict[str, Any] = {k: cfg[k] for k in GLOBAL_KEYS if k in cfg}
+    homes = []
+    for h in all_homes(cfg):
+        if not may_use(h, user):
+            continue
+        one = {"id": h["id"], "name": h["name"], "conf": _hide_rtsp(h["conf"], admin)}
+        if admin:
+            one["users"] = h["users"]
+        homes.append(one)
+    out["homes"] = homes
+    return out
+
+
+def _rtsp_urls(cfg: dict[str, Any]) -> set[str]:
+    return {c["url"] for h in all_homes(cfg) for c in h["conf"].get("rtsp", [])}
 
 
 async def _store_and_tell(hass: HomeAssistant, cfg: dict[str, Any]) -> dict[str, Any]:
     st = await async_store(hass)
-    old = {c["url"] for c in st["config"].get("rtsp", [])}
+    old = _rtsp_urls(st["config"])
     st["config"] = cfg
     await st["store"].async_save(cfg)
-    gone = old - {c["url"] for c in cfg.get("rtsp", [])}
+    gone = old - _rtsp_urls(cfg)
     for url in gone:  # a removed or changed camera: stop its stream
         s = st["streams"].pop(url, None)
         if s:
@@ -230,14 +329,17 @@ async def async_store(hass: HomeAssistant) -> dict[str, Any]:
     st = hass.data.get(_DATA)
     if st is None:
         store = Store(hass, STORE_VERSION, STORE_KEY)
-        st = hass.data[_DATA] = {"store": store, "config": clean(await store.async_load() or {}), "streams": {}}
+        st = hass.data[_DATA] = {"store": store, "config": clean_all(await store.async_load() or {}), "streams": {}}
     return st
 
 
-async def _rtsp_stream(hass: HomeAssistant, index: int) -> Any:
-    """Home Assistant's stream for RTSP camera number ``index`` (made once, kept)."""
+async def _rtsp_stream(hass: HomeAssistant, index: int, home: str = FIRST_HOME, user: Any = None) -> Any:
+    """Home Assistant's stream for RTSP camera number ``index`` of a home (made once, kept)."""
     st = await async_store(hass)
-    cams = st["config"].get("rtsp", [])
+    conf = home_conf(st["config"], home, user)
+    if conf is None:
+        raise HomeAssistantError("No such camera")
+    cams = conf.get("rtsp", [])
     if not 0 <= index < len(cams):
         raise HomeAssistantError("No such camera")
     url = cams[index]["url"]
@@ -266,8 +368,9 @@ class SnapView(HomeAssistantView):
 
     async def get(self, request: web.Request, index: str) -> web.Response:
         hass: HomeAssistant = request.app["hass"]
+        home = request.query.get("home", FIRST_HOME)
         try:
-            stream = await _rtsp_stream(hass, int(index))
+            stream = await _rtsp_stream(hass, int(index), home, request.get("hass_user"))
             img = await stream.async_get_image(width=800)
         except Exception:  # noqa: BLE001 - the camera is off or unreachable
             img = None
@@ -289,6 +392,9 @@ def async_setup(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_watch)
     websocket_api.async_register_command(hass, ws_watch_subscribe)
     websocket_api.async_register_command(hass, ws_listen)
+    websocket_api.async_register_command(hass, ws_homes)
+    websocket_api.async_register_command(hass, ws_users)
+    routines.async_setup(hass)
     hass.http.register_view(SnapView)
 
 
@@ -297,7 +403,7 @@ def async_setup(hass: HomeAssistant) -> None:
 async def ws_config(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     st = await async_store(hass)
     admin = bool(connection.user and connection.user.is_admin)
-    connection.send_result(msg["id"], {"config": for_user(st["config"], admin), "admin": admin})
+    connection.send_result(msg["id"], {"config": for_user(st["config"], connection.user), "admin": admin})
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/subscribe"})
@@ -308,7 +414,7 @@ async def ws_subscribe(hass: HomeAssistant, connection: websocket_api.ActiveConn
     @callback
     def send() -> None:
         st = hass.data[_DATA]
-        connection.send_message(websocket_api.event_message(msg["id"], {"config": for_user(st["config"], admin), "admin": admin}))
+        connection.send_message(websocket_api.event_message(msg["id"], {"config": for_user(st["config"], connection.user), "admin": admin}))
 
     await async_store(hass)
     connection.subscriptions[msg["id"]] = async_dispatcher_connect(hass, SIGNAL, send)
@@ -317,18 +423,102 @@ async def ws_subscribe(hass: HomeAssistant, connection: websocket_api.ActiveConn
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/save", vol.Required("config"): dict})
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/save", vol.Required("config"): dict, vol.Optional("home", default=FIRST_HOME): str})
 @websocket_api.async_response
 async def ws_save(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Save one home's setup (the Setup page edits the home that's open)."""
     st = await async_store(hass)
-    cfg = dict(msg["config"])
-    # the Setup page sends the icons it had; keep the newest ones from the store
-    cfg["icons"] = st["config"].get("icons", {})
-    cfg["names"] = st["config"].get("names", {})
-    cfg["look"] = st["config"].get("look")
-    cfg["statusScale"] = st["config"].get("statusScale")
-    cfg = await _store_and_tell(hass, clean(cfg))
-    connection.send_result(msg["id"], {"config": cfg})
+    old = st["config"]
+    got = clean(dict(msg["config"]))
+    part = home_part(got)
+    cfg = {k: v for k, v in old.items() if k in ("homes", "homeName", "homeUsers") or k in GLOBAL_KEYS}
+    # light types / tone / Listen start come from Setup; icons, names and look stay the newest from the store
+    for k in ("lightTypes", "lightTone", "listenStart"):
+        cfg.pop(k, None)
+        if k in got:
+            cfg[k] = got[k]
+    if msg["home"] == FIRST_HOME:
+        cfg.update(part)
+    else:
+        homes = [dict(h) for h in old.get("homes", [])]
+        for i, h in enumerate(homes):
+            if h["id"] == msg["home"]:
+                homes[i] = {"id": h["id"], "name": h["name"], **({"users": h["users"]} if h.get("users") else {}), **part}
+                break
+        else:
+            connection.send_error(msg["id"], "not_found", "That home is gone")
+            return
+        cfg["homes"] = homes
+        cfg.update(home_part(old))
+    cfg = await _store_and_tell(hass, clean_all(cfg))
+    connection.send_result(msg["id"], {"config": for_user(cfg, connection.user)})
+
+
+@websocket_api.require_admin
+@websocket_api.websocket_command({
+    vol.Required("type"): "ar_4c_dash/homes",
+    vol.Required("op"): vol.In(("add", "rename", "delete", "users")),
+    vol.Optional("home"): str,
+    vol.Optional("name"): str,
+    vol.Optional("users"): [str],
+})
+@websocket_api.async_response
+async def ws_homes(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """Add, rename or remove a home, or choose who may use it. The first home can't be removed."""
+    st = await async_store(hass)
+    cfg = dict(st["config"])
+    homes = [dict(h) for h in cfg.get("homes", [])]
+    op, hid = msg["op"], msg.get("home", FIRST_HOME)
+    name = _text(msg.get("name"), 40)
+    new_id = None
+    if op == "add":
+        if len(homes) + 1 >= MAX_HOMES:
+            connection.send_error(msg["id"], "too_many", f"At most {MAX_HOMES} homes")
+            return
+        used = {FIRST_HOME, *(h["id"] for h in homes)}
+        n = 2
+        while f"h{n}" in used:
+            n += 1
+        new_id = f"h{n}"
+        homes.append({"id": new_id, "name": name or f"Home {len(homes) + 2}", "rooms": []})
+        if not cfg.get("homeName"):
+            cfg["homeName"] = "Main house"
+    elif hid == FIRST_HOME:
+        if op == "delete":
+            connection.send_error(msg["id"], "first_home", "The first home can be renamed but not removed")
+            return
+        if op == "rename":
+            cfg["homeName"] = name or "Home"
+        else:
+            cfg["homeUsers"] = _users(msg.get("users"))
+    else:
+        hit = next((h for h in homes if h["id"] == hid), None)
+        if hit is None:
+            connection.send_error(msg["id"], "not_found", "That home is gone")
+            return
+        if op == "delete":
+            homes.remove(hit)
+            await routines.async_remove_home(hass, hid)
+        elif op == "rename":
+            hit["name"] = name or hit["name"]
+        else:
+            hit["users"] = _users(msg.get("users"))
+    cfg["homes"] = homes
+    cfg = await _store_and_tell(hass, clean_all(cfg))
+    connection.send_result(msg["id"], {"config": for_user(cfg, connection.user), "home": new_id})
+
+
+@websocket_api.require_admin
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/users"})
+@websocket_api.async_response
+async def ws_users(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
+    """The people who can log in (not Home Assistant's own system users)."""
+    users = await hass.auth.async_get_users()
+    connection.send_result(msg["id"], [
+        {"id": u.id, "name": u.name or "User", "admin": u.is_admin}
+        for u in users
+        if not u.system_generated and u.is_active
+    ])
 
 
 @websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/set_icon", vol.Required("key"): vol.In(ICON_KEYS), vol.Optional("value"): vol.Any(str, None)})
@@ -343,7 +533,7 @@ async def ws_set_icon(hass: HomeAssistant, connection: websocket_api.ActiveConne
     else:
         icons.pop(msg["key"], None)
     cfg["icons"] = icons
-    await _store_and_tell(hass, clean(cfg))
+    await _store_and_tell(hass, clean_all(cfg))
     connection.send_result(msg["id"], {"icons": icons})
 
 
@@ -361,7 +551,7 @@ async def ws_set_look(hass: HomeAssistant, connection: websocket_api.ActiveConne
         cfg["look"] = msg["look"]
     if "scale" in msg:
         cfg["statusScale"] = msg["scale"]
-    await _store_and_tell(hass, clean(cfg))
+    await _store_and_tell(hass, clean_all(cfg))
     connection.send_result(msg["id"])
 
 
@@ -381,7 +571,7 @@ async def ws_set_names(hass: HomeAssistant, connection: websocket_api.ActiveConn
         else:
             names.pop(e, None)
     cfg["names"] = names
-    cfg = await _store_and_tell(hass, clean(cfg))
+    cfg = await _store_and_tell(hass, clean_all(cfg))
     connection.send_result(msg["id"], {"names": cfg.get("names", {})})
 
 
@@ -433,25 +623,29 @@ async def ws_logo(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
         connection.send_error(msg["id"], "upload", str(err) or "Couldn't save the picture")
 
 
-@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/stream", vol.Required("index"): int})
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/stream", vol.Required("index"): int, vol.Optional("home", default=FIRST_HOME): str})
 @websocket_api.async_response
 async def ws_stream(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     from homeassistant.components.stream import HLS_PROVIDER  # noqa: PLC0415
 
     try:
-        stream = await _rtsp_stream(hass, msg["index"])
+        stream = await _rtsp_stream(hass, msg["index"], msg["home"], connection.user)
         await stream.start()
         connection.send_result(msg["id"], {"url": stream.endpoint_url(HLS_PROVIDER)})
     except Exception as err:  # noqa: BLE001
         connection.send_error(msg["id"], "stream", str(err) or "The camera can't be streamed")
 
 
-@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/watch", vol.Required("action"): vol.In(("start", "key", "vol", "mute", "off")), vol.Required("room"): int, vol.Optional("src"): str, vol.Optional("k"): str, vol.Optional("d"): int})
+@websocket_api.websocket_command({vol.Required("type"): "ar_4c_dash/watch", vol.Required("action"): vol.In(("start", "key", "vol", "mute", "off")), vol.Required("room"): int, vol.Optional("src"): str, vol.Optional("k"): str, vol.Optional("d"): int, vol.Optional("home", default=FIRST_HOME): str})
 @websocket_api.async_response
 async def ws_watch(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
     st = await async_store(hass)
+    conf = home_conf(st["config"], msg["home"], connection.user)
+    if conf is None:
+        connection.send_error(msg["id"], "unauthorized", "You can't use that home")
+        return
     try:
-        await watch.async_action(hass, st["config"], msg["action"], msg)
+        await watch.async_action(hass, conf, msg["action"], msg)
         connection.send_result(msg["id"])
     except Exception as err:  # noqa: BLE001
         connection.send_error(msg["id"], "watch", str(err) or "That didn't work")

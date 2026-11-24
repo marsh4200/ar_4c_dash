@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.5.1";
+const VERSION = "1.6.0";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -24,6 +24,10 @@ const DROP = '<svg viewBox="0 0 24 24"><path d="M12 3.5c3 3.6 5.5 6.9 5.5 10a5.5
 const SUNUP = '<svg viewBox="0 0 24 24"><path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 4v4M9.5 6.5L12 4l2.5 2.5M4.5 13l1.6.9M19.5 13l-1.6.9"/></svg>';
 const SUNDN = '<svg viewBox="0 0 24 24"><path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 4v4M9.5 5.5L12 8l2.5-2.5M4.5 13l1.6.9M19.5 13l-1.6.9"/></svg>';
 const LINE = {
+  timers: '<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 1.6M9.5 2.8h5M18.6 5.6l1.6 1.6"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  sunup: '<path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 4v4M9.5 6.5L12 4l2.5 2.5M4.5 13l1.6.9M19.5 13l-1.6.9"/>',
+  sundn: '<path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 4v4M9.5 5.5L12 8l2.5-2.5M4.5 13l1.6.9M19.5 13l-1.6.9"/>',
   garage: '<path d="M3 10.5L12 4l9 6.5V20H3z"/><path d="M6.5 20v-8h11v8M6.5 14.7h11M6.5 17.4h11"/>',
   icons: '<circle cx="7.5" cy="7.5" r="3.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><path d="M7.5 13.5l4 6.5h-8z"/><circle cx="16.5" cy="16.5" r="3.5"/>',
   chev: '<path d="M9 6l6 6-6 6"/>',
@@ -71,13 +75,13 @@ const LINE = {
 };
 const PRESETS = {"villa": "villa.jpg", "cape": "cape.jpg", "sunset-sea": "sunset-sea.jpg", "mountains": "mountains.jpg", "forest-mist": "forest-mist.jpg", "dunes": "dunes.jpg", "stars": "stars.jpg", "aurora": "aurora.jpg", "city-night": "city-night.jpg", "lounge": "lounge.jpg", "marble-white": "marble-white.jpg", "marble-black": "marble-black.jpg", "slate": "slate.jpg", "concrete": "concrete.jpg", "steel": "steel.jpg", "walnut": "walnut.jpg", "oak": "oak.jpg", "leather": "leather.jpg", "linen": "linen.jpg", "colour-midnight": "colour-midnight.jpg", "colour-emerald": "colour-emerald.jpg", "colour-bordeaux": "colour-bordeaux.jpg", "colour-champagne": "colour-champagne.jpg", "colour-graphite": "colour-graphite.jpg", "colour-twilight": "colour-twilight.jpg", "colour-lagoon": "colour-lagoon.jpg", "colour-amber": "colour-amber.jpg", "sky-blue": "sky-blue.jpg", "sky-high": "sky-high.jpg", "sky-golden": "sky-golden.jpg", "sky-dawn": "sky-dawn.jpg", "sky-moon": "sky-moon.jpg"};
 const BG_NAMES = { villa: "Villa at dusk", cape: "Cape dusk", "sunset-sea": "Sunset sea", mountains: "Misty mountains", "forest-mist": "Forest mist", dunes: "Desert dunes", stars: "Night sky", aurora: "Aurora", "city-night": "City lights", lounge: "Evening lounge", "marble-white": "White marble", "marble-black": "Black marble", slate: "Slate", concrete: "Concrete", steel: "Brushed steel", walnut: "Walnut", oak: "Oak", leather: "Leather", linen: "Linen", "colour-midnight": "Midnight blue", "colour-emerald": "Emerald", "colour-bordeaux": "Bordeaux", "colour-champagne": "Champagne silk", "colour-graphite": "Graphite silk", "colour-twilight": "Twilight", "colour-lagoon": "Lagoon", "colour-amber": "Amber glow", "sky-blue": "Blue sky", "sky-high": "High clouds", "sky-golden": "Golden hour", "sky-dawn": "Pastel dawn", "sky-moon": "Moonlit clouds" };
-const TITLES = { garage: "Garage", lights: "Lights", climate: "Comfort", music: "Listen", watch: "Watch", shades: "Shades", cameras: "Cameras", utilities: "Utilities", security: "Security", scenes: "Scenes" };
-const ORDER = ["lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes"];
+const TITLES = { garage: "Garage", lights: "Lights", climate: "Comfort", music: "Listen", watch: "Watch", shades: "Shades", cameras: "Cameras", utilities: "Utilities", security: "Security", scenes: "Scenes", timers: "Timers" };
+const ORDER = ["lights", "climate", "music", "watch", "shades", "garage", "cameras", "utilities", "security", "scenes", "timers"];
 // Utilities sections (3D slider): key, title, built-in icon, glow colour
 const U_SECT = [["pool", "Pool", "r2_pool", "70,190,255"], ["irrigation", "Irrigation", "r2_irrigation", "96,214,120"], ["geyser", "Geysers", "r2_geyser", "255,138,64"], ["more", "Other", "r2_utilities", "250,204,80"]];
 const ROOM_KEYS = ["lights", "climate", "music", "watch", "shades", "scenes", "presence"];
 const IC_CATS = ["Lighting", "Climate", "Security", "Media", "Doors & shades", "Utilities", "Scenes & rooms"];
-const IC_FOR = { garage: "Doors & shades", lights: "Lighting", climate: "Climate", security: "Security", cameras: "Security", music: "Media", watch: "Media", shades: "Doors & shades", utilities: "Utilities", scenes: "Scenes & rooms" };
+const IC_FOR = { garage: "Doors & shades", lights: "Lighting", climate: "Climate", security: "Security", cameras: "Security", music: "Media", watch: "Media", shades: "Doors & shades", utilities: "Utilities", scenes: "Scenes & rooms", timers: "Scenes & rooms" };
 const LAMP_K = { warm: 2700, soft: 3000, neutral: 4000, cool: 5000, daylight: 6500, dim: 2200 };
 const LAMP_NAME = { lamp: "Pendant", edison: "Filament", downlight: "Downlight", bulb: "Bulb" };
 const MODE = { off: "Off", heat: "Heat", cool: "Cool", heat_cool: "Heat / cool", auto: "Auto", dry: "Dry", fan_only: "Fan" };
@@ -122,6 +126,84 @@ function loadLib() {
   return libLoading;
 }
 const libSrc = (n) => (LIB && LIB[n] ? "data:image/svg+xml;charset=utf-8," + encodeURIComponent(LIB[n].svg) : "");
+
+// ---- timers and scenes made on the dash (Home Assistant checks them again) ----------
+// [on / open, off / close] per kind of device; locks and garage doors are never on a timer
+const TIMER_SVC = { light: ["turn_on", "turn_off"], switch: ["turn_on", "turn_off"], fan: ["turn_on", "turn_off"], input_boolean: ["turn_on", "turn_off"], cover: ["open_cover", "close_cover"], climate: ["turn_on", "turn_off"], media_player: ["turn_on", "turn_off"] };
+const DAYS = [["mon", "M", "Mon"], ["tue", "T", "Tue"], ["wed", "W", "Wed"], ["thu", "T", "Thu"], ["fri", "F", "Fri"], ["sat", "S", "Sat"], ["sun", "S", "Sun"]];
+const SCENE_ICONS = ["moon", "sun", "sparkle", "movie", "dinner", "relax", "party", "read", "away", "home"];
+const newEv = (o, w, at) => ({ o, w, at: at || "07:00", off: 0, days: [] });
+const ids = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+const hhmmss = (min) => { const a = Math.abs(Math.round(min)); return (min < 0 ? "-" : "") + String(Math.floor(a / 60)).padStart(2, "0") + ":" + String(a % 60).padStart(2, "0") + ":00"; };
+const minutesOf = (o) => { if (!o) return 0; const neg = String(o).trim()[0] === "-"; const p = String(o).replace("-", "").split(":").map(Number); const m = (p[0] || 0) * 60 + (p[1] || 0) + (p[2] || 0) / 60; return Math.round(neg ? -m : m); };
+
+// a timer is a Home Assistant automation: each time is a trigger (ev0, ev1…) and
+// one "choose" switches the devices on or off for the time that fired
+function buildTimer(t) {
+  const triggers = [], choose = [];
+  const by = {}; t.devs.forEach((e) => (by[domain(e)] = by[domain(e)] || []).push(e));
+  t.ev.forEach((ev, i) => {
+    const id = "ev" + i;
+    if (ev.w === "time") triggers.push({ trigger: "time", at: ev.at + ":00", id });
+    else { const tr = { trigger: "sun", event: ev.w, id }; if (ev.off) tr.offset = hhmmss(ev.off); triggers.push(tr); }
+    const conditions = [{ condition: "trigger", id }];
+    const days = DAYS.map((d) => d[0]).filter((d) => ev.days.indexOf(d) >= 0);
+    if (days.length && days.length < 7) conditions.push({ condition: "time", weekday: days });
+    const sequence = Object.keys(by).map((d) => ({ action: d + "." + TIMER_SVC[d][ev.o === "on" ? 0 : 1], target: { entity_id: by[d].length === 1 ? by[d][0] : by[d] } }));
+    choose.push({ conditions, sequence });
+  });
+  return { alias: t.name.trim(), description: "Timer made on 4C Dash", mode: "queued", triggers, conditions: [], actions: [{ choose }] };
+}
+function parseTimer(c) {
+  const opts = ids((ids(c.actions)[0] || {}).choose), by = {};
+  let devs = null;
+  opts.forEach((o) => {
+    const cs = ids(o.conditions), es = [];
+    let on = null;
+    ids(o.sequence).forEach((a) => {
+      const sv = String(a.action || a.service || "").split("."), pair = TIMER_SVC[sv[0]];
+      if (!pair || pair.indexOf(sv[1]) < 0) throw new Error("step");
+      const x = pair[0] === sv[1] ? "on" : "off";
+      if (on && on !== x) throw new Error("mixed");
+      on = x;
+      ids(a.target && a.target.entity_id).forEach((e) => es.push(e));
+    });
+    if (devs === null) devs = es;
+    else if (devs.slice().sort().join() !== es.slice().sort().join()) throw new Error("devices");
+    by[cs[0] && cs[0].id] = { o: on || "on", days: cs.slice(1).reduce((a, x) => a.concat(ids(x.weekday)), []) };
+  });
+  const ev = ids(c.triggers).map((t) => {
+    const b = by[t.id];
+    if (!b) throw new Error("trigger");
+    if (t.trigger === "time" && /^\d{1,2}:\d\d/.test(String(t.at))) return { o: b.o, w: "time", at: String(t.at).slice(0, 5).padStart(5, "0"), off: 0, days: b.days };
+    if (t.trigger === "sun") return { o: b.o, w: t.event, at: "07:00", off: minutesOf(t.offset), days: b.days };
+    throw new Error("trigger");
+  });
+  return { name: c.alias || "", devs: devs || [], ev };
+}
+// a scene the household made: Home Assistant scene, in scenes.yaml
+function buildScene(s) {
+  const entities = {};
+  s.rows.forEach((r) => {
+    const d = domain(r.e), o = { state: r.state };
+    if (d === "light" && r.state === "on" && r.bri) o.brightness = Math.max(1, Math.min(255, Math.round(r.bri * 2.55)));
+    if (d === "cover" && r.state === "open" && r.pos != null) o.current_position = Math.round(r.pos);
+    if (d === "climate" && r.state !== "off" && r.temp) o.temperature = Number(r.temp);
+    entities[r.e] = o;
+  });
+  return { name: s.name.trim(), icon: "line:" + (s.icon || "sparkle"), entities };
+}
+function parseScene(c) {
+  const rows = Object.keys(c.entities || {}).map((e) => {
+    const v = c.entities[e], o = v && typeof v === "object" ? v : { state: v === true ? "on" : v === false ? "off" : String(v) };
+    const r = { e, state: String(o.state || "on") };
+    if (o.brightness) r.bri = Math.max(1, Math.round(o.brightness / 2.55));
+    if (o.current_position != null) r.pos = o.current_position;
+    if (o.temperature) r.temp = o.temperature;
+    return r;
+  });
+  return { name: c.name || "", icon: String(c.icon || "line:sparkle").replace(/^line:/, ""), rows };
+}
 
 const CSS = `
 :host{display:block;--fg:#f1ede6;--muted:#a49d92;--line:rgba(255,255,255,.14);--glass:rgba(22,20,24,.58);--accrgb:243,211,154;--acc:rgb(var(--accrgb));--warm:255,196,128;font-family:Jost,"Jost",Roboto,system-ui,sans-serif;color:var(--fg)}
@@ -468,6 +550,51 @@ svg{flex:none}
 .spr .nm{flex:1;min-width:0}.spr input{width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:inherit;font:inherit;font-size:16px;padding:7px 9px}.spr small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}.spr .chip{flex:none}
 .pick{position:absolute;inset:0;z-index:7;background:rgb(16,15,19);border-radius:26px 26px 0 0;display:flex;flex-direction:column}
 .msg{position:absolute;left:50%;bottom:calc(76px + var(--dash-bot,0px));transform:translateX(-50%);background:rgba(20,20,24,.95);border:1px solid var(--line);padding:9px 16px;border-radius:18px;font-size:14px;z-index:9;white-space:nowrap;pointer-events:none}
+
+/* homes, timers, own scenes */
+.hm{display:block;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);line-height:1;margin-bottom:3px}
+.room.two{flex-direction:column;align-items:flex-start;gap:0}.room.two .rn{display:flex;align-items:center;gap:6px}.room .rn svg{width:14px;height:14px}
+.ghd{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);padding:18px 6px 0}
+.hcard{display:flex;align-items:center;gap:14px;padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.1);margin-top:10px;cursor:pointer;background:#222 center/cover;position:relative;overflow:hidden;min-height:82px}
+.hcard::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,9,12,.92),rgba(10,9,12,.5))}
+.hcard>*{position:relative}.hcard.on{border-color:var(--acc)}
+.hcard .av{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:grid;place-items:center;flex:none}
+.hcard.on .av{border-color:var(--acc);color:var(--acc);background:rgba(var(--accrgb),.12)}
+.hcard .av svg{width:22px;height:22px}.hcard b{display:block;font-weight:400;font-size:18px}.hcard small{color:var(--muted);font-size:12.5px}
+.hcard .ck{margin-left:auto;color:var(--acc)}.hcard .ck svg{width:20px;height:20px}
+.rt{display:flex;align-items:center;gap:12px;flex:none}
+.rt .av{width:44px;height:44px;border-radius:50%;border:1px solid rgba(var(--accrgb),.5);background:rgba(var(--accrgb),.1);display:grid;place-items:center;color:var(--acc);flex:none;cursor:pointer}
+.rt .av svg{width:22px;height:22px}
+.rt .tx{flex:1;min-width:0;cursor:pointer}.rt .tx b{display:block;font-weight:400;font-size:16px}
+.rt .tx small{display:block;color:var(--muted);font-size:12.5px;line-height:1.45;margin-top:2px}.rt .tx em{font-style:normal;color:var(--acc)}
+.rt.off .av{border-color:var(--line);background:transparent;color:var(--muted)}.rt.off .tx em{color:var(--muted)}
+.devs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.devs span{display:flex;align-items:center;gap:5px;font-size:11.5px;color:rgba(241,237,230,.8);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:2px 8px 2px 6px}
+.devs svg{width:13px;height:13px;color:var(--acc)}
+.gold{background:rgba(var(--accrgb),.92)!important;color:#2a2116!important;border-color:transparent!important}
+.addb{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:18px;border:1px dashed rgba(255,255,255,.25);color:var(--acc);font-size:14px;cursor:pointer;flex:none;margin-top:8px}
+.addb svg{width:18px;height:18px}
+.tsv{display:flex;color:var(--acc)}.tsv svg{width:20px;height:20px}.tsx{display:flex;color:var(--muted);cursor:pointer;padding:6px}.tsx svg{width:18px;height:18px}
+.ev{border-left:3px solid var(--acc)}.ev.of{border-left-color:rgba(255,255,255,.3)}
+.evh{display:flex;align-items:center;gap:10px}.evh>svg{width:20px;height:20px;color:var(--acc)}.evh b{flex:1;font-weight:400;font-size:16px;min-width:0}
+.segf{display:flex;padding:3px;border-radius:19px;background:rgba(255,255,255,.08)}
+.segf div{flex:1;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;color:var(--muted);text-align:center}
+.segf div.on{background:var(--fg);color:#17161a}
+.dch{display:flex;gap:5px}.dch div{flex:1;height:36px;border-radius:18px;border:1px solid var(--line);display:grid;place-items:center;font-size:12.5px;cursor:pointer}
+.dch div.on{background:rgba(var(--accrgb),.92);color:#2a2116;border-color:transparent}
+.tbig{font-size:18px;font-weight:300;text-align:center;flex:1}
+.inp.tin{height:52px;font-size:26px;font-weight:300;text-align:center;color-scheme:dark}
+.pkr{display:flex;align-items:center;gap:12px;min-height:50px;border-top:1px solid rgba(255,255,255,.07);cursor:pointer}
+.pkr>svg{width:20px;height:20px;color:var(--muted)}.pkr span{flex:1}.pkr.on>svg{color:var(--acc)}
+.pkr .tick{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-style:normal}
+.pkr.on .tick{background:var(--acc);border-color:transparent;color:#2a2116}.pkr .tick svg{width:15px;height:15px}
+.scn{position:relative}.scn.add{border-style:dashed;color:var(--muted);flex-direction:row;align-items:center;justify-content:center;gap:8px}.scn.add svg{color:var(--muted)}
+.scn .sed{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}.scn .sed svg{width:16px;height:16px;color:var(--muted)}
+.sic{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.sic div{aspect-ratio:1;border-radius:16px;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer}.sic svg{width:24px;height:24px}
+.sic div.on{border-color:var(--acc);color:var(--acc);background:rgba(var(--accrgb),.1)}
+.rrow{display:grid;grid-template-columns:auto 1fr 46px;align-items:center;gap:12px;font-size:13px;color:var(--muted)}.rrow b{font-weight:400;color:var(--fg);text-align:right}
+.rrow .rng{width:100%;accent-color:var(--acc)}
 `;
 
 // ---- logo cut-out (as in AR Lighting Scenes): takes a plain background off an
@@ -664,7 +791,7 @@ class Ar4cDash extends HTMLElement {
     this.page = "home";
     this.sheet = null;
     this.opt = {}; // optimistic values while Home Assistant catches up
-    this.P = { room: null, look: null, icons: {}, bg: null };
+    this.P = { room: null, look: null, icons: {}, bg: null, home: null };
     this.media = { icons: [], backgrounds: [] };
     this.up = { icon: [], bg: [] };
     this._ready = true;
@@ -689,6 +816,7 @@ class Ar4cDash extends HTMLElement {
     });
     this.shadowRoot.addEventListener("input", (ev) => {
       const t = ev.target, k = t.getAttribute && t.getAttribute("data-in");
+      if (k && k.indexOf("r-") === 0) { this.rtInput(k, t); return; }
       if (k === "so-preset" && this.draft && this.draft.solar) { this.draft.solar.preset = t.value; this.dirty = true; this._render(true); return; }
       if (k === "logofile") { this._upFor = { kind: "logo" }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
       if (k === "iconfile") { this._upFor = { kind: "icon", k: t.getAttribute("data-k") }; this.logoFile(t.files && t.files[0]); t.value = ""; return; }
@@ -765,7 +893,10 @@ class Ar4cDash extends HTMLElement {
       const m = await h.callWS({ type: "ar_lighting_scenes/media" });
       if (m) this.media = { icons: m.icons || [], backgrounds: m.backgrounds || [] };
     } catch (e) {}
+    this.pickHome();
     this._setup();
+    this.rt = {};
+    if (!this.noHome) this.rtLoad();
     loadLib().then(() => this._render());
     this._render();
   }
@@ -776,7 +907,8 @@ class Ar4cDash extends HTMLElement {
       let first = true;
       h.connection
         .subscribeMessage((m) => {
-          this.conf = (m && m.config) || { rooms: [] };
+          this.all = (m && m.config) || { homes: [] };
+          this.pickHome();
           this.admin = !!(m && m.admin);
           this.err = null;
           if (first) { first = false; ok(); return; }
@@ -862,6 +994,8 @@ class Ar4cDash extends HTMLElement {
       if (k === "watch") return r.watch.length || r.sources.length;
       if (k === "utilities") return this.house.utilities.length || !!this.solarCfg();
       if (k === "garage") return this.house.garage.length && (r.whole || !(this.rooms || []).some((x) => x.whole)); // on the Whole House home
+      if (k === "scenes") return r.scenes.length || this.rtDevs().length; // the room's scenes, and the household's own
+      if (k === "timers") return this.rtDevs().length;
       return (HOUSE_KEYS.indexOf(k) >= 0 ? this.house[k] : r[k]).length;
     });
   }
@@ -911,6 +1045,7 @@ class Ar4cDash extends HTMLElement {
     const sc = (this.conf && this.conf.status) || {};
     if (sc.temp) w.push(sc.temp);
     if (sc.sun) w.push("sun.sun");
+    if (this.rt) this.rtEnts().forEach((e) => w.push(e));
     if (this.conf && this.conf.weather) w.push(this.conf.weather);
     else { const wx = Object.keys(this._hass.states).filter((e) => e.indexOf("weather.") === 0)[0]; if (wx) w.push(wx); }
     return (this._watch = w);
@@ -988,8 +1123,12 @@ class Ar4cDash extends HTMLElement {
       g += '<div class="btn' + (lit ? " lit" : "") + '" data-act="go" data-k="' + k + '"><div class="ring">' + this.icon(k) + badge + "</div><span>" + TITLES[k] + "</span></div>";
     });
     const hasLights = this.room().lights.length;
+    if (this.noHome) return '<div class="top"><div class="ib" data-act="menu" title="Home Assistant menu">' + MENU + '</div></div><div class="empty" style="margin:auto 0">You haven\u2019t been given a home on this dash yet. Ask the person who looks after Home Assistant.</div>';
+    const roomEl = this.multiHome()
+      ? '<div class="room two" data-act="rooms"><span class="hm">' + esc(this.hm.name) + '</span><span class="rn">' + this.roomName() + line("down") + "</span></div>"
+      : '<div class="room" data-act="rooms">' + this.roomName() + line("down") + "</div>";
     return (
-      '<div class="top"><div class="ib" data-act="menu" title="Home Assistant menu">' + MENU + '</div><div class="room" data-act="rooms">' + this.roomName() + line("down") + '</div><div class="sp"></div>' + (this.gearUntil > Date.now() ? '<div class="ib gear" data-act="settings">' + line("icons") + "</div>" : '<div class="ib hid" data-act="gtap"></div>') + "</div>" +
+      '<div class="top"><div class="ib" data-act="menu" title="Home Assistant menu">' + MENU + "</div>" + roomEl + '<div class="sp"></div>' + (this.gearUntil > Date.now() ? '<div class="ib gear" data-act="settings">' + line("icons") + "</div>" : '<div class="ib hid" data-act="gtap"></div>') + "</div>" +
       '<div class="hero"><div class="clock"><div class="t">' + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) + '</div><div class="d">' + now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + (wtxt ? "<i>" + esc(wtxt) + "</i>" : "") + "</div></div>" + this.statusHtml() + "</div>" + this.peopleHtml() +
       (this.empty ? '<div class="empty" style="margin-top:auto">' + (this.admin ? 'Nothing set up yet.<br><br><span class="pill" style="display:inline-flex" data-act="setup">' + line("rooms") + "Set up rooms</span>" : "Nothing set up yet. Ask the person who looks after Home Assistant to set up the 4C Dash.") + "</div>" : '<div class="grid">' + (g || '<div class="empty" style="grid-column:1/-1">Nothing set up for this room yet.</div>') + "</div>") +
       (this.houseScenes && this.houseScenes.length && !this.empty ? '<div class="chips hsc">' + this.houseScenes.map((e) => '<div class="chip dot sc" data-act="scene" data-e="' + esc(e) + '"><i></i>' + esc(this.name(e)) + "</div>").join("") + "</div>" : "") +
@@ -998,11 +1137,12 @@ class Ar4cDash extends HTMLElement {
   }
   head(title) {
     const house = HOUSE_KEYS.indexOf(this.page) >= 0;
-    return '<div class="top"><div class="ib" data-act="back">' + line("chevl") + '</div><div class="room"' + (house ? "" : ' data-act="rooms"') + ">" + title + (house ? "" : "<small>" + this.roomName() + line("down") + "</small>") + '</div><div class="sp"></div><div class="ib" data-act="back" data-v="home">' + line("home") + "</div></div>";
+    const sub = this.page === "timers" ? (this.multiHome() ? "<small>" + esc(this.hm.name) + "</small>" : "") : house ? (this.multiHome() ? "<small>" + esc(this.hm.name) + "</small>" : "") : "<small>" + this.roomName() + line("down") + "</small>";
+    return '<div class="top"><div class="ib" data-act="back">' + line("chevl") + '</div><div class="room"' + (house || this.page === "timers" ? "" : ' data-act="rooms"') + ">" + title + sub + '</div><div class="sp"></div><div class="ib" data-act="back" data-v="home">' + line("home") + "</div></div>";
   }
   inner() {
     const k = this.page;
-    const f = { garage: this.pGarage, lights: this.pLights, climate: this.pClimate, music: this.pListen, watch: this.pWatch, shades: this.pShades, scenes: this.pScenes, security: this.pSecurity, cameras: this.pCameras, utilities: this.pUtil }[k];
+    const f = { garage: this.pGarage, lights: this.pLights, climate: this.pClimate, music: this.pListen, watch: this.pWatch, shades: this.pShades, scenes: this.pScenes, security: this.pSecurity, cameras: this.pCameras, utilities: this.pUtil, timers: this.pTimers }[k];
     return this.head(TITLES[k]) + (f ? f.call(this) : "");
   }
 
@@ -1515,7 +1655,7 @@ class Ar4cDash extends HTMLElement {
     const r = this.room();
     if (!r.sources.length) return this.pMedia();
     const room = this.ri, actv = (this.wst || {}).active || {};
-    const act = r.whole ? (r.sources.filter((s) => actv[String(s._r)] === s._id)[0] || {}).id : actv[String(room)];
+    const act = r.whole ? (r.sources.filter((s) => actv[this.wkey(s._r)] === s._id)[0] || {}).id : actv[this.wkey(room)];
     const wv = this.wv || (this.wv = {});
     if (wv.room !== room) { wv.room = room; wv.view = null; }
     if (!wv.view) { wv.view = act ? "remote" : "pick"; wv.src = act; }
@@ -1563,7 +1703,7 @@ class Ar4cDash extends HTMLElement {
   myRun() {
     const wv = this.wv, run = (this.wst || {}).run;
     const tg = this.wTarget(wv.src);
-    return run && run.id !== wv.prevRun && run.room === tg.room && wv.src && run.src === tg.src ? run : null;
+    return run && run.id !== wv.prevRun && run.room === tg.room && (run.home || "h1") === this.homeId() && wv.src && run.src === tg.src ? run : null;
   }
   watchStart() {
     const wv = this.wv, s = this.srcOf(wv.src);
@@ -1599,13 +1739,8 @@ class Ar4cDash extends HTMLElement {
   }
   watchCmd(kind, v) {
     const room = this.wTarget(this.wv && this.wv.src).room;
-    if (kind === "key") this._hass.callWS({ type: "ar_4c_dash/watch", action: "key", room, k: v }).catch(() => {});
-    else if (kind === "vol") this._hass.callWS({ type: "ar_4c_dash/watch", action: "vol", room, d: Number(v) }).catch(() => {});
-  }
-  pScenes() {
-    let h = "";
-    this.room().scenes.forEach((e) => (h += '<div class="scn" data-act="scene" data-e="' + esc(e) + '">' + line("sparkle") + "<span>" + esc(this.name(e)) + "</span></div>"));
-    return '<div class="scroll">' + (h ? '<div class="sgrid">' + h + "</div>" : '<div class="empty">No scenes in this room.</div>') + "</div>";
+    if (kind === "key") this._hass.callWS({ type: "ar_4c_dash/watch", action: "key", room, k: v, home: this.homeId() }).catch(() => {});
+    else if (kind === "vol") this._hass.callWS({ type: "ar_4c_dash/watch", action: "vol", room, d: Number(v), home: this.homeId() }).catch(() => {});
   }
   pSecurity() {
     let h = "";
@@ -1642,7 +1777,7 @@ class Ar4cDash extends HTMLElement {
   // a still of an RTSP camera, made by Home Assistant (the address never reaches the phone)
   _snap(e) {
     const h = this._hass;
-    const path = "/api/ar_4c_dash/snap/" + e.slice(5);
+    const path = "/api/ar_4c_dash/snap/" + e.slice(5) + "?home=" + encodeURIComponent(this.homeId());
     const get = h.fetchWithAuth ? h.fetchWithAuth(path) : fetch(path, { headers: { Authorization: "Bearer " + ((h.auth && h.auth.data && h.auth.data.access_token) || "") } });
     return get.then((r) => (r.ok ? r.blob() : null)).then((b) => {
       if (!b) return;
@@ -1682,7 +1817,7 @@ class Ar4cDash extends HTMLElement {
   _stream(e, v, on) {
     const st = { hls: null, dead: false };
     const fail = (why) => { if (st.dead) return; st.dead = true; if (st.hls) { st.hls.destroy(); st.hls = null; } on && on(false, why); };
-    const ask = this.isRtsp(e) ? { type: "ar_4c_dash/stream", index: Number(e.slice(5)) } : { type: "camera/stream", entity_id: e };
+    const ask = this.isRtsp(e) ? { type: "ar_4c_dash/stream", index: Number(e.slice(5)), home: this.homeId() } : { type: "camera/stream", entity_id: e };
     v.addEventListener("playing", () => on && on(true), { once: true });
     this._hass.callWS(ask).then((res) => {
       if (st.dead) return;
@@ -2067,7 +2202,10 @@ class Ar4cDash extends HTMLElement {
 
   // ---- sheets: rooms + settings ---------------------------------------------------
   sheetHtml() {
-    if (this.sheet === "rooms") {
+    if (this.sheet === "r-timer" && this.tdraft) return this.timerSheet();
+    if (this.sheet === "r-scene" && this.sdraft) return this.sceneSheet();
+    if (this.sheet === "rooms") return this.roomsSheet();
+    if (this.sheet === "rooms-old") {
       let h = "";
       this.rooms.forEach((r, i) => {
         const n = r.lights.filter((e) => this.isOn(e)).length;
@@ -2168,7 +2306,7 @@ class Ar4cDash extends HTMLElement {
   setupHtml() {
     if (!this.draft) this.draftStart();
     const d = this.draft;
-    let h = '<div class="lbl" style="padding:10px 4px 2px">Rooms</div>';
+    let h = this.homesSetupHtml() + '<div class="lbl" style="padding:18px 4px 2px">Rooms' + (this.multiHome() ? " in " + esc(this.hm.name) : "") + "</div>";
     d.rooms.forEach((rm, i) => {
       const n = SETUP_CATS.reduce((t, c) => t + ((rm[c[0]] || []).length), 0);
       h += '<div class="it' + (this.sOpen === i ? " open" : "") + '"><div class="ih" data-act="s-open" data-v="' + i + '"><span class="now">' + line(rm.whole ? "rooms" : "home") + "</span><b>" + esc(rm.name || "Room " + (i + 1)) + "</b><small>" + (rm.whole ? "All rooms" : n + (n === 1 ? " device" : " devices") + ((rm.sources || []).length ? " \u00b7 " + rm.sources.length + " to watch" : "")) + "</small></div>";
@@ -2413,8 +2551,8 @@ class Ar4cDash extends HTMLElement {
     const nd = this.nameDraft; this.nameDraft = null;
     // names first (they're kept on their own), then the rest of the setup
     const names = nd && Object.keys(nd).length ? this._hass.callWS({ type: "ar_4c_dash/set_names", names: nd }).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save the names")) : Promise.resolve();
-    names.then(() => this._hass.callWS({ type: "ar_4c_dash/save", config: this.draft })).then((res) => {
-      this.conf = (res && res.config) || this.draft;
+    names.then(() => this._hass.callWS({ type: "ar_4c_dash/save", config: this.draft, home: this.homeId() })).then((res) => {
+      if (res && res.config) { this.all = res.config; this.pickHome(); } else this.conf = this.draft;
       this.draft = JSON.parse(JSON.stringify(this.conf));
       this.dirty = false;
       this._setup();
@@ -2423,12 +2561,364 @@ class Ar4cDash extends HTMLElement {
     }).catch((e) => this._toast(e && e.message ? e.message : "Couldn't save"));
   }
 
+  // ---- homes: several homes on one Home Assistant ----------------------------------
+  // the config from Home Assistant has the homes this person may use; the dash
+  // shows one at a time (this.conf), so everything else works as before
+  pickHome() {
+    const hs = (this.all && this.all.homes) || [];
+    this.homes = hs;
+    const h = hs.filter((x) => x.id === this.P.home)[0] || hs[0];
+    this.hm = h || null;
+    this.noHome = !h;
+    this.conf = h ? Object.assign({}, h.conf) : { rooms: [] };
+  }
+  homeId() { return this.hm ? this.hm.id : "h1"; }
+  multiHome() { return (this.homes || []).length > 1; }
+  wkey(room) { return this.homeId() === "h1" ? String(room) : this.homeId() + ":" + room; }
+  homeImg(h) {
+    const c = (h && h.conf) || {};
+    return this.url(c.houseImage) || this.url(((c.rooms || []).filter((r) => r.image)[0] || {}).image) || BASE + "/backgrounds/thumbs/villa.jpg";
+  }
+  setHome(id) {
+    if (this.homeId() === id) return;
+    this.P.home = id; this.P.room = 0; this._save();
+    this.pickHome(); this._setup(); this._seen = null;
+    // Setup stays open on the other home, with a fresh draft (never the last home's)
+    const keep = this.sheet === "settings";
+    this.draft = null; this.dirty = false; this.pick = null;
+    this.page = "home"; this.sheet = keep ? "settings" : null; this.wv = null; this.tdraft = null; this.sdraft = null;
+    this.rt = {}; this.rtLoad();
+  }
+  roomsSheet() {
+    let h = "";
+    if (this.multiHome()) {
+      h += '<div class="ghd">Home</div>';
+      this.homes.forEach((hm) => {
+        const on = hm.id === this.homeId(), n = ((hm.conf && hm.conf.rooms) || []).filter((r) => !r.whole).length;
+        h += '<div class="hcard' + (on ? " on" : "") + '" data-act="r-home" data-v="' + esc(hm.id) + '" style="background-image:url(&quot;' + esc(this.homeImg(hm)) + '&quot;)"><div class="av">' + line("home") + "</div><div><b>" + esc(hm.name) + "</b><small>" + n + (n === 1 ? " room" : " rooms") + "</small></div>" + (on ? '<div class="ck">' + line("chevr") + "</div>" : "") + "</div>";
+      });
+      h += '<div class="ghd">Rooms in ' + esc(this.hm.name) + "</div>";
+    }
+    this.rooms.forEach((r, i) => {
+      const n = r.lights.filter((e) => this.isOn(e)).length;
+      h += '<div class="rm' + (i === this.ri ? " on" : "") + '" data-act="room" data-v="' + i + '"><b>' + esc(r.name) + "</b><small>" + (r.lights.length ? (n ? n + " on" : "Lights off") : "") + "</small></div>";
+    });
+    return '<div class="sheet"><div class="shh"><b>' + (this.multiHome() ? "Homes &amp; rooms" : "Rooms") + '</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + "</div></div>";
+  }
+  // Setup: the homes (admins). Changes here save straight away.
+  homesSetupHtml() {
+    const hs = this.homes || [];
+    const users = this.haUsers;
+    if (!users && !this._usersAsked) {
+      this._usersAsked = true;
+      this._hass.callWS({ type: "ar_4c_dash/users" }).then((u) => { this.haUsers = u || []; this._render(true); }).catch(() => { this.haUsers = []; });
+    }
+    let h = '<div class="lbl" style="padding:10px 4px 2px">Homes</div><div class="hint" style="text-align:left;padding:2px 4px 4px">More than one home on this Home Assistant (e.g. a main house and a cottage). Each home has its own rooms, cameras, alarm, timers and scenes. Setup below is for <b style="color:var(--fg);font-weight:500">' + esc(this.hm ? this.hm.name : "Home") + "</b>; switch homes with the room name at the top.</div>";
+    hs.forEach((hm, i) => {
+      const open = this.hOpen === hm.id;
+      const who = hm.users && hm.users.length ? hm.users.length + (hm.users.length === 1 ? " person" : " people") : "Everyone";
+      h += '<div class="it' + (open ? " open" : "") + '"><div class="ih" data-act="r-hopen" data-v="' + esc(hm.id) + '"><span class="now">' + line("home") + "</span><b>" + esc(hm.name) + (hm.id === this.homeId() ? ' <small style="color:var(--acc)">\u00b7 open</small>' : "") + "</b><small>" + esc(who) + "</small></div>";
+      if (open) {
+        h += '<div class="sbody"><div class="row"><input class="inp" data-in="r-hname" data-v="' + esc(hm.id) + '" value="' + esc(hm.name) + '" maxlength="40" placeholder="Home name"><div class="chip" data-act="r-hrename" data-v="' + esc(hm.id) + '">Rename</div></div>';
+        h += '<div class="lbl">Who can use it</div><div class="hint" style="text-align:left;padding:0">None ticked: everyone. Admins always can.</div><div class="wrapc" style="justify-content:flex-start">';
+        (users || []).filter((u) => !u.admin).forEach((u) => {
+          const on = (hm.users || []).indexOf(u.id) >= 0;
+          h += '<div class="chip' + (on ? " on" : "") + '" data-act="r-huser" data-v="' + esc(hm.id) + '" data-e="' + esc(u.id) + '">' + esc(u.name) + "</div>";
+        });
+        if (users && !users.filter((u) => !u.admin).length) h += '<div class="hint" style="padding:0">No non-admin logins yet (Settings \u203a People).</div>';
+        h += "</div>";
+        if (hm.id !== this.homeId()) h += '<div class="chip" data-act="r-home" data-v="' + esc(hm.id) + '" style="align-self:flex-start">' + line("chevr") + "Open this home to set it up</div>";
+        if (i > 0) h += '<div class="chip" data-act="r-hdel" data-v="' + esc(hm.id) + '" style="align-self:flex-start;color:#ff9a8a">' + line("x") + (this.hDel === hm.id ? "Tap again: remove " + esc(hm.name) + ", its rooms, timers and scenes" : "Remove this home") + "</div>";
+        h += "</div>";
+      }
+      h += "</div>";
+    });
+    h += '<div class="chip" style="border-style:dashed;margin-top:10px;align-self:flex-start" data-act="r-hadd">' + line("plus") + "Add a home</div>";
+    return h;
+  }
+  homesOp(msg, done) {
+    this._hass.callWS(Object.assign({ type: "ar_4c_dash/homes" }, msg)).then((res) => {
+      if (res && res.config) { this.all = res.config; this.pickHome(); }
+      if (done) done(res);
+      this._render(true);
+    }).catch((er) => this._toast(er && er.message ? er.message : "Couldn't save"));
+  }
+
+  // ---- timers and the household's own scenes (made on the dash) ---------------------
+  // the devices a timer or scene may use: this home's lights, aircons, curtains,
+  // speakers and simple utilities (Home Assistant checks the same list)
+  rtDevs() {
+    const c = this.conf || {}, out = [], seen = {};
+    const add = (e, room) => { if (typeof e === "string" && TIMER_SVC[domain(e)] && !seen[e]) { seen[e] = 1; out.push({ e, room }); } };
+    (c.rooms || []).forEach((r) => { if (!r.whole) ["lights", "climate", "shades", "music"].forEach((k) => list(r[k]).forEach((e) => add(e, r.name || "Room"))); });
+    list(c.utilities).forEach((e) => add(e, "Utilities"));
+    return out;
+  }
+  rtLoad(kind) {
+    const hid = this.homeId();
+    (kind ? [kind] : ["timer", "scene"]).forEach((k) => {
+      this._hass.callWS({ type: "ar_4c_dash/routines", op: "list", kind: k, home: hid }).then((items) => {
+        if (this.homeId() !== hid) return;
+        this.rt = this.rt || {};
+        this.rt[k] = (items || []).sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+        this._watch = null;
+        this._render(true);
+      }).catch(() => { this.rt = this.rt || {}; this.rt[k] = []; });
+    });
+  }
+  rtEnts() {
+    const r = this.rt || {}, out = [];
+    ["timer", "scene"].forEach((k) => (r[k] || []).forEach((x) => { const e = this.rtEntity(k, x); if (e) out.push(e); }));
+    return out;
+  }
+  rtEntity(kind, x) {
+    if (x.entity_id && this.st(x.entity_id)) return x.entity_id;
+    const d = kind === "timer" ? "automation." : "scene.";
+    return Object.keys(this._hass.states).filter((e) => e.indexOf(d) === 0 && this._hass.states[e].attributes.id === x.id)[0] || x.entity_id || null;
+  }
+  onOff(devs) {
+    const ds = {}; (devs || []).forEach((e) => (ds[domain(e)] = 1));
+    const k = Object.keys(ds);
+    if (k.length && k.every((d) => d === "cover")) return { on: "Open", off: "Close", s: ["Open", "Close"] };
+    if (ds.cover) return { on: "On / open", off: "Off / close", s: ["On", "Off"] };
+    return { on: "Turn on", off: "Turn off", s: ["On", "Off"] };
+  }
+  whenTxt(ev) {
+    if (ev.w === "time") return "at " + ev.at;
+    return ev.off ? Math.abs(ev.off) + " min " + (ev.off < 0 ? "before " : "after ") + ev.w : "at " + ev.w;
+  }
+  daysTxt(d) {
+    if (!d || !d.length || d.length === 7) return "";
+    if (d.length === 5 && d.indexOf("sat") < 0 && d.indexOf("sun") < 0) return "Weekdays";
+    if (d.length === 2 && d.indexOf("sat") >= 0 && d.indexOf("sun") >= 0) return "Weekends";
+    return DAYS.filter((x) => d.indexOf(x[0]) >= 0).map((x) => x[2]).join(", ");
+  }
+
+  pTimers() {
+    const items = (this.rt || {}).timer;
+    if (!items) { this.rtLoad("timer"); return '<div class="scroll"><div class="empty">Loading\u2026</div></div>'; }
+    let h = "";
+    items.forEach((x, i) => {
+      let m = null; try { m = parseTimer(x.config); } catch (er) { m = null; }
+      const e = this.rtEntity("timer", x), s = e && this.st(e), on = !!s && s.state === "on";
+      if (!m) {
+        h += '<div class="card"><div class="rt off"><div class="av">' + line("timers") + '</div><div class="tx"><b>' + esc(x.name || "Timer") + "</b><small>" + esc(x.reason || "Made somewhere else: change it in Home Assistant") + "</small></div></div></div>";
+        return;
+      }
+      const lab = this.onOff(m.devs);
+      const evs = m.ev.map((ev) => "<em>" + (ev.o === "on" ? lab.s[0] : lab.s[1]) + "</em> " + esc(this.whenTxt(ev).replace(/^at /, "")) + (this.daysTxt(ev.days) ? " \u00b7 " + this.daysTxt(ev.days) : "")).join("<br>");
+      const chips = m.devs.slice(0, 6).map((d) => "<span>" + line(this.devCat(d)) + esc(this.name(d)) + "</span>").join("") + (m.devs.length > 6 ? "<span>+" + (m.devs.length - 6) + "</span>" : "");
+      h += '<div class="card"><div class="rt' + (on ? "" : " off") + '"><div class="av" data-act="r-tedit" data-v="' + i + '">' + line("timers") + '</div><div class="tx" data-act="r-tedit" data-v="' + i + '"><b>' + esc(x.name || "Timer") + "</b><small>" + evs + '</small><div class="devs">' + chips + '</div></div><div class="sw' + (on ? " on" : "") + '" data-act="r-ttog" data-e="' + esc(e || "") + '"></div></div></div>';
+    });
+    if (!h) h = '<div class="empty">' + (this.rtDevs().length ? "No timers yet.<br><br>Switch lights, curtains, plugs and more on and off by themselves: at a time, at sunrise or at sunset." : "Nothing to put on a timer yet: lights, curtains and plugs are added in Setup.") + "</div>";
+    const n = items.filter((x) => { const e = this.rtEntity("timer", x), s = e && this.st(e); return s && s.state === "on"; }).length;
+    return '<div class="scroll">' + h + '</div><div class="bot">' + (this.rtDevs().length ? '<div class="pill gold" data-act="r-tnew">' + line("plus") + "New timer</div>" : "<span></span>") + '<span class="lbl">' + (items.length ? n + " of " + items.length + " on" : "") + "</span></div>";
+  }
+  devCat(e) {
+    const d = domain(e);
+    return d === "cover" ? "shades" : d === "climate" ? "climate" : d === "media_player" ? "music" : d === "light" ? "lights" : "power";
+  }
+  // choose devices: this home's devices by room, tap to tick
+  devPicker(sel, act) {
+    let h = "", cur = null;
+    this.rtDevs().forEach((x) => {
+      if (x.room !== cur) { cur = x.room; h += '<div class="ghd" style="padding:12px 4px 2px">' + esc(cur) + "</div>"; }
+      const on = sel.indexOf(x.e) >= 0;
+      h += '<div class="pkr' + (on ? " on" : "") + '" data-act="' + act + '" data-e="' + esc(x.e) + '">' + line(this.devCat(x.e)) + "<span>" + esc(this.name(x.e)) + '</span><i class="tick">' + (on ? line("check") : "") + "</i></div>";
+    });
+    return h || '<div class="hint">No devices in this home yet.</div>';
+  }
+  timerSheet() {
+    const t = this.tdraft, lab = this.onOff(t.devs);
+    let h = '<div class="lbl" style="padding:6px 4px">Name</div><input class="inp" data-in="r-tname" value="' + esc(t.name) + '" placeholder="e.g. Garden lights" maxlength="60">';
+    h += '<div class="lbl" style="padding:18px 4px 6px">Devices</div>';
+    if (t.pick) h += '<div class="card" style="padding:4px 12px 10px;gap:0">' + this.devPicker(t.devs, "r-tdev") + '</div><div class="pill gold" data-act="r-tpick" style="justify-content:center;margin-top:10px">Done</div>';
+    else {
+      h += t.devs.length ? '<div class="card" style="padding:4px 14px;gap:0">' + t.devs.map((e) => '<div class="row urow"><span class="tsv">' + line(this.devCat(e)) + '</span><span style="flex:1">' + esc(this.name(e)) + '</span><span class="tsx" data-act="r-tdev" data-e="' + esc(e) + '">' + line("x") + "</span></div>").join("") + "</div>" : "";
+      h += '<div class="addb" data-act="r-tpick">' + line("plus") + (t.devs.length ? "Add or remove devices" : "Choose lights, curtains or plugs") + "</div>";
+      if (t.devs.length) h += '<div class="wrapc" style="margin-top:10px;flex-wrap:nowrap"><div class="pill" style="flex:1;justify-content:center" data-act="r-tnow" data-v="on">' + line("power") + esc(lab.on) + ' now</div><div class="pill" style="flex:1;justify-content:center" data-act="r-tnow" data-v="off">' + line("power") + esc(lab.off) + " now</div></div>";
+    }
+    h += '<div class="lbl" style="padding:20px 4px 6px">Times</div>';
+    t.ev.forEach((ev, i) => {
+      h += '<div class="card ev' + (ev.o === "on" ? "" : " of") + '" style="margin-top:10px"><div class="evh">' + line(ev.w === "time" ? "timers" : ev.w === "sunrise" ? "sunup" : "sundn") + "<b>" + esc((ev.o === "on" ? lab.on : lab.off) + " " + this.whenTxt(ev)) + '</b><span class="tsx" data-act="r-tdel-ev" data-v="' + i + '">' + line("x") + "</span></div>" +
+        '<div class="segf">' + [["on", lab.on], ["off", lab.off]].map((o) => '<div class="' + (ev.o === o[0] ? "on" : "") + '" data-act="r-tset" data-v="' + i + ":o:" + o[0] + '">' + esc(o[1]) + "</div>").join("") + "</div>" +
+        '<div class="segf">' + [["time", "Time"], ["sunrise", "Sunrise"], ["sunset", "Sunset"]].map((w) => '<div class="' + (ev.w === w[0] ? "on" : "") + '" data-act="r-tset" data-v="' + i + ":w:" + w[0] + '">' + w[1] + "</div>").join("") + "</div>" +
+        (ev.w === "time"
+          ? '<input class="inp tin" type="time" data-in="r-tat" data-v="' + i + '" value="' + esc(ev.at) + '">'
+          : '<div class="row" style="justify-content:space-between"><div class="ib" data-act="r-toff" data-v="' + i + ':-15">' + line("minus") + '</div><div class="tbig">' + (ev.off ? Math.abs(ev.off) + " min " + (ev.off < 0 ? "before" : "after") : "Exactly at " + ev.w) + '</div><div class="ib" data-act="r-toff" data-v="' + i + ':15">' + line("plus") + "</div></div>") +
+        '<div class="dch">' + DAYS.map((d) => '<div class="' + (ev.days.indexOf(d[0]) >= 0 ? "on" : "") + '" data-act="r-tday" data-v="' + i + ":" + d[0] + '">' + d[1] + "</div>").join("") + '</div><div class="hint" style="text-align:left;padding:0 2px">' + (this.daysTxt(ev.days) || "Every day") + "</div></div>";
+    });
+    h += '<div class="addb" data-act="r-tadd">' + line("plus") + "Add a time</div>";
+    h += '<div class="pill gold" data-act="r-tsave" style="justify-content:center;margin-top:16px;height:48px">' + (this.busy ? "Saving\u2026" : "Save timer") + "</div>";
+    if (t.id) h += '<div class="pill" data-act="r-tdelete" style="justify-content:center;margin-top:10px;color:#ff9a8a">' + line("x") + (this.delAsk ? "Tap again to delete" : "Delete timer") + "</div>";
+    return '<div class="sheet"><div class="shh"><b>' + (t.id ? "Edit timer" : "New timer") + '</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + "</div></div>";
+  }
+
+  // Scenes: the room's scenes as set up, then the household's own
+  pScenes() {
+    let h = "";
+    this.room().scenes.forEach((e) => (h += '<div class="scn" data-act="scene" data-e="' + esc(e) + '">' + line("sparkle") + "<span>" + esc(this.name(e)) + "</span></div>"));
+    const own = (this.rt || {}).scene;
+    if (!own) this.rtLoad("scene");
+    let o = "";
+    (own || []).forEach((x, i) => {
+      const e = this.rtEntity("scene", x);
+      const ic = String((x.config && x.config.icon) || "line:sparkle").replace(/^line:/, "");
+      o += '<div class="scn mine" data-act="r-srun" data-e="' + esc(e || "") + '">' + line(LINE[ic] ? ic : "sparkle") + "<span>" + esc(x.name || "Scene") + "</span>" + (x.reason ? "" : '<b class="sed" data-act="r-sedit" data-v="' + i + '">' + line("pencil") + "</b>") + "</div>";
+    });
+    const can = this.rtDevs().length;
+    if (can) o += '<div class="scn add" data-act="r-snew">' + line("plus") + "<span>New scene</span></div>";
+    return '<div class="scroll">' + (h ? '<div class="sgrid">' + h + "</div>" : "") + (o ? '<div class="ghd" style="padding:' + (h ? "14px" : "2px") + ' 4px 0">Your scenes</div><div class="sgrid">' + o + "</div>" : "") + (!h && !o ? '<div class="empty">No scenes in this room.</div>' : "") + "</div>";
+  }
+  sceneSheet() {
+    const s = this.sdraft;
+    let h = '<div class="lbl" style="padding:6px 4px">Name</div><input class="inp" data-in="r-sname" value="' + esc(s.name) + '" placeholder="e.g. Good night" maxlength="60">';
+    h += '<div class="lbl" style="padding:16px 4px 6px">Icon</div><div class="sic">' + SCENE_ICONS.map((k) => '<div class="' + (s.icon === k ? "on" : "") + '" data-act="r-sicon" data-v="' + k + '">' + line(k) + "</div>").join("") + "</div>";
+    h += '<div class="lbl" style="padding:18px 4px 6px">What it sets</div>';
+    if (s.pick) h += '<div class="card" style="padding:4px 12px 10px;gap:0">' + this.devPicker(s.rows.map((r) => r.e), "r-sdev") + '</div><div class="pill gold" data-act="r-spick" style="justify-content:center;margin-top:10px">Done</div>';
+    else {
+      s.rows.forEach((r, i) => {
+        const d = domain(r.e);
+        const opts = d === "cover" ? [["open", "Open"], ["closed", "Closed"]] : d === "climate" ? [["off", "Off"], ["cool", "Cool"], ["heat", "Heat"], ["auto", "Auto"]].filter((m) => { const hm = (this.st(r.e) || { attributes: {} }).attributes.hvac_modes; return !hm || hm.indexOf(m[0]) >= 0; }) : [["on", "On"], ["off", "Off"]];
+        let extra = "";
+        if (d === "light" && r.state === "on" && this.dimmable(r.e)) extra = this.rng(i, "bri", r.bri || 100, 1, 100, "%", "Brightness");
+        if (d === "cover" && r.state === "open") extra = this.rng(i, "pos", r.pos == null ? 100 : r.pos, 0, 100, "%", "Open");
+        if (d === "climate" && r.state !== "off") extra = this.rng(i, "temp", r.temp || 22, 16, 30, "\u00b0", "Set to");
+        h += '<div class="card" style="margin-top:8px;gap:10px"><div class="evh">' + line(this.devCat(r.e)) + "<b>" + esc(this.name(r.e)) + '</b><span class="tsx" data-act="r-sdev" data-e="' + esc(r.e) + '">' + line("x") + '</span></div><div class="segf">' + opts.map((o) => '<div class="' + (r.state === o[0] ? "on" : "") + '" data-act="r-sset" data-v="' + i + ":" + o[0] + '">' + o[1] + "</div>").join("") + "</div>" + extra + "</div>";
+      });
+      h += '<div class="addb" data-act="r-spick">' + line("plus") + (s.rows.length ? "Add or remove devices" : "Choose lights, curtains, aircons\u2026") + "</div>";
+      if (s.rows.length) h += '<div class="wrapc" style="margin-top:10px;flex-wrap:nowrap"><div class="pill" style="flex:1;justify-content:center" data-act="r-snow">' + line("eye") + 'Copy how they are now</div><div class="pill" style="flex:1;justify-content:center" data-act="r-stry">' + line("sparkle") + "Try it</div></div>";
+    }
+    h += '<div class="pill gold" data-act="r-ssave" style="justify-content:center;margin-top:16px;height:48px">' + (this.busy ? "Saving\u2026" : "Save scene") + "</div>";
+    if (s.id) h += '<div class="pill" data-act="r-sdelete" style="justify-content:center;margin-top:10px;color:#ff9a8a">' + line("x") + (this.delAsk ? "Tap again to delete" : "Delete scene") + "</div>";
+    return '<div class="sheet"><div class="shh"><b>' + (s.id ? "Edit scene" : "New scene") + '</b><div class="ib" data-act="close">' + line("x") + '</div></div><div class="shb">' + h + "</div></div>";
+  }
+  rng(i, k, v, min, max, unit, label) {
+    return '<div class="rrow"><span>' + label + '</span><input type="range" class="rng" min="' + min + '" max="' + max + '" value="' + v + '" data-in="r-srng" data-v="' + i + ":" + k + '"><b data-out="' + i + ":" + k + '">' + v + unit + "</b></div>";
+  }
+  rowNow(e) {
+    const s = this.st(e), d = domain(e), r = { e, state: d === "cover" ? "open" : "on" };
+    if (!s) return r;
+    if (d === "climate") { r.state = s.state === "unavailable" ? "off" : s.state; if (s.attributes.temperature) r.temp = s.attributes.temperature; return r; }
+    if (d === "cover") { r.state = s.state === "closed" ? "closed" : "open"; if (s.attributes.current_position != null) r.pos = s.attributes.current_position; return r; }
+    r.state = s.state === "off" ? "off" : "on";
+    if (d === "light" && s.attributes.brightness) r.bri = Math.max(1, Math.round(s.attributes.brightness / 2.55));
+    return r;
+  }
+
+  rtInput(k, t) {
+    const v = t.getAttribute("data-v");
+    if (k === "r-tname" && this.tdraft) this.tdraft.name = t.value;
+    else if (k === "r-tat" && this.tdraft) { const ev = this.tdraft.ev[Number(v)]; if (ev && /^\d\d:\d\d/.test(t.value)) ev.at = t.value.slice(0, 5); }
+    else if (k === "r-sname" && this.sdraft) this.sdraft.name = t.value;
+    else if (k === "r-hname") (this.hName = this.hName || {})[v] = t.value;
+    else if (k === "r-srng" && this.sdraft) {
+      const [i, f] = v.split(":"), r = this.sdraft.rows[Number(i)];
+      if (r) { r[f] = Number(t.value); const o = this.shadowRoot.querySelector('[data-out="' + v + '"]'); if (o) o.textContent = t.value + (f === "temp" ? "\u00b0" : "%"); }
+    }
+  }
+  rtClick(act, t, v, e) {
+    const ok = (txt) => this._toast(txt);
+    const err = (er) => { this.busy = false; this._toast(er && er.message ? er.message : "That didn't work"); this._render(true); };
+    if (act !== "r-tdelete" && act !== "r-sdelete") this.delAsk = false;
+    if (act !== "r-hdel") this.hDel = null;
+    switch (act) {
+      // homes
+      case "r-home": this.setHome(v); break;
+      case "r-hopen": this.hOpen = this.hOpen === v ? null : v; break;
+      case "r-hadd": this.homesOp({ op: "add", name: "New home" }, (res) => { if (res && res.home) this.hOpen = res.home; }); return;
+      case "r-hrename": this.homesOp({ op: "rename", home: v, name: ((this.hName || {})[v] || "").trim() || undefined }, () => ok("Renamed")); return;
+      case "r-huser": {
+        const hm = this.homes.filter((x) => x.id === v)[0]; if (!hm) return;
+        const us = (hm.users || []).slice(), j = us.indexOf(e);
+        if (j >= 0) us.splice(j, 1); else us.push(e);
+        this.homesOp({ op: "users", home: v, users: us }); return;
+      }
+      case "r-hdel":
+        if (this.hDel !== v) { this.hDel = v; break; }
+        this.hDel = null;
+        if (this.homeId() === v) this.setHome("h1");
+        this.homesOp({ op: "delete", home: v }, () => ok("Home removed")); return;
+      // timers
+      case "r-ttog": if (!e) return; this.call("automation", this.st(e) && this.st(e).state === "on" ? "turn_off" : "turn_on", { entity_id: e }); return;
+      case "r-tnew": this.tdraft = { name: "", devs: [], pick: true, ev: [newEv("on", "sunset"), newEv("off", "time", "23:00")] }; this.sheet = "r-timer"; this._sheetIn = true; break;
+      case "r-tedit": {
+        const x = ((this.rt || {}).timer || [])[Number(v)]; if (!x) return;
+        let m; try { m = parseTimer(x.config); } catch (er) { return; }
+        if (x.reason) { ok("Made somewhere else: change it in Home Assistant"); return; }
+        this.tdraft = Object.assign(m, { id: x.id, name: x.name || "" }); this.sheet = "r-timer"; this._sheetIn = true; break;
+      }
+      case "r-tpick": this.tdraft.pick = !this.tdraft.pick; break;
+      case "r-tdev": { const d = this.tdraft.devs, j = d.indexOf(e); if (j >= 0) d.splice(j, 1); else d.push(e); break; }
+      case "r-tset": { const [i, f, x] = v.split(":"), ev = this.tdraft.ev[Number(i)]; if (f === "o") ev.o = x; else ev.w = x; break; }
+      case "r-toff": { const [i, n] = v.split(":"), ev = this.tdraft.ev[Number(i)]; ev.off = clamp((ev.off || 0) + Number(n), -180, 180); break; }
+      case "r-tday": { const [i, d] = v.split(":"), ds = this.tdraft.ev[Number(i)].days, j = ds.indexOf(d); if (j >= 0) ds.splice(j, 1); else ds.push(d); break; }
+      case "r-tadd": { const l = this.tdraft.ev[this.tdraft.ev.length - 1]; this.tdraft.ev.push(newEv(l && l.o === "on" ? "off" : "on", "time", l && l.w === "time" ? l.at : "07:00")); break; }
+      case "r-tdel-ev": this.tdraft.ev.splice(Number(v), 1); break;
+      case "r-tnow": {
+        const by = {}; this.tdraft.devs.forEach((x) => (by[domain(x)] = by[domain(x)] || []).push(x));
+        Object.keys(by).forEach((d) => this.call(d, TIMER_SVC[d][v === "on" ? 0 : 1], { entity_id: by[d] }));
+        return;
+      }
+      case "r-tsave": {
+        if (this.busy) return;
+        const t0 = this.tdraft;
+        const bad = !t0.name.trim() ? "Give the timer a name" : !t0.devs.length ? "Choose at least one device" : !t0.ev.length ? "Add at least one time" : "";
+        if (bad) return ok(bad);
+        this.busy = true;
+        const m = { type: "ar_4c_dash/routines", op: "save", kind: "timer", home: this.homeId(), config: buildTimer(t0) };
+        if (t0.id) m.item_id = t0.id;
+        this._render(true);
+        this._hass.callWS(m).then(() => { this.busy = false; this.sheet = null; this.tdraft = null; ok("Timer saved"); this.rtLoad("timer"); }).catch(err);
+        return;
+      }
+      case "r-tdelete":
+        if (!this.delAsk) { this.delAsk = true; break; }
+        this.delAsk = false;
+        this._hass.callWS({ type: "ar_4c_dash/routines", op: "delete", kind: "timer", home: this.homeId(), item_id: this.tdraft.id }).then(() => { this.sheet = null; this.tdraft = null; ok("Timer deleted"); this.rtLoad("timer"); }).catch(err);
+        return;
+      // scenes
+      case "r-srun": if (!e) return; this.call("scene", "turn_on", { entity_id: e }); t.classList.add("hit"); setTimeout(() => t.classList.remove("hit"), 600); ok(t.querySelector("span").textContent); return;
+      case "r-snew": this.sdraft = { name: "", icon: "moon", rows: [], pick: true }; this.sheet = "r-scene"; this._sheetIn = true; break;
+      case "r-sedit": {
+        const x = ((this.rt || {}).scene || [])[Number(v)]; if (!x) return;
+        this.sdraft = Object.assign(parseScene(x.config), { id: x.id }); this.sheet = "r-scene"; this._sheetIn = true; break;
+      }
+      case "r-sicon": this.sdraft.icon = v; break;
+      case "r-spick": this.sdraft.pick = !this.sdraft.pick; break;
+      case "r-sdev": { const rs = this.sdraft.rows, j = rs.findIndex((r) => r.e === e); if (j >= 0) rs.splice(j, 1); else rs.push(this.rowNow(e)); break; }
+      case "r-sset": { const [i, x] = v.split(":"); this.sdraft.rows[Number(i)].state = x; break; }
+      case "r-snow": this.sdraft.rows = this.sdraft.rows.map((r) => this.rowNow(r.e)); ok("Copied how they are right now"); break;
+      case "r-stry": this.call("scene", "apply", { entities: buildScene(this.sdraft).entities }); ok("Trying it on your devices"); return;
+      case "r-ssave": {
+        if (this.busy) return;
+        const s0 = this.sdraft;
+        const bad = !s0.name.trim() ? "Give the scene a name" : !s0.rows.length ? "Choose at least one device" : "";
+        if (bad) return ok(bad);
+        this.busy = true;
+        const m = { type: "ar_4c_dash/routines", op: "save", kind: "scene", home: this.homeId(), config: buildScene(s0) };
+        if (s0.id) m.item_id = s0.id;
+        this._render(true);
+        this._hass.callWS(m).then(() => { this.busy = false; this.sheet = null; this.sdraft = null; ok("Scene saved"); this.rtLoad("scene"); }).catch(err);
+        return;
+      }
+      case "r-sdelete":
+        if (!this.delAsk) { this.delAsk = true; break; }
+        this.delAsk = false;
+        this._hass.callWS({ type: "ar_4c_dash/routines", op: "delete", kind: "scene", home: this.homeId(), item_id: this.sdraft.id }).then(() => { this.sheet = null; this.sdraft = null; ok("Scene deleted"); this.rtLoad("scene"); }).catch(err);
+        return;
+      default: return;
+    }
+    this._render(true);
+  }
+
   // ---- taps -------------------------------------------------------------------------
   _click(ev) {
     if (this._swiped && Date.now() - this._swiped < 400) return;
     const t = ev.target.closest("[data-act]");
     if (!t) return;
     const act = t.getAttribute("data-act"), e = t.getAttribute("data-e"), v = t.getAttribute("data-v");
+    if (act.indexOf("r-") === 0) return this.rtClick(act, t, v, e);
     const room = this.room();
     switch (act) {
       case "uback": this.usec = null; break;
@@ -2458,7 +2948,7 @@ class Ar4cDash extends HTMLElement {
         break;
       }
       case "settings": this.upList("icon"); this.upList("bg"); clearTimeout(this._gearT); this.gearUntil = 0; this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
-      case "close": if (this.dirty) this._toast("Setup not saved"); this.sheet = null; this.draft = null; this.dirty = false; this.pick = null; break;
+      case "close": if (this.dirty) this._toast("Setup not saved"); this.tdraft = null; this.sdraft = null; this.delAsk = false; this.sheet = null; this.draft = null; this.dirty = false; this.pick = null; break;
       case "room": this.ri = Number(v); this.P.room = this.ri; this.sheet = null; this.cl = null; this._save(); this.libOpen = null; if (this.wv) this.wv.view = null; if (this.page !== "home" && this.cats().indexOf(this.page) < 0) this.page = "home"; break;
       case "roomoff": room.lights.forEach((x) => this.setOpt(x, { on: false })); if (room.lights.length) this.call("homeassistant", "turn_off", { entity_id: room.lights }); this._toast(room.name + ": lights off"); break;
       case "allon": room.lights.forEach((x) => this.setOpt(x, { on: true, v: 100 })); this.call("homeassistant", "turn_on", { entity_id: room.lights }); break;
@@ -2575,15 +3065,15 @@ class Ar4cDash extends HTMLElement {
         wv.t0 = Date.now(); wv.src = v; wv.view = "start";
         (this.wLast || (this.wLast = {}))[this.ri] = v;
         const tg = this.wTarget(v);
-        this._hass.callWS({ type: "ar_4c_dash/watch", action: "start", room: tg.room, src: tg.src }).catch((er) => this._toast(er && er.message ? er.message : "That didn't work"));
+        this._hass.callWS({ type: "ar_4c_dash/watch", action: "start", room: tg.room, src: tg.src, home: this.homeId() }).catch((er) => this._toast(er && er.message ? er.message : "That didn't work"));
         clearTimeout(wv.timer);
         wv.timer = setTimeout(() => { if (wv.view === "start" && !this.myRun()) this._render(true); }, 9000);
         break;
       }
       case "wchange": this.wv.view = "pick"; break;
-      case "woff": { const s0 = this.srcOf(this.wv.src); this._hass.callWS({ type: "ar_4c_dash/watch", action: "off", room: this.wTarget(this.wv.src).room }).catch(() => {}); this.wv.view = null; this.wv.src = null; this._toast(((s0 && s0.name) || "TV") + " off"); this.page = "home"; break; }
+      case "woff": { const s0 = this.srcOf(this.wv.src); this._hass.callWS({ type: "ar_4c_dash/watch", action: "off", room: this.wTarget(this.wv.src).room, home: this.homeId() }).catch(() => {}); this.wv.view = null; this.wv.src = null; this._toast(((s0 && s0.name) || "TV") + " off"); this.page = "home"; break; }
       case "wkey": this.watchCmd("key", v); return;
-      case "wmute": this._hass.callWS({ type: "ar_4c_dash/watch", action: "mute", room: this.wTarget(this.wv && this.wv.src).room }).catch(() => {}); this._toast("Mute"); return;
+      case "wmute": this._hass.callWS({ type: "ar_4c_dash/watch", action: "mute", room: this.wTarget(this.wv && this.wv.src).room, home: this.homeId() }).catch(() => {}); this._toast("Mute"); return;
       case "stab": this.setTab = v; if (v === "setup") this.draftStart(); break;
       case "menu": this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true })); return;
       case "setup": this.sheet = "settings"; this._sheetIn = true; this.setTab = "setup"; this.draftStart(); break;

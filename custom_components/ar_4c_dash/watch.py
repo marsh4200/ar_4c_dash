@@ -263,12 +263,18 @@ def _source(cfg: dict[str, Any], room: Any, sid: Any) -> dict[str, Any] | None:
     return next((s for s in rooms[room].get("sources") or [] if s.get("id") == sid), None)
 
 
-async def _run(hass: HomeAssistant, room: int, src: dict[str, Any]) -> None:
+def _key(v: dict[str, Any]) -> str:
+    """A room's key in the watch state: its number, or home:number for a second home."""
+    home = v.get("home") or "h1"
+    return str(v.get("room")) if home == "h1" else f"{home}:{v.get('room')}"
+
+
+async def _run(hass: HomeAssistant, room: int, src: dict[str, Any], key: str, home: str) -> None:
     w = _w(hass)
     steps = [s for s in src.get("steps") or [] if isinstance(s, dict)]
-    run = {"id": int(time.time() * 1000), "room": room, "src": src.get("id"), "steps": [step_label(hass, s) for s in steps], "state": ["wait"] * len(steps), "i": 0, "done": False, "fails": 0}
+    run = {"id": int(time.time() * 1000), "room": room, "home": home, "key": key, "src": src.get("id"), "steps": [step_label(hass, s) for s in steps], "state": ["wait"] * len(steps), "i": 0, "done": False, "fails": 0}
     w.run = run
-    used = w.used.setdefault(str(room), [])
+    used = w.used.setdefault(key, [])
     for x in _turned_on(src):
         if x not in used:
             used.append(x)
@@ -286,7 +292,7 @@ async def _run(hass: HomeAssistant, room: int, src: dict[str, Any]) -> None:
             run["fails"] += 1
             _LOGGER.warning("4C Dash watch %s: step %d (%s) failed: %s", src.get("id"), i + 1, st.get("t"), err)
     run["done"] = True
-    w.active[str(room)] = src.get("id")
+    w.active[key] = src.get("id")
     _tell(hass)
 
 
@@ -294,19 +300,20 @@ async def async_action(hass: HomeAssistant, cfg: dict[str, Any], action: str, v:
     """start / key / vol / mute / off, from a phone."""
     w = _w(hass)
     room = v.get("room")
+    key = _key(v)
     if action == "start":
         src = _source(cfg, room, v.get("src"))
         if src is None:
             return
         if w.task and not w.task.done():
             w.task.cancel()
-        w.task = hass.async_create_task(_run(hass, room, src))
+        w.task = hass.async_create_task(_run(hass, room, src, key, v.get("home") or "h1"))
         return
-    src = _source(cfg, room, w.active.get(str(room)) or v.get("src"))
+    src = _source(cfg, room, w.active.get(key) or v.get("src"))
     if action == "off":
-        if w.task and not w.task.done() and w.run and w.run.get("room") == room:
+        if w.task and not w.task.done() and w.run and w.run.get("key") == key:
             w.task.cancel()
-        offs = list(w.used.pop(str(room), []))
+        offs = list(w.used.pop(key, []))
         if src is not None:
             offs += [x for x in _turned_on(src) if x not in offs]
         for how, e, cmd in offs:
@@ -319,8 +326,8 @@ async def async_action(hass: HomeAssistant, cfg: dict[str, Any], action: str, v:
                     await _call(hass, "homeassistant", "turn_off", {"entity_id": e})
             except Exception:  # noqa: BLE001
                 _LOGGER.warning("4C Dash watch: couldn't switch %s off", e, exc_info=True)
-        w.active.pop(str(room), None)
-        if w.run and w.run.get("room") == room:
+        w.active.pop(key, None)
+        if w.run and w.run.get("key") == key:
             w.run = None
         _tell(hass)
         return

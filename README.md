@@ -33,6 +33,26 @@ Open 4C Dash → tap the empty top-right corner **10 times quickly** → the gea
 - **Copy from an AR NSPanel Pro panel** (only shown when AR NSPanel Pro is installed): takes the rooms, devices, lamp types and background from a panel's Device Setup in one go. Check it, then Save.
 - **Save for everyone**: every phone shows the new setup.
 
+## Timers and your own scenes
+
+Anyone who uses a home can make these on their phone, no admin needed. They only ever use that home's own lights, aircons, curtains, speakers and utilities (the devices set up in Setup). Locks, garage doors and anything else are never offered, and Home Assistant checks every save again.
+
+- **Timers** (home button): **New timer**, choose devices, then add as many times as you like. Each time switches them **on / open** or **off / close**, at a **time**, at **sunrise** or at **sunset** (earlier or later in 15-minute steps), on every day or only some days. Example: on 15 min before sunset every day, off at 23:00 on weekdays, off at 00:30 on weekends. The switch on each timer turns it on or off; "Turn on now / Turn off now" tries the devices.
+- **Scenes** (home button): the room's scenes as before, then **Your scenes**: **New scene** (Good night, Good morning, anything), choose devices and how each should be (on / off and brightness, open / closed and how far, aircon mode and temperature). **Copy how they are now** takes the devices as they are; **Try it** sets them without saving. Tap a scene to run it; the pencil changes it.
+
+They are ordinary Home Assistant automations and scenes, so they also show in Settings › Automations & scenes. The dash only lists and changes the ones it made. Needs `automation: !include automations.yaml` and `scene: !include scenes.yaml` in `configuration.yaml` (there by default).
+
+Coming from **Auto & Scenes**: its timers and scenes show in the first home here. Remove the Auto & Scenes integration (Settings › Devices & services) so there is one place; what it made keeps working.
+
+## More than one home
+
+One Home Assistant can run several homes on one property, e.g. a main house and a cottage. Gear › Setup › **Homes**: **Add a home**, name it, and tick **who can use it** (none ticked: everyone; admins always can). Each home has its own rooms, Whole House, cameras, alarm, garage, utilities, weather, timers and scenes. Icons, look and names are shared.
+
+- Someone with one home never sees the others: the dash is just their home.
+- Someone with more taps the room name at the top: **Homes & rooms** shows the homes, then that home's rooms. The home's name shows above the room name.
+- Setup sets up the home that's open; "Open this home to set it up" switches.
+- Your existing setup is the first home. It can be renamed, not removed. Removing another home removes its rooms, timers and scenes.
+
 ## Using it on a phone
 
 Open the Home Assistant app → sidebar → **4C Dash** (Settings → Profile can hide the other sidebar items, or make it the app's default page). The ☰ button top left opens Home Assistant's own menu.
@@ -52,6 +72,8 @@ Icons are the same on every phone. Look, background and the last room are saved 
 `type: custom:ar-4c-dash` shows the same dash on any dashboard (best on a Panel view).
 
 ## Changes
+
+- **1.6.0**: **Timers** and **your own scenes** on the dash (from Auto & Scenes, now built in: no sidebar item). **More than one home** on one Home Assistant, each with its own rooms, devices, cameras, timers and scenes, and its own people. Restart Home Assistant after updating.
 
 - **1.5.1**: The Utilities choice in Setup is now one switch, "3D view". On gives the 3D icons, off gives the plain list as before.
 - **1.5.0**: Utilities can be a 3D slider. In Setup, under Utilities, switch on "3D view" and put each switch into Pool, Irrigation, Geysers or Other. The page then opens on the section icons, which swipe round without an end; tap one for its switches. Each section icon can be changed or replaced with your own picture (background removed, icon only) in Settings, Icons. "List" stays the default, so nothing changes until you choose the slider. Restart Home Assistant after updating.
