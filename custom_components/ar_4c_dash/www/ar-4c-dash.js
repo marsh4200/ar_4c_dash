@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.6.3";
+const VERSION = "1.6.4";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -269,6 +269,7 @@ svg{flex:none}
 .lt .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(var(--lc),.10),rgba(var(--lc),.34));border-right:2px solid rgba(var(--lc),.9);transition:width .15s linear}
 .lt.drag .fill{transition:none}
 .lt.off .fill{opacity:0}
+.lt.na{opacity:.38;filter:grayscale(1);pointer-events:none;cursor:not-allowed}.lt.na .fill{opacity:0}.lt.na .pc{font-size:13px;letter-spacing:.06em}
 .lt canvas{width:52px;height:52px;flex:none;position:relative}
 .nm{position:relative;flex:1;min-width:0}
 .nm b{display:block;font-weight:400;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1177,6 +1178,10 @@ class Ar4cDash extends HTMLElement {
         const v = this.renDraft && e in this.renDraft ? this.renDraft[e] : (this.conf && this.conf.names && this.conf.names[e]) || "";
         return '<div class="lt rn"><div class="nm"><input data-in="lname" data-e="' + esc(e) + '" value="' + esc(v) + '" placeholder="' + esc(this.haName(e)) + '" maxlength="40"><small>' + esc(this.haName(e)) + " \u00b7 " + esc(e) + "</small></div></div>";
       }
+      if (this.lightNa(e)) {
+        // unavailable in Home Assistant: greyed out, can't be switched or dimmed
+        return '<div class="lt na" data-lt="' + esc(e) + '" aria-disabled="true"><div class="fill" style="width:0"></div><canvas data-lamp="' + esc(e) + '"></canvas><div class="nm"><b>' + esc(this.name(e)) + "</b><small>Unavailable</small></div><div class=\"pc\">Offline</div><div class=\"sw\"></div></div>";
+      }
       const on = this.isOn(e), dim = this.dimmable(e), v = this.lightPct(e);
       const lc = this.lampRgb(e).join(",");
       const t = (this.rc.lightTypes && LAMP_NAME[this.rc.lightTypes[e]]) || (dim ? "Dimmer" : "Switch");
@@ -1257,6 +1262,7 @@ class Ar4cDash extends HTMLElement {
       const row = ev.target.closest(".lt");
       const sl = ev.target.closest(".slider");
       if (!row && !sl) return;
+      if (row && row.classList.contains("na")) return;
       cur = { row, sl, x0: ev.clientX, moved: false, id: ev.pointerId, last: 0 };
       (row || sl).setPointerCapture(ev.pointerId);
       if (sl) this._slide(cur, ev, false);
@@ -1326,7 +1332,10 @@ class Ar4cDash extends HTMLElement {
     const pc = sl.parentNode && sl.parentNode.querySelector(".vpc");
     if (pc) pc.textContent = v + "%";
   }
+  // a light Home Assistant can't reach (unavailable, or gone)
+  lightNa(e) { const s = this.st(e); return !s || s.state === "unavailable"; }
   toggle(e) {
+    if (this.lightNa(e)) { this._toast(this.name(e) + " is unavailable"); this._render(true); return; }
     const on = !this.isOn(e);
     this.setOpt(e, { on });
     const d = domain(e);
@@ -3033,17 +3042,18 @@ class Ar4cDash extends HTMLElement {
       case "settings": this.upList("icon"); this.upList("bg"); clearTimeout(this._gearT); this.gearUntil = 0; this.sheet = "settings"; this._sheetIn = true; this.icOpen = this.icOpen || this.cats()[0]; break;
       case "close": if (this.dirty) this._toast("Setup not saved"); this.tdraft = null; this.sdraft = null; this.delAsk = false; this.sheet = null; this.draft = null; this.dirty = false; this.pick = null; break;
       case "room": this.ri = Number(v); this.P.room = this.ri; this.sheet = null; this.cl = null; this._save(); this.libOpen = null; if (this.wv) this.wv.view = null; if (this.page !== "home" && this.cats().indexOf(this.page) < 0) this.page = "home"; break;
-      case "roomoff": room.lights.forEach((x) => this.setOpt(x, { on: false })); if (room.lights.length) this.call("homeassistant", "turn_off", { entity_id: room.lights }); this._toast(room.name + ": lights off"); break;
-      case "allon": room.lights.forEach((x) => this.setOpt(x, { on: true, v: 100 })); this.call("homeassistant", "turn_on", { entity_id: room.lights }); break;
-      case "alloff": room.lights.forEach((x) => this.setOpt(x, { on: false })); this.call("homeassistant", "turn_off", { entity_id: room.lights }); break;
+      case "roomoff": { const ok = room.lights.filter((x) => !this.lightNa(x)); ok.forEach((x) => this.setOpt(x, { on: false })); if (ok.length) this.call("homeassistant", "turn_off", { entity_id: ok }); } this._toast(room.name + ": lights off"); break;
+      case "allon": { const ok = room.lights.filter((x) => !this.lightNa(x)); ok.forEach((x) => this.setOpt(x, { on: true, v: 100 })); if (ok.length) this.call("homeassistant", "turn_on", { entity_id: ok }); break; }
+      case "alloff": { const ok = room.lights.filter((x) => !this.lightNa(x)); ok.forEach((x) => this.setOpt(x, { on: false })); if (ok.length) this.call("homeassistant", "turn_off", { entity_id: ok }); break; }
       case "scene": this.call(domain(e) === "script" ? "script" : "scene", "turn_on", { entity_id: e }); t.classList.add("hit"); setTimeout(() => t.classList.remove("hit"), 600); this._toast(this.name(e)); return;
       case "toggle": ev.stopPropagation(); this.toggle(e); return;
       case "grp": {
         ev.stopPropagation();
         const g = room.groups && room.groups[Number(v)]; if (!g) return;
         const on = !g.lights.some((x) => this.isOn(x));
-        g.lights.forEach((x) => this.setOpt(x, on ? { on: true, v: 100 } : { on: false }));
-        this.call("homeassistant", on ? "turn_on" : "turn_off", { entity_id: g.lights });
+        const ok = g.lights.filter((x) => !this.lightNa(x));
+        ok.forEach((x) => this.setOpt(x, on ? { on: true, v: 100 } : { on: false }));
+        if (ok.length) this.call("homeassistant", on ? "turn_on" : "turn_off", { entity_id: ok });
         break;
       }
       case "ren": this.ren = true; this.renDraft = {}; break;
