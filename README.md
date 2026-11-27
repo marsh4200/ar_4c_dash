@@ -73,6 +73,7 @@ Icons are the same on every phone. Look, background and the last room are saved 
 
 ## Changes
 
+- **1.6.5**: **Light colour**: hold a light that can change colour (a small colour dot by its name) and a colour sheet slides up: a colour wheel and White (warm to cool) for RGB lights, just White for white-tone lights, a brightness bar and quick colours (Warm, Daylight, Red, Orange, Pink, Purple, Blue, Green). The lamp and the card follow the colour as you drag. Tap still switches, slide still dims; plain dimmers and unavailable lights don't open it. Tap outside the sheet to close it.
 - **1.6.4**: **Unavailable lights grey out**: a light (or switch) on the Lights page that Home Assistant can't reach is greyed out, says Unavailable · Offline, and can't be switched or dimmed. All on, All off, Room Off and the room switches on Whole House leave it out.
 - **1.6.3**: **Fans under Comfort**: in Setup, Comfort › Add still lists the aircons, with an optional **Show switches & fans** button underneath. Pick a fan (or heater) that's only a switch and it shows on the room's Comfort page under the aircon as an on/off card; a real fan entity also gets Low / Medium / High. The Comfort button lights up when one is on.
 - **1.6.2**: **Your logo** (admins): Gear › Look › Your logo › Show your logo asks for a picture, takes its plain background off and shows it small, bottom right of the home screen (next to Room Off), on every phone and in every home. Small / Medium / Large, and White for a dark logo. Off by default.

@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.6.4";
+const VERSION = "1.6.5";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -106,6 +106,13 @@ function kelvinRgb(k) {
   else { r = 329.7 * Math.pow(t - 60, -0.1332); g = 288.12 * Math.pow(t - 60, -0.0755); b = 255; }
   return [clamp(Math.round(r), 0, 255), clamp(Math.round(g), 0, 255), clamp(Math.round(b), 0, 255)];
 }
+
+function hsvRgb(h, sat, v) {
+  const f = (n) => { const k = (n + h / 60) % 6; return v - v * sat * Math.max(0, Math.min(k, 4 - k, 1)); };
+  return [f(5), f(3), f(1)].map((x) => Math.round(x * 255));
+}
+// quick colours on the colour sheet: [name, "ct", kelvin] or [name, "rgb", hue, saturation]
+const CSWATCH = [["Warm", "ct", 2700], ["Daylight", "ct", 5000], ["Red", "rgb", 0, 1], ["Orange", "rgb", 28, 1], ["Pink", "rgb", 330, 0.55], ["Purple", "rgb", 275, 0.8], ["Blue", "rgb", 220, 1], ["Green", "rgb", 130, 0.85]];
 
 let hlsLoading = null; // hls.js (comes with the integration), for live video where the browser can't play HLS itself
 function loadHls() {
@@ -269,6 +276,22 @@ svg{flex:none}
 .lt .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(var(--lc),.10),rgba(var(--lc),.34));border-right:2px solid rgba(var(--lc),.9);transition:width .15s linear}
 .lt.drag .fill{transition:none}
 .lt.off .fill{opacity:0}
+.lt{transition:transform .45s ease,border-color .45s ease}.lt.hold{transform:scale(.97);border-color:rgba(var(--accrgb),.85)}
+.cdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:0;background:conic-gradient(red,#ff0,lime,cyan,blue,#f0f,red)}.cdot.ct{background:linear-gradient(90deg,#ffa54f,#dbe8ff)}
+.cshade{position:absolute;inset:0;z-index:8;background:rgba(0,0,0,.45)}
+.csh{position:absolute;left:0;right:0;bottom:0;z-index:9;background:rgb(18,16,20);border-radius:26px 26px 0 0;border-top:1px solid var(--line);padding:10px 18px calc(22px + var(--dash-bot,0px));display:flex;flex-direction:column;gap:14px}
+.csh.in{animation:up .22s ease-out}
+.csh .grab{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.22);margin:0 auto 2px}
+.csh .sh{display:flex;align-items:center;gap:12px}.csh .sh>div:not(.sw){flex:1;min-width:0}.csh .sh b{display:block;font-weight:400;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.csh .sh small{color:var(--muted);font-size:13px}
+.csh .big{width:44px;height:44px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.25)}
+.csh .seg2{display:flex;border:1px solid var(--line);border-radius:14px;padding:3px;gap:3px}.csh .seg2 div{flex:1;height:34px;border-radius:11px;display:grid;place-items:center;color:var(--muted);font-size:14px;cursor:pointer}.csh .seg2 div.on{background:rgba(255,255,255,.1);color:var(--fg)}
+.cwh{position:relative;width:220px;height:220px;margin:0 auto;touch-action:none}.cwh canvas{width:220px;height:220px;border-radius:50%;display:block}
+.cknob{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6);pointer-events:none}
+.ctb{position:relative;height:44px;border-radius:22px;background:linear-gradient(90deg,#ffa54f,#ffd6a0 35%,#fff4e6 60%,#dbe8ff);touch-action:none;margin:6px 0}.ctb .cknob{top:50%}
+.ctl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.cbr{display:flex;align-items:center;gap:12px}.cbr>svg{width:22px;height:22px;color:var(--muted);flex:none}
+.cbb{position:relative;flex:1;height:36px;border-radius:18px;background:rgba(255,255,255,.08);overflow:hidden;touch-action:none}.cbb i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(var(--lc),.25),rgba(var(--lc),.85))}.cbb span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;font-variant-numeric:tabular-nums}
+.csw{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}.csw div{aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.2);cursor:pointer}.csw div.on{outline:2px solid #fff;outline-offset:2px}
 .lt.na{opacity:.38;filter:grayscale(1);pointer-events:none;cursor:not-allowed}.lt.na .fill{opacity:0}.lt.na .pc{font-size:13px;letter-spacing:.06em}
 .lt canvas{width:52px;height:52px;flex:none;position:relative}
 .nm{position:relative;flex:1;min-width:0}
@@ -1103,6 +1126,8 @@ class Ar4cDash extends HTMLElement {
     let h = this.page === "home" ? this.home() : this.inner();
     if (this.sheet) h += this.sheetHtml();
     if (this.viewCam) h += this.camView();
+    if (this.csh && (this.page !== "lights" || this.sheet || this.lightNa(this.csh))) this.csh = null;
+    if (this.csh) h += this.cshHtml();
     if (this.efcEl && this.efcEl.isConnected) this.efcEl.hass = this._hass;
     if (pg.__h === h) { if (this.page === "utilities") { this.efcMount(); this.uMount(); } return; } // nothing on screen changed
     pg.__h = h;
@@ -1111,6 +1136,7 @@ class Ar4cDash extends HTMLElement {
     if (soft) { const s2 = pg.querySelector(".scroll,.dialw"); if (s2) s2.scrollTop = y; const s3 = this.app.querySelector(".sheet .shb"); if (s3) s3.scrollTop = shy; }
     pg.querySelectorAll("canvas[data-lamp]").forEach((c) => this.lamp(c, c.getAttribute("data-lamp")));
     if (this.page === "climate") this.paintDial();
+    if (this.csh) { this._cshIn = false; this.cshPaint(); }
     if (this.page === "cameras") this._camFill();
     if (this.page === "utilities") { this.efcMount(); this.uMount(); }
     if (this.page === "garage") {
@@ -1185,7 +1211,8 @@ class Ar4cDash extends HTMLElement {
       const on = this.isOn(e), dim = this.dimmable(e), v = this.lightPct(e);
       const lc = this.lampRgb(e).join(",");
       const t = (this.rc.lightTypes && LAMP_NAME[this.rc.lightTypes[e]]) || (dim ? "Dimmer" : "Switch");
-      return '<div class="lt ' + (on ? "on" : "off") + '" data-lt="' + esc(e) + '" style="--lc:' + lc + '"><div class="fill" style="width:' + (dim ? v : 100) + '%"></div><canvas data-lamp="' + esc(e) + '"></canvas><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(t) + '</small></div><div class="pc">' + (on ? (dim ? v + "%" : "On") : "Off") + '</div><div class="sw' + (on ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div></div>';
+      const cc = this.colCaps(e), cdot = cc.rgb ? '<span class="cdot"></span>' : cc.ct ? '<span class="cdot ct"></span>' : "";
+      return '<div class="lt ' + (on ? "on" : "off") + '" data-lt="' + esc(e) + '" style="--lc:' + lc + '"><div class="fill" style="width:' + (dim ? v : 100) + '%"></div><canvas data-lamp="' + esc(e) + '"></canvas><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + cdot + esc(t) + '</small></div><div class="pc">' + (on ? (dim ? v + "%" : "On") : "Off") + '</div><div class="sw' + (on ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div></div>';
     };
     let rows = "";
     const groups = this.room().groups;
@@ -1200,6 +1227,8 @@ class Ar4cDash extends HTMLElement {
     return chips + '<div class="scroll">' + (rows || '<div class="empty">No lights in this room.</div>') + '</div>' + (hint ? '<div class="hint">' + hint + "</div>" : "") + '<div class="bot"><div class="pill" data-act="roomoff">' + line("power") + 'Room Off</div><span class="lbl">' + n + " of " + es.length + " on</span></div>";
   }
   lampRgb(e) {
+    const co = this.opt[e + "#col"];
+    if (co && co.until > Date.now()) return co.mode === "rgb" ? hsvRgb(co.h, co.s, 1) : kelvinRgb(co.k);
     const s = this.st(e);
     const a = (s && s.attributes) || {};
     if (Array.isArray(a.rgb_color) && a.color_mode && a.color_mode !== "color_temp") return a.rgb_color;
@@ -1257,18 +1286,44 @@ class Ar4cDash extends HTMLElement {
     window.addEventListener("pointercancel", this._liftWin, true);
     window.addEventListener("blur", this._liftWin);
     document.addEventListener("visibilitychange", this._wake);
+    let cd = null; // a drag on the colour sheet
+    R.addEventListener("pointerdown", (ev) => {
+      const dz = ev.target.closest("[data-cdrag]");
+      if (dz && this.csh) {
+        cd = { el: dz, kind: dz.getAttribute("data-cdrag"), id: ev.pointerId };
+        dz.setPointerCapture(ev.pointerId);
+        this.dragging = true; this._dragAt = Date.now();
+        this.cshDrag(cd, ev, false);
+      }
+    });
+    R.addEventListener("pointermove", (ev) => { if (cd && ev.pointerId === cd.id) { this._dragAt = Date.now(); this.cshDrag(cd, ev, false); } });
+    const cdEnd = (ev) => { if (!cd || ev.pointerId !== cd.id) return; const c = cd; cd = null; this.cshDrag(c, ev, true); this.dragging = false; this._render(true); };
+    R.addEventListener("pointerup", cdEnd);
+    R.addEventListener("pointercancel", cdEnd);
+    R.addEventListener("contextmenu", (ev) => { if (ev.target.closest(".lt,.csh")) ev.preventDefault(); });
     R.addEventListener("pointerdown", (ev) => {
       if (ev.target.closest("[data-act]")) return;
       const row = ev.target.closest(".lt");
       const sl = ev.target.closest(".slider");
       if (!row && !sl) return;
       if (row && row.classList.contains("na")) return;
-      cur = { row, sl, x0: ev.clientX, moved: false, id: ev.pointerId, last: 0 };
+      cur = { row, sl, x0: ev.clientX, y0: ev.clientY, moved: false, id: ev.pointerId, last: 0 };
+      // hold a light that can change colour: the colour sheet
+      if (row && !this.ren) {
+        const le = row.getAttribute("data-lt"), cc = le ? this.colCaps(le) : {};
+        if (cc.rgb || cc.ct) {
+          const me = cur;
+          row.classList.add("hold");
+          me.ht = setTimeout(() => { if (cur === me && !me.moved) { me.held = true; row.classList.remove("hold"); this.cshOpen(le); } }, 480);
+        }
+      }
       (row || sl).setPointerCapture(ev.pointerId);
       if (sl) this._slide(cur, ev, false);
     });
     R.addEventListener("pointermove", (ev) => {
       if (!cur || ev.pointerId !== cur.id) return;
+      if (cur.ht && (Math.abs(ev.clientX - cur.x0) > 8 || Math.abs(ev.clientY - cur.y0) > 8)) { clearTimeout(cur.ht); cur.ht = 0; cur.row.classList.remove("hold"); }
+      if (cur.held) return;
       if (cur.row) {
         const e = cur.row.getAttribute("data-lt");
         if (!this.dimmable(e)) return;
@@ -1294,6 +1349,9 @@ class Ar4cDash extends HTMLElement {
       const c = cur;
       cur = null;
       this.dragging = false;
+      if (c.ht) clearTimeout(c.ht);
+      if (c.row) c.row.classList.remove("hold");
+      if (c.held) { setTimeout(() => (this._cshGuard = false), 80); return; } // the lift that ends the hold doesn't close the sheet
       if (c.row) {
         const e = c.row.getAttribute("data-lt");
         if (c.moved && c.v != null) this.call("light", "turn_on", { entity_id: e, brightness_pct: c.v });
@@ -1331,6 +1389,115 @@ class Ar4cDash extends HTMLElement {
     } else if (kind === "svol") { this.setOpt("SP#vol", { v }); this.spot().api("PUT", "/me/player/volume?volume_percent=" + v).catch(() => {}); }
     const pc = sl.parentNode && sl.parentNode.querySelector(".vpc");
     if (pc) pc.textContent = v + "%";
+  }
+  // what a light can do besides dimming: full colour and / or warm-to-cool white
+  colCaps(e) {
+    if (domain(e) !== "light") return { rgb: false, ct: false };
+    const s = this.st(e), m = (s && s.attributes.supported_color_modes) || [];
+    return { rgb: m.some((x) => ["hs", "rgb", "rgbw", "rgbww", "xy"].indexOf(x) >= 0), ct: m.indexOf("color_temp") >= 0 };
+  }
+  colNow(e) {
+    const s = this.st(e), a = (s && s.attributes) || {}, cc = this.colCaps(e);
+    const r = { kmin: a.min_color_temp_kelvin || 2200, kmax: a.max_color_temp_kelvin || 6500 };
+    const co = this.opt[e + "#col"];
+    if (co && co.until > Date.now()) return Object.assign(r, co);
+    const hs = Array.isArray(a.hs_color) ? a.hs_color : null;
+    r.mode = cc.rgb && (!cc.ct || (a.color_mode && a.color_mode !== "color_temp")) ? "rgb" : "ct";
+    r.h = hs ? hs[0] : 0; r.s = hs ? hs[1] / 100 : 0; r.k = a.color_temp_kelvin || 2700;
+    return r;
+  }
+  cshOpen(e) {
+    this.csh = e; this.cshTab = this.colNow(e).mode; this._cshIn = true; this._cshGuard = true;
+    try { if (navigator.vibrate) navigator.vibrate(15); } catch (er) {}
+    this._render(true);
+  }
+  cshHtml() {
+    const e = this.csh, c = this.colNow(e), cc = this.colCaps(e), on = this.isOn(e), v = this.lightPct(e);
+    const tab = cc.rgb && cc.ct ? this.cshTab : cc.rgb ? "rgb" : "ct";
+    const rgb = this.lampRgb(e).join(",");
+    const sub = on ? (c.mode === "rgb" ? "Colour" : Math.round(c.k) + " K white") + (this.dimmable(e) ? " \u00b7 " + v + "%" : "") : "Off";
+    let h = '<div class="cshade" data-act="c-x"></div><div class="csh' + (this._cshIn ? " in" : "") + '" style="--lc:' + rgb + '"><div class="grab"></div>';
+    h += '<div class="sh"><span class="big" style="background:rgb(' + rgb + ');box-shadow:0 0 24px -4px rgb(' + rgb + ')"></span><div><b>' + esc(this.name(e)) + "</b><small>" + esc(sub) + '</small></div><div class="sw' + (on ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div></div>';
+    if (cc.rgb && cc.ct) h += '<div class="seg2"><div data-act="c-tab" data-v="rgb" class="' + (tab === "rgb" ? "on" : "") + '">Colour</div><div data-act="c-tab" data-v="ct" class="' + (tab === "ct" ? "on" : "") + '">White</div></div>';
+    if (tab === "rgb") h += '<div class="cwh" data-cdrag="wheel"><canvas width="440" height="440"></canvas><span class="cknob"></span></div>';
+    else h += '<div><div class="ctb" data-cdrag="ct"><span class="cknob"></span></div><div class="ctl"><span>Warm</span><span>Cool</span></div></div>';
+    if (this.dimmable(e)) h += '<div class="cbr">' + line("sun") + '<div class="cbb" data-cdrag="bri"><i style="width:' + (on ? v : 0) + '%"></i><span>' + (on ? v + "%" : "Off") + "</span></div></div>";
+    let sw = "";
+    CSWATCH.forEach((x, i) => {
+      if ((x[1] === "rgb" && !cc.rgb) || (x[1] === "ct" && !cc.ct)) return;
+      const col = x[1] === "rgb" ? hsvRgb(x[2], x[3], 1) : kelvinRgb(x[2]);
+      const sel = on && x[1] === c.mode && (x[1] === "ct" ? Math.abs(c.k - x[2]) < 150 : Math.abs(c.h - x[2]) < 6 && Math.abs(c.s - x[3]) < 0.06);
+      sw += '<div data-act="c-sw" data-v="' + i + '" title="' + x[0] + '" class="' + (sel ? "on" : "") + '" style="background:rgb(' + col.join(",") + ')"></div>';
+    });
+    if (sw) h += '<div class="csw">' + sw + "</div>";
+    return h + "</div>";
+  }
+  cshPaint() {
+    const pg = this.app.querySelector(".pg"), cv = pg.querySelector(".cwh canvas");
+    if (cv) {
+      if (!this._wheel) {
+        const img = new ImageData(440, 440), R = 220;
+        for (let y = 0; y < 440; y++) for (let x = 0; x < 440; x++) {
+          const dx = x - R, dy = y - R, d = Math.sqrt(dx * dx + dy * dy), o = (y * 440 + x) * 4;
+          if (d > R) continue;
+          const [r, g, b] = hsvRgb((Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360, d / R, 1);
+          img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = d > R - 1.5 ? 120 : 255;
+        }
+        this._wheel = img;
+      }
+      cv.getContext("2d").putImageData(this._wheel, 0, 0);
+    }
+    this.cshKnobs();
+  }
+  cshKnobs() {
+    const pg = this.app.querySelector(".pg"), c = this.colNow(this.csh);
+    const wk = pg.querySelector(".cwh .cknob");
+    if (wk) { const a = (c.h * Math.PI) / 180, r = c.s * 110; wk.style.left = 110 + Math.cos(a) * r + "px"; wk.style.top = 110 + Math.sin(a) * r + "px"; wk.style.background = "rgb(" + hsvRgb(c.h, c.s, 1).join(",") + ")"; }
+    const tk = pg.querySelector(".ctb .cknob");
+    if (tk) { tk.style.left = clamp((c.k - c.kmin) / (c.kmax - c.kmin), 0, 1) * 100 + "%"; tk.style.background = "rgb(" + kelvinRgb(c.k).join(",") + ")"; }
+  }
+  // a drag on the wheel / white bar / brightness bar: the screen follows the finger, Home Assistant every 300 ms and on lift
+  cshDrag(cd, ev, done) {
+    const e = this.csh; if (!e) return;
+    const r = cd.el.getBoundingClientRect(), c = this.colNow(e);
+    let data = null;
+    if (cd.kind === "wheel") {
+      const dx = ev.clientX - r.left - r.width / 2, dy = ev.clientY - r.top - r.height / 2;
+      const h = Math.round((Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360), sat = clamp(Math.sqrt(dx * dx + dy * dy) / (r.width / 2), 0, 1);
+      this.setOpt(e + "#col", { mode: "rgb", h, s: sat, k: c.k });
+      data = { hs_color: [h, Math.round(sat * 100)] };
+    } else if (cd.kind === "ct") {
+      const k = Math.round((c.kmin + clamp((ev.clientX - r.left) / r.width, 0, 1) * (c.kmax - c.kmin)) / 50) * 50;
+      this.setOpt(e + "#col", { mode: "ct", h: c.h, s: c.s, k });
+      data = { color_temp_kelvin: k };
+    } else {
+      const v = clamp(Math.round(((ev.clientX - r.left) / r.width) * 100), 1, 100);
+      this.setOpt(e, { v, on: true });
+      data = { brightness_pct: v };
+    }
+    if (cd.kind !== "bri") this.setOpt(e, { on: true });
+    // what's on screen, without a redraw
+    const pg = this.app.querySelector(".pg"), rgb = this.lampRgb(e).join(","), v = this.lightPct(e);
+    const sh = pg.querySelector(".csh");
+    if (sh) {
+      sh.style.setProperty("--lc", rgb);
+      const big = sh.querySelector(".big"); if (big) { big.style.background = "rgb(" + rgb + ")"; big.style.boxShadow = "0 0 24px -4px rgb(" + rgb + ")"; }
+      const cn = this.colNow(e), sm = sh.querySelector(".sh small");
+      if (sm) sm.textContent = (cn.mode === "rgb" ? "Colour" : Math.round(cn.k) + " K white") + (this.dimmable(e) ? " \u00b7 " + v + "%" : "");
+      const bb = sh.querySelector(".cbb"); if (bb) { bb.firstChild.style.width = v + "%"; bb.lastChild.textContent = v + "%"; }
+      const sw = sh.querySelector(".sh .sw"); if (sw) sw.className = "sw on";
+      sh.querySelectorAll(".csw .on").forEach((x) => x.classList.remove("on"));
+    }
+    this.cshKnobs();
+    const row = [...pg.querySelectorAll(".lt[data-lt]")].filter((x) => x.getAttribute("data-lt") === e)[0];
+    if (row) { row.style.setProperty("--lc", rgb); const cv = row.querySelector("canvas"); if (cv) this.lamp(cv, e); }
+    cd.data = Object.assign(cd.data || {}, data);
+    const now = Date.now();
+    if (done || now - (cd.last || 0) > 300) {
+      const js = JSON.stringify(cd.data);
+      if (js !== cd.sent) { cd.sent = js; this.call("light", "turn_on", Object.assign({ entity_id: e }, cd.data)); }
+      cd.last = now; cd.data = null;
+    }
   }
   // a light Home Assistant can't reach (unavailable, or gone)
   lightNa(e) { const s = this.st(e); return !s || s.state === "unavailable"; }
@@ -3047,6 +3214,16 @@ class Ar4cDash extends HTMLElement {
       case "alloff": { const ok = room.lights.filter((x) => !this.lightNa(x)); ok.forEach((x) => this.setOpt(x, { on: false })); if (ok.length) this.call("homeassistant", "turn_off", { entity_id: ok }); break; }
       case "scene": this.call(domain(e) === "script" ? "script" : "scene", "turn_on", { entity_id: e }); t.classList.add("hit"); setTimeout(() => t.classList.remove("hit"), 600); this._toast(this.name(e)); return;
       case "toggle": ev.stopPropagation(); this.toggle(e); return;
+      case "c-x": if (this._cshGuard) return; this.csh = null; break;
+      case "c-tab": this.cshTab = v; break;
+      case "c-sw": {
+        const x = CSWATCH[Number(v)], le = this.csh; if (!x || !le) break;
+        const c = this.colNow(le);
+        if (x[1] === "ct") { const k = clamp(x[2], c.kmin, c.kmax); this.setOpt(le + "#col", { mode: "ct", h: c.h, s: c.s, k }); this.call("light", "turn_on", { entity_id: le, color_temp_kelvin: k }); this.cshTab = "ct"; }
+        else { this.setOpt(le + "#col", { mode: "rgb", h: x[2], s: x[3], k: c.k }); this.call("light", "turn_on", { entity_id: le, hs_color: [x[2], Math.round(x[3] * 100)] }); this.cshTab = "rgb"; }
+        this.setOpt(le, { on: true });
+        break;
+      }
       case "grp": {
         ev.stopPropagation();
         const g = room.groups && room.groups[Number(v)]; if (!g) return;
