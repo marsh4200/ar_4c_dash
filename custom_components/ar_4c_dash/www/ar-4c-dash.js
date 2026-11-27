@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.6.2";
+const VERSION = "1.6.3";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -44,6 +44,7 @@ const LINE = {
   cameras: '<path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/>',
   scenes: '<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
   utilities: '<path d="M12 2.7 6.3 9a7 7 0 1 0 11.4 0z"/><path d="m12.5 10-2.5 4h4l-2.5 4"/>',
+  fan: '<circle cx="12" cy="12" r="1.6"/><path d="M12 10.4c-1-3.2-.4-6.4 2.4-6.4 2.4 0 2.6 3.4-1 6.6M13.6 12c3.2-1 6.4-.4 6.4 2.4 0 2.4-3.4 2.6-6.6-1M12 13.6c1 3.2.4 6.4-2.4 6.4-2.4 0-2.6-3.4 1-6.6M10.4 12c-3.2 1-6.4.4-6.4-2.4 0-2.4 3.4-2.6 6.6 1"/>',
   power: '<path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>',
   calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
   bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
@@ -334,6 +335,12 @@ svg{flex:none}
 .pm .ib svg{width:24px;height:24px}
 .wrapc{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
 .lbl{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.cfans{width:100%;display:flex;flex-direction:column;gap:10px}.cfans .lbl{padding:0 4px}
+.fico{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;flex:none;color:var(--muted)}.fico svg{width:22px;height:22px}
+.card.fon .fico{border-color:rgba(var(--accrgb),.85);color:var(--acc);box-shadow:0 0 18px -6px rgba(var(--accrgb),.8)}.card.fon .fico svg{animation:fspin 1.6s linear infinite}@keyframes fspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.card.fon .fico svg{animation:none}}
+.pmore{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;border:1px dashed rgba(var(--accrgb),.55);margin-top:14px;cursor:pointer;color:var(--acc)}.pmore svg{width:22px;height:22px;flex:none}.pmore div{flex:1}.pmore b{display:block;font-weight:500;font-size:15px}.pmore small{display:block;color:var(--muted);font-size:12.5px}
+.pmode{display:flex;align-items:center;gap:8px;padding:8px 4px 2px}.pmode .hint{padding:0;text-align:left}
 /* shades / media */
 .slider{position:relative;height:30px;flex:1;cursor:pointer;touch-action:pan-y}
 .slider::before{content:"";position:absolute;left:0;right:0;top:13px;height:4px;border-radius:2px;background:rgba(255,255,255,.16)}
@@ -1123,7 +1130,7 @@ class Ar4cDash extends HTMLElement {
       let lit = false, badge = "";
       const es = this.ents(k);
       if (k === "lights") { const n = es.filter((e) => this.isOn(e)).length; lit = n > 0; if (n) badge = '<i class="badge">' + n + "</i>"; }
-      else if (k === "climate") lit = es.some((e) => { const s = this.st(e); return s && s.state !== "off" && s.state !== "unavailable"; });
+      else if (k === "climate") lit = es.some((e) => { const s = this.st(e); if (domain(e) !== "climate") return this.isOn(e); return s && s.state !== "off" && s.state !== "unavailable"; });
       else if (k === "music" || k === "watch") lit = es.some((e) => { const s = this.st(e); return s && s.state === "playing"; });
       else if (k === "security") lit = es.some((e) => { const s = this.st(e); return s && s.state.indexOf("armed") === 0; });
       else if (k === "garage") lit = es.some((e) => { const s = this.st(e); return s && (s.state === "open" || s.state === "opening" || s.state === "unlocked"); });
@@ -1329,12 +1336,29 @@ class Ar4cDash extends HTMLElement {
   }
 
   // ---- comfort -----------------------------------------------------------------
+  // a fan (or heater) that is only a switch, picked under Comfort
+  comfortFan(e) {
+    const s = this.st(e); if (!s) return "";
+    const on = this.isOn(e), d = domain(e), a = s.attributes;
+    let st = s.state === "unavailable" ? "Unavailable" : on ? "On" : "Off";
+    if (d === "fan" && on && a.percentage != null) st += " \u00b7 " + a.percentage + "%";
+    let h = '<div class="card' + (on ? " fon" : "") + '"><div class="row"><span class="fico">' + line(d === "fan" || /fan/i.test(this.name(e)) ? "fan" : "power") + '</span><div class="nm"><b>' + esc(this.name(e)) + "</b><small>" + esc(st) + '</small></div><div class="sw' + (on ? " on" : "") + '" data-act="toggle" data-e="' + esc(e) + '"></div></div>';
+    if (d === "fan" && on && a.percentage != null && (a.supported_features & 1)) {
+      h += '<div class="wrapc">';
+      [[33, "Low"], [66, "Medium"], [100, "High"]].forEach((p) => { const cur = a.percentage <= 33 ? 33 : a.percentage <= 66 ? 66 : 100; h += '<div class="chip' + (p[0] === cur ? " on" : "") + '" data-act="fpct" data-e="' + esc(e) + '" data-v="' + p[0] + '">' + p[1] + "</div>"; });
+      h += "</div>";
+    }
+    return h + "</div>";
+  }
   pClimate() {
-    const es = this.room().climate;
-    if (!es.length) return '<div class="empty">No climate in this room.</div>';
+    const all = this.room().climate || [];
+    const es = all.filter((e) => domain(e) === "climate"), others = all.filter((e) => domain(e) !== "climate");
+    if (!all.length) return '<div class="empty">No climate in this room.</div>';
+    const fanCards = others.length ? '<div class="cfans">' + (es.length ? '<div class="lbl">Fans &amp; switches</div>' : "") + others.map((e) => this.comfortFan(e)).join("") + "</div>" : "";
+    if (!es.length) { this._dial = null; return '<div class="dialw" style="justify-content:flex-start">' + fanCards + "</div>"; }
     if (!this.cl || es.indexOf(this.cl) < 0) this.cl = es[0];
     const e = this.cl, s = this.st(e);
-    if (!s) return '<div class="empty">' + esc(e) + " isn't available.</div>";
+    if (!s) return '<div class="empty">' + esc(e) + " isn't available.</div>" + (fanCards ? '<div class="dialw" style="justify-content:flex-start">' + fanCards + "</div>" : "");
     const a = s.attributes, mode = s.state;
     const t = this.opt[e + "#t"] && this.opt[e + "#t"].until > Date.now() ? this.opt[e + "#t"].v : a.temperature;
     const col = MODE_COL[mode] || "#f3d39a";
@@ -1345,10 +1369,10 @@ class Ar4cDash extends HTMLElement {
     let fans = "";
     (a.fan_modes || []).forEach((m) => (fans += '<div class="chip' + (m === a.fan_mode ? " on" : "") + '" data-act="fan" data-v="' + esc(m) + '">' + esc(String(m).charAt(0).toUpperCase() + String(m).slice(1)) + "</div>"));
     this._dial = { t, min: a.min_temp || 16, max: a.max_temp || 30, col: mode === "off" ? "#777" : col };
-    return tabs + '<div class="dialw"><div class="dial"><svg viewBox="0 0 200 200"><path d="M40 160 A85 85 0 1 1 160 160" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none" stroke-linecap="round"/><path class="arc" d="M40 160 A85 85 0 1 1 160 160" stroke-width="10" fill="none" stroke-linecap="round" pathLength="100"/><circle class="knob" r="9" fill="#fff"/></svg>' +
+    return tabs + '<div class="dialw"' + (fanCards ? ' style="justify-content:flex-start"' : "") + '><div class="dial"><svg viewBox="0 0 200 200"><path d="M40 160 A85 85 0 1 1 160 160" stroke="rgba(255,255,255,.12)" stroke-width="10" fill="none" stroke-linecap="round"/><path class="arc" d="M40 160 A85 85 0 1 1 160 160" stroke-width="10" fill="none" stroke-linecap="round" pathLength="100"/><circle class="knob" r="9" fill="#fff"/></svg>' +
       '<div class="c"><small style="color:' + col + '">' + esc(MODE[mode] || mode) + "</small><b>" + (t != null ? Number(t).toFixed(t % 1 ? 1 : 0) + "<sup>\u00b0</sup>" : "\u2013") + "</b><span>" + (a.current_temperature != null ? "Inside " + a.current_temperature + "\u00b0 \u00b7 " : "") + esc(this.name(e)) + "</span></div></div>" +
       '<div class="pm"><div class="ib" data-act="tmp" data-v="-1">' + line("minus") + '</div><div class="ib" data-act="tmp" data-v="1">' + line("plus") + "</div></div>" +
-      (modes ? '<div class="wrapc">' + modes + "</div>" : "") + (fans ? '<div class="wrapc"><span class="lbl">Fan</span>' + fans + "</div>" : "") + "</div>";
+      (modes ? '<div class="wrapc">' + modes + "</div>" : "") + (fans ? '<div class="wrapc"><span class="lbl">Fan</span>' + fans + "</div>" : "") + fanCards + "</div>";
   }
   paintDial() {
     const d = this._dial, arc = this.shadowRoot.querySelector(".arc"), kn = this.shadowRoot.querySelector(".knob");
@@ -2308,7 +2332,8 @@ class Ar4cDash extends HTMLElement {
   }
   chipsFor(arr, where) {
     let h = '<div class="wrapc" style="justify-content:flex-start">';
-    (arr || []).forEach((e, i) => (h += '<div class="chip" data-act="s-rm" data-w="' + where + '" data-v="' + i + '">' + esc(this.st(e) ? this.name(e) : e) + line("x") + "</div>"));
+    const cf = /:climate$/.test(where);
+    (arr || []).forEach((e, i) => (h += '<div class="chip" data-act="s-rm" data-w="' + where + '" data-v="' + i + '">' + (cf && domain(e) !== "climate" ? line("fan") : "") + esc(this.st(e) ? this.name(e) : e) + line("x") + "</div>"));
     h += '<div class="chip" style="border-style:dashed" data-act="s-pick" data-w="' + where + '">' + line("plus") + "Add</div></div>";
     return h;
   }
@@ -2496,12 +2521,16 @@ class Ar4cDash extends HTMLElement {
         doms = { on: ["media_player", "remote", "switch", "button", "input_button", "light", "fan"], input: ["media_player", "remote", "button", "input_button"], app: ["media_player", "remote", "button"], source: ["media_player", "remote", "button"], scene: ["scene", "script"], cmd: ["remote"], press: ["button", "input_button"] }[t] || ["media_player", "remote", "switch", "button"];
       }
     }
+    const cSw = k === "climate" && w[0] !== "w" && w[0] !== "h";
+    if (cSw && this.pickSw) doms = ["switch", "fan", "input_boolean"];
     const q = (this.pickQ || "").toLowerCase();
     const ids = Object.keys(this._hass.states).filter((e) => doms.indexOf(domain(e)) >= 0 && have.indexOf(e) < 0 && (!q || e.toLowerCase().indexOf(q) >= 0 || this.name(e).toLowerCase().indexOf(q) >= 0));
     ids.sort((a, b) => this.name(a).localeCompare(this.name(b)));
-    let h = "";
+    let h = cSw && this.pickSw ? '<div class="pmode"><div class="chip" data-act="p-sw" data-v="0">' + line("chevl") + 'Aircons</div><span class="hint">Switches &amp; fans for Comfort</span></div>' : "";
     ids.slice(0, 200).forEach((e) => (h += '<div class="rm" data-act="p-add" data-e="' + esc(e) + '"><b>' + esc(this.name(e)) + "</b><small>" + esc(e) + "</small></div>"));
-    return h || '<div class="empty">Nothing ' + (q ? "matches" : "left to add") + ".</div>";
+    if (!ids.length) h += '<div class="empty">Nothing ' + (q ? "matches" : "left to add") + ".</div>";
+    if (cSw && !this.pickSw) h += '<div class="pmore" data-act="p-sw" data-v="1">' + line("fan") + "<div><b>Show switches &amp; fans</b><small>For a fan or heater that\u2019s just a switch</small></div>" + line("chevr") + "</div>";
+    return h;
   }
   pickArr(create) {
     const w = this.pick.split(":"), d = this.draft;
@@ -3029,6 +3058,7 @@ class Ar4cDash extends HTMLElement {
         break;
       }
       case "cl": this.cl = e; break;
+      case "fpct": this.call("fan", "set_percentage", { entity_id: e, percentage: Number(v) }); return;
       case "tmp": {
         const c = this.cl, s = this.st(c); if (!s) return;
         const step = s.attributes.target_temp_step || (s.attributes.temperature % 1 ? 0.5 : 1);
@@ -3136,7 +3166,8 @@ class Ar4cDash extends HTMLElement {
       case "s-del": { const i = Number(v); if (this.delArm !== i) { this.delArm = i; break; } this.draft.rooms.splice(i, 1); this.delArm = null; this.sOpen = null; this.dirty = true; break; }
       case "s-mv": { const i = Number(v), j = i + Number(t.getAttribute("data-d")); const a = this.draft.rooms; [a[i], a[j]] = [a[j], a[i]]; this.sOpen = j; this.dirty = true; break; }
       case "s-rm": { this.pick = t.getAttribute("data-w"); const w = this.pick.split(":"); if (w[1] === "weather") delete this.draft.weather; else this.pickArr(true).splice(Number(v), 1); this.pick = null; this.dirty = true; break; }
-      case "s-pick": this.pick = t.getAttribute("data-w"); this.pickQ = ""; break;
+      case "s-pick": this.pick = t.getAttribute("data-w"); this.pickQ = ""; this.pickSw = false; break;
+      case "p-sw": this.pickSw = v === "1"; this.pickQ = ""; break;
       case "p-add": if (this.pick.indexOf("w:") === 0) {
         const w = this.pick.split(":"), sc = this.srcAt(w[1] + ":" + w[2]), f = w[3];
         if (f === "remote") sc.remote = { e, kind: (sc.remote && sc.remote.kind) || "appletv" };
