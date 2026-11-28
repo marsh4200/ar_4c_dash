@@ -10,7 +10,7 @@
  * Also usable as a card on any dashboard: type: custom:ar-4c-dash
  */
 (() => {
-const VERSION = "1.6.5";
+const VERSION = "1.6.6";
 const MENU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const SETUP_CATS = [["lights", "Lights"], ["climate", "Comfort"], ["music", "Listen"], ["watch", "Watch"], ["shades", "Shades"], ["scenes", "Scenes"], ["presence", "Presence / motion sensor"]];
 const HOUSE_CATS = [["cameras", "Cameras"], ["security", "Alarm"], ["garage", "Garage doors"], ["utilities", "Utilities"]];
@@ -2579,8 +2579,8 @@ class Ar4cDash extends HTMLElement {
       h += '<div class="wrapc" style="justify-content:flex-start"><div class="chip' + (so.invGrid ? " on" : "") + '" data-act="so-inv" data-v="invGrid">Flip grid direction</div><div class="chip' + (so.invBat ? " on" : "") + '" data-act="so-inv" data-v="invBat">Flip battery direction</div></div>';
     }
     h += '<div class="lbl">RTSP cameras</div><div class="hint" style="text-align:left;padding:0">Cameras that aren\'t in Home Assistant: their address, e.g. rtsp://admin:password@192.168.1.64:554/Streaming/Channels/102. Only admins ever see the address.</div>';
-    (d.rtsp || []).forEach((c, i) => (h += '<div class="rtr"><input class="inp" data-in="rname" data-v="' + i + '" value="' + esc(c.name || "") + '" placeholder="Name" maxlength="40"><input class="inp" data-in="rurl" data-v="' + i + '" value="' + esc(c.url || "") + '" placeholder="rtsp://\u2026" autocapitalize="off" autocomplete="off" spellcheck="false"><div class="chip" data-act="r-rm" data-v="' + i + '">' + line("x") + "Remove</div></div>"));
-    h += '<div class="chip" style="border-style:dashed;align-self:flex-start" data-act="r-add">' + line("plus") + "Add RTSP camera</div></div>";
+    (d.rtsp || []).forEach((c, i) => (h += '<div class="rtr"><input class="inp" data-in="rname" data-v="' + i + '" value="' + esc(c.name || "") + '" placeholder="Name" maxlength="40"><input class="inp" data-in="rurl" data-v="' + i + '" value="' + esc(c.url || "") + '" placeholder="rtsp://\u2026" autocapitalize="off" autocomplete="off" spellcheck="false"><div class="chip" data-act="rtsp-rm" data-v="' + i + '">' + line("x") + "Remove</div></div>"));
+    h += '<div class="chip" style="border-style:dashed;align-self:flex-start" data-act="rtsp-add">' + line("plus") + "Add RTSP camera</div></div>";
     h += this.namesHtml(d);
     if (this.nsp && this.nsp.length) {
       h += '<div class="lbl" style="padding:18px 4px 6px">Copy from an AR NSPanel Pro panel</div><div class="wrapc" style="justify-content:flex-start">';
@@ -3411,8 +3411,8 @@ class Ar4cDash extends HTMLElement {
         break;
       }
       case "logo-set": { const sc = this.srcAt(this.logoPick); if (v) sc.logo = { src: v }; else delete sc.logo; this.logoPick = null; this.dirty = true; break; }
-      case "r-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
-      case "r-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
+      case "rtsp-add": (this.draft.rtsp = this.draft.rtsp || []).push({ name: "Camera " + (this.draft.rtsp.length + 1), url: "" }); this.dirty = true; break;
+      case "rtsp-rm": this.draft.rtsp.splice(Number(v), 1); this.dirty = true; break;
       case "s-save": if (this.dirty) this.saveSetup(); return;
       case "spren": this.spRen = true; this.spDraft = {}; break;
       case "spren-done": {
